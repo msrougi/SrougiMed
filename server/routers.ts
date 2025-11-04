@@ -245,6 +245,42 @@ export const appRouter = router({
     }),
   }),
 
+
+  // Importação de dados
+  importData: router({
+    importPatients: protectedProcedure
+      .input(z.array(z.object({
+        name: z.string(),
+        code: z.string().optional(),
+        address: z.string().optional(),
+        phone: z.string().optional(),
+        mobile: z.string().optional(),
+        skinColorId: z.number().optional(),
+        city: z.string().optional(),
+        state: z.string().optional(),
+        rg: z.string().optional(),
+        cpf: z.string().optional(),
+        birthDate: z.string().optional(),
+        birthPlace: z.string().optional(),
+        maritalStatusId: z.number().optional(),
+        genderId: z.number().optional(),
+        email: z.string().optional(),
+        referredBy: z.string().optional(),
+        registrationDate: z.string().optional(),
+        occupation: z.string().optional(),
+        additionalInfo1: z.string().optional(),
+        additionalInfo2: z.string().optional(),
+        notes: z.string().optional(),
+      })))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") {
+          throw new Error("Acesso negado");
+        }
+        const { importPatients } = await import("./db");
+        return await importPatients(input);
+      }),
+  }),
+
   // Administração de usuários
   admin: router({
     listUsers: protectedProcedure.query(async ({ ctx }) => {

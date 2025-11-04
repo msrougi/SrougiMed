@@ -93,3 +93,12 @@
 - [x] Geração de arquivo Excel
 - [x] Componente de exportação no painel administrativo
 - [x] Teste de funcionalidade de exportação
+
+
+## Importau00e7u00e3o de Dados
+- [x] Função backend para importar pacientes
+- [x] Parser para CSV
+- [x] Parser para Excel
+- [x] Validação de dados importados
+- [x] Componente de importação no painel administrativo
+- [x] Teste de funcionalidade de importação

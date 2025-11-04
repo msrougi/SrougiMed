@@ -308,3 +308,88 @@ export async function getAllPatients() {
   
   return await db.select().from(patients);
 }
+
+// Função para importar pacientes em massa
+export async function importPatients(patientsData: Array<{
+  name: string;
+  code?: string | null;
+  address?: string | null;
+  phone?: string | null;
+  mobile?: string | null;
+  skinColorId?: number | null;
+  city?: string | null;
+  state?: string | null;
+  rg?: string | null;
+  cpf?: string | null;
+  birthDate?: string | null;
+  birthPlace?: string | null;
+  maritalStatusId?: number | null;
+  genderId?: number | null;
+  email?: string | null;
+  referredBy?: string | null;
+  registrationDate?: string | null;
+  occupation?: string | null;
+  additionalInfo1?: string | null;
+  additionalInfo2?: string | null;
+  notes?: string | null;
+}>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  let successCount = 0;
+  let errorCount = 0;
+  const errors: Array<{ row: number; error: string }> = [];
+  
+  for (let i = 0; i < patientsData.length; i++) {
+    try {
+      const patientData = patientsData[i];
+      
+      // Validar nome (obrigatório)
+      if (!patientData.name || !patientData.name.trim()) {
+        errorCount++;
+        errors.push({ row: i + 1, error: "Nome é obrigatório" });
+        continue;
+      }
+      
+      // Inserir paciente
+      await db.insert(patients).values({
+        name: patientData.name,
+        code: patientData.code || null,
+        address: patientData.address || null,
+        phone: patientData.phone || null,
+        mobile: patientData.mobile || null,
+        skinColorId: patientData.skinColorId || null,
+        city: patientData.city || null,
+        state: patientData.state || null,
+        rg: patientData.rg || null,
+        cpf: patientData.cpf || null,
+        birthDate: patientData.birthDate || null,
+        birthPlace: patientData.birthPlace || null,
+        maritalStatusId: patientData.maritalStatusId || null,
+        genderId: patientData.genderId || null,
+        email: patientData.email || null,
+        referredBy: patientData.referredBy || null,
+        registrationDate: patientData.registrationDate || null,
+        occupation: patientData.occupation || null,
+        additionalInfo1: patientData.additionalInfo1 || null,
+        additionalInfo2: patientData.additionalInfo2 || null,
+        notes: patientData.notes || null,
+      });
+      
+      successCount++;
+    } catch (error) {
+      errorCount++;
+      errors.push({
+        row: i + 1,
+        error: error instanceof Error ? error.message : "Erro desconhecido",
+      });
+    }
+  }
+  
+  return {
+    successCount,
+    errorCount,
+    errors,
+    totalProcessed: patientsData.length,
+  };
+}
