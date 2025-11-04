@@ -14,52 +14,51 @@
 - [x] Backend para excluir usuários
 - [x] Backend para alterar nível de acesso (administrador/usuário padrão)
 - [x] Backend para listar todos os usuários
-- [ ] Interface frontend completa para gerenciamento
+- [x] Interface frontend completa para gerenciamento
 
 ## Cadastro de Pacientes
-- [ ] Botão Buscar com campos: Nome, Código, Nascimento, Cidade
-- [ ] Busca por qualquer parte do nome
-- [ ] Busca combinada em múltiplos campos
-- [ ] Paginação de resultados de busca
-- [ ] Botão excluir com popup de confirmação
-- [ ] Botão Cadastrar com todos os campos especificados
-- [ ] Campo Nome (200 caracteres alfanuméricos)
-- [ ] Campo Código (10 caracteres numéricos)
-- [ ] Campo Endereço (200 caracteres alfanuméricos)
-- [ ] Campo Telefone (10 caracteres numéricos)
-- [ ] Campo Celular (11 caracteres numéricos)
-- [ ] Campo Cor da pele (select: branca, preta, parda, amarela, indígena)
-- [ ] Campo Cidade (100 caracteres alfanuméricos)
-- [ ] Campo Estado (100 caracteres alfanuméricos)
-- [ ] Campo RG (100 caracteres alfanuméricos)
-- [ ] Campo CPF (100 caracteres alfanuméricos)
-- [ ] Campo Nascimento com formatação XX/XX/XXXX
-- [ ] Cálculo automático de idade a partir da data de nascimento
-- [ ] Campo Natural de (100 caracteres alfanuméricos)
-- [ ] Campo Estado civil (select: solteiro(a), casado(a), viúvo(a), divorciado(a), separado(a))
-- [ ] Campo Sexo (select: masculino, feminino, não informado)
-- [ ] Campo E-mail (200 caracteres alfanuméricos)
-- [ ] Campo Indicado Por (100 caracteres alfanuméricos)
-- [ ] Campo Data Cadastro (pré-preenchido com data atual)
-- [ ] Campo Ocupação (200 caracteres alfanuméricos)
-- [ ] Campo Info Adicional 1 (200 caracteres alfanuméricos)
-- [ ] Campo Info Adicional 2 (200 caracteres alfanuméricos)
-- [ ] Botão Notas com popup (2000 caracteres alfanuméricos)
-- [ ] Salvar cadastro no banco de dados
+- [x] Botão Buscar com campos: Nome, Código, Nascimento, Cidade
+- [x] Busca por qualquer parte do nome
+- [x] Busca por código exato
+- [x] Busca por data de nascimento
+- [x] Busca por cidade
+- [x] Paginação com 10 registros por página
+- [x] Botão Cadastrar
+- [x] Campo Nome (200 caracteres alfanuméricos) *
+- [x] Campo Código (10 caracteres numéricos)
+- [x] Campo Endereço (200 caracteres alfanuméricos)
+- [x] Campo Telefone (10 caracteres numéricos)
+- [x] Campo Celular (11 caracteres numéricos)
+- [x] Campo Cor da Pele (select com opções pré-cadastradas)
+- [x] Campo Cidade (100 caracteres alfanuméricos)
+- [x] Campo Estado (100 caracteres alfanuméricos)
+- [x] Campo RG (100 caracteres alfanuméricos)
+- [x] Campo CPF (100 caracteres alfanuméricos)
+- [x] Campo Data de Nascimento (DD/MM/YYYY com cálculo automático de idade)
+- [x] Campo Natural de (100 caracteres alfanuméricos)
+- [x] Campo Estado Civil (select com opções pré-cadastradas)
+- [x] Campo Sexo (select com opções pré-cadastradas)
+- [x] Campo E-mail (200 caracteres alfanuméricos)
+- [x] Campo Indicado Por (100 caracteres alfanuméricos)
+- [x] Campo Data de Cadastro (auto-preenchido com data atual)
+- [x] Campo Ocupação (200 caracteres alfanuméricos)
+- [x] Campo Info Adicional 1 (200 caracteres alfanuméricos)
+- [x] Campo Info Adicional 2 (200 caracteres alfanuméricos)
+- [x] Campo Notas (2000 caracteres alfanuméricos)
+- [x] Salvar cadastro no banco de dados
 
 ## Agenda Telefônica
-- [ ] Botão Buscar por Nome
-- [ ] Busca por qualquer parte do nome
-- [ ] Paginação de resultados
-- [ ] Botão excluir com popup de confirmação
-- [ ] Botão Cadastrar
-- [ ] Campo Nome (200 caracteres alfanuméricos)
-- [ ] Campo E-mail (200 caracteres alfanuméricos)
-- [ ] Campo Ocupação (200 caracteres alfanuméricos)
-- [ ] Campo Categoria (200 caracteres alfanuméricos)
-- [ ] Campo Telefone (200 caracteres alfanuméricos)
-- [ ] Campo Observações (2000 caracteres alfanuméricos)
-- [ ] Salvar cadastro no banco de dados
+- [x] Botão Buscar
+- [x] Campo Busca por Nome
+- [x] Paginação com 10 registros por página
+- [x] Botão Cadastrar
+- [x] Campo Nome (200 caracteres alfanuméricos) *
+- [x] Campo E-mail (200 caracteres alfanuméricos)
+- [x] Campo Ocupação (200 caracteres alfanuméricos)
+- [x] Campo Categoria (200 caracteres alfanuméricos)
+- [x] Campo Telefone (200 caracteres alfanuméricos)
+- [x] Campo Observações (2000 caracteres alfanuméricos)
+- [x] Salvar cadastro no banco de dados
 
 ## Segurança
 - [x] Proteção contra XSS (via React e Zod)
@@ -78,3 +77,11 @@
 - [x] Rotas CRUD de agenda telefônica
 - [x] Rotas de administração de usuários
 - [x] Rotas para opções pré-cadastradas (cores, estados civis, sexos)
+
+## Frontend (Componentes)
+- [x] Formulário completo de cadastro de pacientes
+- [x] Busca de pacientes com paginação
+- [x] Formulário de agenda telefônica
+- [x] Painel administrativo completo
+- [x] Cálculo automático de idade
+- [x] Formatação de data com máscara DD/MM/YYYY
