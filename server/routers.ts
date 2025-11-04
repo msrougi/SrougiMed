@@ -3,6 +3,8 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { z } from "zod";
+import * as jwt from "jsonwebtoken";
+import { ENV } from "./_core/env";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -31,9 +33,6 @@ export const appRouter = router({
         }
 
         // Criar sessão usando JWT
-        const jwt = await import("jsonwebtoken");
-        const { ENV } = await import("./_core/env");
-        
         const token = jwt.sign(
           { userId: user.id, username: user.username, role: user.role },
           ENV.cookieSecret,
