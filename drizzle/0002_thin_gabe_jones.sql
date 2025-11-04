@@ -1,0 +1,2 @@
+-- Colunas já foram adicionadas manualmente pelo script seed
+-- Esta migração está vazia para manter consistência

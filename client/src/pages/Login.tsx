@@ -1,0 +1,102 @@
+import { useState } from "react";
+import { useLocation } from "wouter";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
+
+export default function Login() {
+  const [, setLocation] = useLocation();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const loginMutation = trpc.customAuth.login.useMutation({
+    onSuccess: () => {
+      toast.success("Login realizado com sucesso!");
+      setLocation("/dashboard");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erro ao fazer login");
+      setIsLoading(false);
+    },
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!username || !password) {
+      toast.error("Por favor, preencha todos os campos");
+      return;
+    }
+    setIsLoading(true);
+    loginMutation.mutate({ username, password });
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#1a2332] via-[#1e3a5f] to-[#0d9488] p-4">
+      <div className="w-full max-w-md">
+        <div className="bg-white rounded-2xl shadow-2xl p-8">
+          {/* Logo */}
+          <div className="flex justify-center mb-8">
+            <img
+              src="/logo-srougimed.png"
+              alt="SrougiMed"
+              className="w-[300px] h-[200px] object-contain"
+            />
+          </div>
+
+          {/* Formulário de Login */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="username" className="text-gray-700 font-medium">
+                Usuário
+              </Label>
+              <Input
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Digite seu usuário"
+                className="w-full"
+                disabled={isLoading}
+                autoComplete="username"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-gray-700 font-medium">
+                Senha
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Digite sua senha"
+                className="w-full"
+                disabled={isLoading}
+                autoComplete="current-password"
+              />
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full bg-gradient-to-r from-[#1e3a5f] to-[#0d9488] hover:from-[#1a2332] hover:to-[#0d9488] text-white font-semibold py-6 text-lg"
+              disabled={isLoading}
+            >
+              {isLoading ? "Entrando..." : "Entrar"}
+            </Button>
+          </form>
+
+          {/* Informações de teste */}
+          <div className="mt-6 p-4 bg-gray-50 rounded-lg text-xs text-gray-600">
+            <p className="font-semibold mb-2">Usuários de teste:</p>
+            <p>Admin: usuário <strong>admin</strong> / senha <strong>admin</strong></p>
+            <p>Usuário: usuário <strong>teste</strong> / senha <strong>teste</strong></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
