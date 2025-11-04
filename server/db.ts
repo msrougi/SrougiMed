@@ -300,3 +300,11 @@ export async function updateUserRole(id: number, role: "admin" | "user") {
   
   await db.update(users).set({ role }).where(eq(users.id, id));
 }
+
+// Função para buscar todos os pacientes (para exportação)
+export async function getAllPatients() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.select().from(patients);
+}

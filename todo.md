@@ -85,3 +85,11 @@
 - [x] Painel administrativo completo
 - [x] Cálculo automático de idade
 - [x] Formatação de data com máscara DD/MM/YYYY
+
+
+## Exportação de Dados
+- [x] Função backend para buscar todos os pacientes
+- [x] Geração de arquivo CSV
+- [x] Geração de arquivo Excel
+- [x] Componente de exportação no painel administrativo
+- [x] Teste de funcionalidade de exportação

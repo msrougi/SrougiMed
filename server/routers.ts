@@ -234,6 +234,17 @@ export const appRouter = router({
       }),
   }),
 
+  // Exportação de dados
+  export: router({
+    getAllPatients: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user?.role !== "admin") {
+        throw new Error("Acesso negado");
+      }
+      const { getAllPatients } = await import("./db");
+      return await getAllPatients();
+    }),
+  }),
+
   // Administração de usuários
   admin: router({
     listUsers: protectedProcedure.query(async ({ ctx }) => {
