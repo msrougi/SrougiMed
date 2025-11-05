@@ -393,3 +393,31 @@ export async function importPatients(patientsData: Array<{
     totalProcessed: patientsData.length,
   };
 }
+
+
+// Autenticação customizada com JWT
+export async function authenticateCustomToken(token: string) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot authenticate: database not available");
+    return null;
+  }
+
+  try {
+    const jwtModule = await import("jsonwebtoken");
+    const jwt = jwtModule.default as any;
+    const ENV = (await import('./_core/env')).ENV;
+    
+    const decoded = jwt.verify(token, ENV.cookieSecret) as any;
+    
+    if (!decoded.userId) {
+      return null;
+    }
+
+    const user = await getUserById(decoded.userId);
+    return user || null;
+  } catch (error) {
+    console.warn("[Auth] Token verification failed:", error);
+    return null;
+  }
+}

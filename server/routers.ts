@@ -3,7 +3,8 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { z } from "zod";
-import * as jwt from "jsonwebtoken";
+import jwtModule from "jsonwebtoken";
+const jwt = jwtModule as any;
 import { ENV } from "./_core/env";
 
 export const appRouter = router({
@@ -102,7 +103,7 @@ export const appRouter = router({
         limit: z.number().optional(),
         offset: z.number().optional(),
       }))
-      .query(async ({ input }) => {
+      .mutation(async ({ input }) => {
         const { searchPatients } = await import("./db");
         return await searchPatients(input);
       }),
@@ -148,10 +149,10 @@ export const appRouter = router({
       }),
 
     delete: protectedProcedure
-      .input(z.number())
+      .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const { deletePatient } = await import("./db");
-        await deletePatient(input);
+        await deletePatient(input.id);
         return { success: true };
       }),
 
@@ -194,7 +195,7 @@ export const appRouter = router({
         limit: z.number().optional(),
         offset: z.number().optional(),
       }))
-      .query(async ({ input }) => {
+      .mutation(async ({ input }) => {
         const { searchPhoneBook } = await import("./db");
         return await searchPhoneBook(input.name, input.limit, input.offset);
       }),
@@ -235,6 +236,13 @@ export const appRouter = router({
 
   // Exportação de dados
   export: router({
+    patients: protectedProcedure.mutation(async ({ ctx }) => {
+      if (ctx.user?.role !== "admin") {
+        throw new Error("Acesso negado");
+      }
+      const { getAllPatients } = await import("./db");
+      return await getAllPatients();
+    }),
     getAllPatients: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user?.role !== "admin") {
         throw new Error("Acesso negado");
@@ -282,7 +290,7 @@ export const appRouter = router({
 
   // Administração de usuários
   admin: router({
-    listUsers: protectedProcedure.query(async ({ ctx }) => {
+    listUsers: protectedProcedure.mutation(async ({ ctx }) => {
       if (ctx.user?.role !== "admin") {
         throw new Error("Acesso negado");
       }
@@ -307,13 +315,13 @@ export const appRouter = router({
       }),
 
     deleteUser: protectedProcedure
-      .input(z.number())
+      .input(z.object({ id: z.number() }))
       .mutation(async ({ input, ctx }) => {
         if (ctx.user?.role !== "admin") {
           throw new Error("Acesso negado");
         }
         const { deleteUser } = await import("./db");
-        await deleteUser(input);
+        await deleteUser(input.id);
         return { success: true };
       }),
 

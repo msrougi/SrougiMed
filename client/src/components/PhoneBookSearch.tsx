@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,11 +29,26 @@ export default function PhoneBookSearch() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const limit = 10;
 
-  const { data: entries = [], isLoading } = trpc.phoneBook.search.useQuery({
-    name: searchName || undefined,
-    limit,
-    offset: page * limit,
-  });
+  const searchMutation = trpc.phoneBook.search.useMutation();
+  const [entries, setEntries] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    setIsLoading(true);
+    searchMutation.mutate({
+      name: searchName || undefined,
+      limit,
+      offset: page * limit,
+    }, {
+      onSuccess: (data) => {
+        setEntries(data);
+        setIsLoading(false);
+      },
+      onError: () => {
+        setIsLoading(false);
+      }
+    });
+  }, [searchName, page]);
 
   const deleteMutation = trpc.phoneBook.delete.useMutation({
     onSuccess: () => {

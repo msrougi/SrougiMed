@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,7 +51,24 @@ export default function AdminPanel() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   // Buscar usuários
-  const { data: users = [], refetch } = trpc.admin.listUsers.useQuery();
+  const listUsersMutation = trpc.admin.listUsers.useMutation();
+  const [users, setUsers] = useState<any[]>([]);
+
+  useEffect(() => {
+    listUsersMutation.mutate(undefined, {
+      onSuccess: (data) => {
+        setUsers(data);
+      }
+    });
+  }, []);
+
+  const refetch = () => {
+    listUsersMutation.mutate(undefined, {
+      onSuccess: (data) => {
+        setUsers(data);
+      }
+    });
+  };
 
   // Criar usuário
   const createMutation = trpc.admin.createUser.useMutation({
@@ -108,7 +125,7 @@ export default function AdminPanel() {
 
   const handleDelete = () => {
     if (deleteId) {
-      deleteMutation.mutate(deleteId);
+      deleteMutation.mutate({ id: deleteId });
     }
   };
 

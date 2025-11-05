@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,14 +36,29 @@ export default function PatientSearch() {
   const limit = 10;
 
   // Buscar pacientes
-  const { data: patients = [], isLoading } = trpc.patients.search.useQuery({
-    name: filters.name || undefined,
-    code: filters.code || undefined,
-    birthDate: filters.birthDate || undefined,
-    city: filters.city || undefined,
-    limit,
-    offset: page * limit,
-  });
+  const searchMutation = trpc.patients.search.useMutation();
+  const [patients, setPatients] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    setIsLoading(true);
+    searchMutation.mutate({
+      name: filters.name || undefined,
+      code: filters.code || undefined,
+      birthDate: filters.birthDate || undefined,
+      city: filters.city || undefined,
+      limit,
+      offset: page * limit,
+    }, {
+      onSuccess: (data) => {
+        setPatients(data);
+        setIsLoading(false);
+      },
+      onError: () => {
+        setIsLoading(false);
+      }
+    });
+  }, [filters, page]);
 
   // Deletar paciente
   const deletePatientMutation = trpc.patients.delete.useMutation({
@@ -66,7 +81,7 @@ export default function PatientSearch() {
 
   const handleDelete = () => {
     if (deleteId) {
-      deletePatientMutation.mutate(deleteId);
+      deletePatientMutation.mutate({ id: deleteId });
     }
   };
 
