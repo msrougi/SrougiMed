@@ -101,22 +101,34 @@ export default function PatientForm({ onSuccess }: PatientFormProps) {
     }
   }, [formData.birthDate]);
 
-  // Formatar data enquanto digita
+  // Formatar data enquanto digita - permite deleção completa
   const handleBirthDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, "");
+    let value = e.target.value;
 
-    if (value.length > 8) {
-      value = value.slice(0, 8);
+    // Se vazio, permite deleção completa
+    if (value === "") {
+      setFormData({ ...formData, birthDate: "" });
+      return;
     }
 
-    if (value.length >= 2) {
-      value = value.slice(0, 2) + "/" + value.slice(2);
-    }
-    if (value.length >= 5) {
-      value = value.slice(0, 5) + "/" + value.slice(5);
+    // Remove tudo que não é dígito
+    let digitsOnly = value.replace(/\D/g, "");
+
+    // Limita a 8 dígitos
+    if (digitsOnly.length > 8) {
+      digitsOnly = digitsOnly.slice(0, 8);
     }
 
-    setFormData({ ...formData, birthDate: value });
+    // Formata como DD/MM/YYYY
+    let formatted = digitsOnly;
+    if (digitsOnly.length >= 2) {
+      formatted = digitsOnly.slice(0, 2) + "/" + digitsOnly.slice(2);
+    }
+    if (digitsOnly.length >= 4) {
+      formatted = digitsOnly.slice(0, 2) + "/" + digitsOnly.slice(2, 4) + "/" + digitsOnly.slice(4);
+    }
+
+    setFormData({ ...formData, birthDate: formatted });
   };
 
   const handleInputChange = (
