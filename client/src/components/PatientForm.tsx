@@ -131,6 +131,39 @@ export default function PatientForm({ onSuccess }: PatientFormProps) {
     setFormData({ ...formData, birthDate: formatted });
   };
 
+  // Formatar CPF enquanto digita - XXX.XXX.XXX-XX
+  const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value;
+
+    // Se vazio, permite deleção completa
+    if (value === "") {
+      setFormData({ ...formData, cpf: "" });
+      return;
+    }
+
+    // Remove tudo que não é dígito
+    let digitsOnly = value.replace(/\D/g, "");
+
+    // Limita a 11 dígitos
+    if (digitsOnly.length > 11) {
+      digitsOnly = digitsOnly.slice(0, 11);
+    }
+
+    // Formata como XXX.XXX.XXX-XX
+    let formatted = digitsOnly;
+    if (digitsOnly.length >= 3) {
+      formatted = digitsOnly.slice(0, 3) + "." + digitsOnly.slice(3);
+    }
+    if (digitsOnly.length >= 6) {
+      formatted = digitsOnly.slice(0, 3) + "." + digitsOnly.slice(3, 6) + "." + digitsOnly.slice(6);
+    }
+    if (digitsOnly.length >= 9) {
+      formatted = digitsOnly.slice(0, 3) + "." + digitsOnly.slice(3, 6) + "." + digitsOnly.slice(6, 9) + "-" + digitsOnly.slice(9);
+    }
+
+    setFormData({ ...formData, cpf: formatted });
+  };
+
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -255,9 +288,9 @@ export default function PatientForm({ onSuccess }: PatientFormProps) {
               id="cpf"
               name="cpf"
               value={formData.cpf}
-              onChange={handleInputChange}
+              onChange={handleCPFChange}
               placeholder="000.000.000-00"
-              maxLength={100}
+              maxLength={14}
             />
           </div>
         </div>
