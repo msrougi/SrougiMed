@@ -28,7 +28,6 @@ interface PatientFormProps {
 export default function PatientForm({ onSuccess }: PatientFormProps) {
   const [formData, setFormData] = useState({
     name: "",
-    code: "",
     address: "",
     phone: "",
     mobile: "",
@@ -134,7 +133,6 @@ export default function PatientForm({ onSuccess }: PatientFormProps) {
   const resetForm = () => {
     setFormData({
       name: "",
-      code: "",
       address: "",
       phone: "",
       mobile: "",
@@ -178,15 +176,9 @@ export default function PatientForm({ onSuccess }: PatientFormProps) {
       return;
     }
 
-    if (formData.code && !/^\d{0,10}$/.test(formData.code)) {
-      toast.error("Código deve conter até 10 dígitos numéricos");
-      return;
-    }
-
     // Preparar dados para envio
     const submitData = {
       name: formData.name,
-      code: formData.code || undefined,
       address: formData.address || undefined,
       phone: formData.phone || undefined,
       mobile: formData.mobile || undefined,
@@ -229,19 +221,6 @@ export default function PatientForm({ onSuccess }: PatientFormProps) {
               placeholder="Nome completo"
               maxLength={200}
               required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="code">Código</Label>
-            <Input
-              id="code"
-              name="code"
-              value={formData.code}
-              onChange={handleInputChange}
-              placeholder="Código do paciente"
-              maxLength={10}
-              type="number"
             />
           </div>
 

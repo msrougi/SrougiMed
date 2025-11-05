@@ -129,11 +129,48 @@ export async function getUserById(id: number) {
 }
 
 // Funções de gerenciamento de pacientes
+
+export async function generatePatientCode(): Promise<string> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    const lastPatient = await db
+      .select({ code: patients.code })
+      .from(patients)
+      .orderBy(patients.id)
+      .limit(1)
+      .offset(0);
+
+    let nextNumber = 1;
+
+    if (lastPatient && lastPatient.length > 0) {
+      const lastCode = lastPatient[0].code;
+      if (lastCode) {
+        const lastNumber = parseInt(lastCode, 10);
+        if (!isNaN(lastNumber)) {
+          nextNumber = lastNumber + 1;
+        }
+      }
+    }
+
+    return String(nextNumber).padStart(9, "0");
+  } catch (error) {
+    console.error("Erro ao gerar codigo de paciente:", error);
+    throw new Error("Erro ao gerar codigo sequencial");
+  }
+}
+
 export async function createPatient(data: InsertPatient) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  const result = await db.insert(patients).values(data);
+  const code = await generatePatientCode();
+  
+  const result = await db.insert(patients).values({
+    ...data,
+    code,
+  });
   return result;
 }
 

@@ -22,6 +22,20 @@
       "when": 1762272559675,
       "tag": "0002_thin_gabe_jones",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1762365369229,
+      "tag": "0003_slow_ben_urich",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1762365440870,
+      "tag": "0004_dapper_hellcat",
+      "breakpoints": true
     }
   ]
 }
