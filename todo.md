@@ -114,3 +114,14 @@
 ## Correções de Bugs
 - [x] Corrigir erro de inserção no banco causado por caracteres especiais (crase no RG)
 - [x] Corrigir erro de inserção de paciente (schema desatualizado)
+- [ ] Investigar erro persistente de inserção de paciente
+- [ ] Adicionar campo Notas no formulário de edição de pacientes
+
+## Modo de Visualização
+- [x] Criar componente PatientView para visualização somente leitura de pacientes
+- [x] Adicionar botão "Visualizar" na lista de pacientes
+- [x] Botão "Notas" no modo visualização que abre dialog com conteúdo
+- [x] Botão "Editar" no modo visualização com confirmação antes de editar
+- [x] Criar componente PhoneBookView para visualização somente leitura de agenda
+- [x] Adicionar botão "Visualizar" na lista de agenda telefônica
+- [x] Botão "Editar" no modo visualização de agenda com confirmação

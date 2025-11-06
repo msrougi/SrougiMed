@@ -1,8 +1,8 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "78f7f657-8cb6-42e5-a8bc-6e402a43186a",
-  "prevId": "885c36d5-b03f-4a22-a74b-d32310349810",
+  "id": "a3904f50-0490-4309-8636-35fa6bd868ea",
+  "prevId": "78f7f657-8cb6-42e5-a8bc-6e402a43186a",
   "tables": {
     "genders": {
       "name": "genders",
@@ -101,7 +101,7 @@
           "name": "code",
           "type": "varchar(10)",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "address": {
@@ -113,14 +113,14 @@
         },
         "phone": {
           "name": "phone",
-          "type": "varchar(10)",
+          "type": "varchar(20)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "mobile": {
           "name": "mobile",
-          "type": "varchar(11)",
+          "type": "varchar(20)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -265,7 +265,14 @@
           ]
         }
       },
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "patients_code_unique": {
+          "name": "patients_code_unique",
+          "columns": [
+            "code"
+          ]
+        }
+      },
       "checkConstraint": {}
     },
     "phone_book": {

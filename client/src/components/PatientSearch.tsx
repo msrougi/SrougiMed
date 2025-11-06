@@ -21,7 +21,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Trash2, ChevronLeft, ChevronRight, Edit } from "lucide-react";
+import { Trash2, ChevronLeft, ChevronRight, Edit, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import PatientView from "@/components/PatientView";
 
 interface PatientSearchProps {
   onEditPatient?: (patient: any) => void;
@@ -38,8 +40,14 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
   const [page, setPage] = useState(0);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [editingPatient, setEditingPatient] = useState<any | null>(null);
+  const [viewingPatient, setViewingPatient] = useState<any | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const limit = 10;
+
+  // Buscar opções pré-cadastradas
+  const { data: skinColors = [] } = trpc.patients.getSkinColors.useQuery();
+  const { data: maritalStatuses = [] } = trpc.patients.getMaritalStatuses.useQuery();
+  const { data: genders = [] } = trpc.patients.getGenders.useQuery();
 
   // Buscar pacientes
   const searchMutation = trpc.patients.search.useMutation();
@@ -229,6 +237,14 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={() => setViewingPatient(patient)}
+                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => {
                           setEditingPatient(patient);
                           if (onEditPatient) onEditPatient(patient);
@@ -278,6 +294,30 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
           </>
         )}
       </div>
+
+      {/* Dialog de Visualização */}
+      <Dialog open={viewingPatient !== null} onOpenChange={(open) => {
+        if (!open) setViewingPatient(null);
+      }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Visualizar Paciente</DialogTitle>
+          </DialogHeader>
+          {viewingPatient && (
+            <PatientView
+              patient={viewingPatient}
+              onEdit={() => {
+                setEditingPatient(viewingPatient);
+                if (onEditPatient) onEditPatient(viewingPatient);
+                setViewingPatient(null);
+              }}
+              skinColors={skinColors}
+              maritalStatuses={maritalStatuses}
+              genders={genders}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog de Confirmação de Deleção */}
       <AlertDialog open={deleteId !== null} onOpenChange={(open) => {

@@ -1,0 +1,36 @@
+{
+  "query": "SELECT * FROM patients WHERE code = '000000001'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3pSSAsX52w7TRP6.root --database 8aTYSERprrM7zmZrotEjLx --execute SELECT * FROM patients WHERE code = '000000001'",
+  "rows": [
+    {
+      "id": "180002",
+      "name": "Marcelo Srougi",
+      "code": "000000001",
+      "address": "Rua Dr. Fadlo Haidar, 139",
+      "phone": "11989911000",
+      "mobile": "11989911000",
+      "skinColorId": "5",
+      "city": "São Paulo",
+      "state": "São Paulo",
+      "rg": "2122312312",
+      "cpf": "220.911.718-67",
+      "birthDate": "01/11/1980",
+      "birthPlace": "sao paulo",
+      "maritalStatusId": "4",
+      "genderId": "1",
+      "email": "msrougi@gmail.com",
+      "referredBy": "Rose",
+      "registrationDate": "06/11/2025",
+      "occupation": "Estudante",
+      "additionalInfo1": "não preciso 1",
+      "additionalInfo2": "não preciso 2",
+      "notes": "teete",
+      "createdAt": "2025-11-06 18:13:49",
+      "updatedAt": "2025-11-06 18:13:49"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcode\taddress\tphone\tmobile\tskinColorId\tcity\tstate\trg\tcpf\tbirthDate\tbirthPlace\tmaritalStatusId\tgenderId\temail\treferredBy\tregistrationDate\toccupation\tadditionalInfo1\tadditionalInfo2\tnotes\tcreatedAt\tupdatedAt\n180002\tMarcelo Srougi\t000000001\tRua Dr. Fadlo Haidar, 139\t11989911000\t11989911000\t5\tSão Paulo\tSão Paulo\t2122312312\t220.911.718-67\t01/11/1980\tsao paulo\t4\t1\tmsrougi@gmail.com\tRose\t06/11/2025\tEstudante\tnão preciso 1\tnão preciso 2\tteete\t2025-11-06 18:13:49\t2025-11-06 18:13:49\n",
+  "stderr": "",
+  "execution_time_ms": 51
+}

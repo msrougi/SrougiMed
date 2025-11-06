@@ -1,0 +1,42 @@
+{
+  "query": "SHOW CREATE TABLE patients",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3pSSAsX52w7TRP6.root --database 8aTYSERprrM7zmZrotEjLx --execute SHOW CREATE TABLE patients",
+  "rows": [
+    {
+      "Table": "patients",
+      "Create Table": "CREATE TABLE `patients` ("
+    }
+  ],
+  "messages": [
+    "  `id` int(11) NOT NULL AUTO_INCREMENT,",
+    "  `name` varchar(200) NOT NULL,",
+    "  `code` varchar(10) NOT NULL,",
+    "  `address` varchar(200) DEFAULT NULL,",
+    "  `phone` varchar(10) DEFAULT NULL,",
+    "  `mobile` varchar(11) DEFAULT NULL,",
+    "  `skinColorId` int(11) DEFAULT NULL,",
+    "  `city` varchar(100) DEFAULT NULL,",
+    "  `state` varchar(100) DEFAULT NULL,",
+    "  `rg` varchar(100) DEFAULT NULL,",
+    "  `cpf` varchar(100) DEFAULT NULL,",
+    "  `birthDate` varchar(10) DEFAULT NULL,",
+    "  `birthPlace` varchar(100) DEFAULT NULL,",
+    "  `maritalStatusId` int(11) DEFAULT NULL,",
+    "  `genderId` int(11) DEFAULT NULL,",
+    "  `email` varchar(200) DEFAULT NULL,",
+    "  `referredBy` varchar(100) DEFAULT NULL,",
+    "  `registrationDate` varchar(10) DEFAULT NULL,",
+    "  `occupation` varchar(200) DEFAULT NULL,",
+    "  `additionalInfo1` varchar(200) DEFAULT NULL,",
+    "  `additionalInfo2` varchar(200) DEFAULT NULL,",
+    "  `notes` text DEFAULT NULL,",
+    "  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,",
+    "  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,",
+    "  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,",
+    "  UNIQUE KEY `patients_code_unique` (`code`)",
+    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AUTO_INCREMENT=210001"
+  ],
+  "stdout": "Table\tCreate Table\npatients\tCREATE TABLE `patients` (\n  `id` int(11) NOT NULL AUTO_INCREMENT,\n  `name` varchar(200) NOT NULL,\n  `code` varchar(10) NOT NULL,\n  `address` varchar(200) DEFAULT NULL,\n  `phone` varchar(10) DEFAULT NULL,\n  `mobile` varchar(11) DEFAULT NULL,\n  `skinColorId` int(11) DEFAULT NULL,\n  `city` varchar(100) DEFAULT NULL,\n  `state` varchar(100) DEFAULT NULL,\n  `rg` varchar(100) DEFAULT NULL,\n  `cpf` varchar(100) DEFAULT NULL,\n  `birthDate` varchar(10) DEFAULT NULL,\n  `birthPlace` varchar(100) DEFAULT NULL,\n  `maritalStatusId` int(11) DEFAULT NULL,\n  `genderId` int(11) DEFAULT NULL,\n  `email` varchar(200) DEFAULT NULL,\n  `referredBy` varchar(100) DEFAULT NULL,\n  `registrationDate` varchar(10) DEFAULT NULL,\n  `occupation` varchar(200) DEFAULT NULL,\n  `additionalInfo1` varchar(200) DEFAULT NULL,\n  `additionalInfo2` varchar(200) DEFAULT NULL,\n  `notes` text DEFAULT NULL,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,\n  UNIQUE KEY `patients_code_unique` (`code`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AUTO_INCREMENT=210001\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}

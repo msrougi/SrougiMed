@@ -21,7 +21,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Trash2, ChevronLeft, ChevronRight, Edit } from "lucide-react";
+import { Trash2, ChevronLeft, ChevronRight, Edit, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import PhoneBookView from "@/components/PhoneBookView";
 
 interface PhoneBookSearchProps {
   onEditEntry?: (entry: any) => void;
@@ -31,6 +33,7 @@ export default function PhoneBookSearch({ onEditEntry }: PhoneBookSearchProps) {
   const [searchName, setSearchName] = useState("");
   const [page, setPage] = useState(0);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [viewingEntry, setViewingEntry] = useState<any | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const limit = 10;
 
@@ -166,6 +169,14 @@ export default function PhoneBookSearch({ onEditEntry }: PhoneBookSearchProps) {
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={() => setViewingEntry(entry)}
+                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => {
                           if (onEditEntry) onEditEntry(entry);
                         }}
@@ -213,6 +224,26 @@ export default function PhoneBookSearch({ onEditEntry }: PhoneBookSearchProps) {
           </>
         )}
       </div>
+
+      {/* Dialog de Visualização */}
+      <Dialog open={viewingEntry !== null} onOpenChange={(open) => {
+        if (!open) setViewingEntry(null);
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Visualizar Contato</DialogTitle>
+          </DialogHeader>
+          {viewingEntry && (
+            <PhoneBookView
+              entry={viewingEntry}
+              onEdit={() => {
+                if (onEditEntry) onEditEntry(viewingEntry);
+                setViewingEntry(null);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={deleteId !== null} onOpenChange={(open) => {
         if (!open) setDeleteId(null);

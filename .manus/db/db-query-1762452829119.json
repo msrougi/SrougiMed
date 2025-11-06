@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO patients (name, code, address, phone, mobile, skinColorId, city, state, rg, cpf, birthDate, birthPlace, maritalStatusId, genderId, email, referredBy, registrationDate, occupation, additionalInfo1, additionalInfo2, notes) VALUES ('Marcelo Srougi', '000000001', 'Rua Dr. Fadlo Haidar, 139', '11989911000', '11989911000', 5, 'São Paulo', 'São Paulo', '2122312312', '220.911.718-67', '01/11/1980', 'sao paulo', 4, 1, 'msrougi@gmail.com', 'Rose', '06/11/2025', 'Estudante', 'não preciso 1', 'não preciso 2', 'teete')",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3pSSAsX52w7TRP6.root --database 8aTYSERprrM7zmZrotEjLx --execute INSERT INTO patients (name, code, address, phone, mobile, skinColorId, city, state, rg, cpf, birthDate, birthPlace, maritalStatusId, genderId, email, referredBy, registrationDate, occupation, additionalInfo1, additionalInfo2, notes) VALUES ('Marcelo Srougi', '000000001', 'Rua Dr. Fadlo Haidar, 139', '11989911000', '11989911000', 5, 'São Paulo', 'São Paulo', '2122312312', '220.911.718-67', '01/11/1980', 'sao paulo', 4, 1, 'msrougi@gmail.com', 'Rose', '06/11/2025', 'Estudante', 'não preciso 1', 'não preciso 2', 'teete')",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 59
+}

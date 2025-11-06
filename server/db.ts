@@ -165,39 +165,47 @@ export async function createPatient(data: InsertPatient) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  const code = await generatePatientCode();
-  
-  // Sanitizar dados para remover caracteres especiais problemáticos
-  const sanitizeString = (str: string | null | undefined): string | null | undefined => {
-    if (!str) return str;
-    // Remove caracteres especiais que podem causar problemas no SQL
-    return str.replace(/[`\\]/g, '');
-  };
-  
-  const sanitizedData = {
-    ...data,
-    name: sanitizeString(data.name as string) as string,
-    address: sanitizeString(data.address as string | undefined),
-    phone: sanitizeString(data.phone as string | undefined),
-    mobile: sanitizeString(data.mobile as string | undefined),
-    city: sanitizeString(data.city as string | undefined),
-    state: sanitizeString(data.state as string | undefined),
-    rg: sanitizeString(data.rg as string | undefined),
-    cpf: sanitizeString(data.cpf as string | undefined),
-    birthDate: sanitizeString(data.birthDate as string | undefined),
-    birthPlace: sanitizeString(data.birthPlace as string | undefined),
-    email: sanitizeString(data.email as string | undefined),
-    referredBy: sanitizeString(data.referredBy as string | undefined),
-    registrationDate: sanitizeString(data.registrationDate as string | undefined),
-    occupation: sanitizeString(data.occupation as string | undefined),
-    additionalInfo1: sanitizeString(data.additionalInfo1 as string | undefined),
-    additionalInfo2: sanitizeString(data.additionalInfo2 as string | undefined),
-    notes: sanitizeString(data.notes as string | undefined),
-    code,
-  };
-  
-  const result = await db.insert(patients).values(sanitizedData);
-  return result;
+  try {
+    const code = await generatePatientCode();
+    
+    // Sanitizar dados para remover caracteres especiais problemáticos
+    const sanitizeString = (str: string | null | undefined): string | undefined => {
+      if (!str) return undefined;
+      // Remove caracteres especiais que podem causar problemas no SQL
+      return str.replace(/[`\\]/g, '');
+    };
+    
+    const sanitizedData = {
+      ...data,
+      name: sanitizeString(data.name as string) as string,
+      address: sanitizeString(data.address as string | undefined),
+      phone: sanitizeString(data.phone as string | undefined),
+      mobile: sanitizeString(data.mobile as string | undefined),
+      city: sanitizeString(data.city as string | undefined),
+      state: sanitizeString(data.state as string | undefined),
+      rg: sanitizeString(data.rg as string | undefined),
+      cpf: sanitizeString(data.cpf as string | undefined),
+      birthDate: sanitizeString(data.birthDate as string | undefined),
+      birthPlace: sanitizeString(data.birthPlace as string | undefined),
+      email: sanitizeString(data.email as string | undefined),
+      referredBy: sanitizeString(data.referredBy as string | undefined),
+      registrationDate: sanitizeString(data.registrationDate as string | undefined),
+      occupation: sanitizeString(data.occupation as string | undefined),
+      additionalInfo1: sanitizeString(data.additionalInfo1 as string | undefined),
+      additionalInfo2: sanitizeString(data.additionalInfo2 as string | undefined),
+      notes: sanitizeString(data.notes as string | undefined),
+      code,
+    };
+    
+    console.log("[createPatient] Tentando inserir:", JSON.stringify(sanitizedData, null, 2));
+    const result = await db.insert(patients).values(sanitizedData);
+    console.log("[createPatient] Inserção bem-sucedida");
+    return result;
+  } catch (error) {
+    console.error("[createPatient] Erro ao inserir paciente:", error);
+    console.error("[createPatient] Dados recebidos:", JSON.stringify(data, null, 2));
+    throw error;
+  }
 }
 
 export async function searchPatients(filters: {
@@ -253,8 +261,8 @@ export async function updatePatient(id: number, data: Partial<InsertPatient>) {
   if (!db) throw new Error("Database not available");
   
   // Sanitizar dados para remover caracteres especiais problemáticos
-  const sanitizeString = (str: string | null | undefined): string | null | undefined => {
-    if (!str) return str;
+  const sanitizeString = (str: string | null | undefined): string | undefined => {
+    if (!str) return undefined;
     return str.replace(/[`\\]/g, '');
   };
   
@@ -451,26 +459,26 @@ export async function importPatients(patientsData: Array<{
       // Inserir paciente
       await db.insert(patients).values({
         name: patientData.name,
-        code: patientData.code || null,
-        address: patientData.address || null,
-        phone: patientData.phone || null,
-        mobile: patientData.mobile || null,
-        skinColorId: patientData.skinColorId || null,
-        city: patientData.city || null,
-        state: patientData.state || null,
-        rg: patientData.rg || null,
-        cpf: patientData.cpf || null,
-        birthDate: patientData.birthDate || null,
-        birthPlace: patientData.birthPlace || null,
-        maritalStatusId: patientData.maritalStatusId || null,
-        genderId: patientData.genderId || null,
-        email: patientData.email || null,
-        referredBy: patientData.referredBy || null,
-        registrationDate: patientData.registrationDate || null,
-        occupation: patientData.occupation || null,
-        additionalInfo1: patientData.additionalInfo1 || null,
-        additionalInfo2: patientData.additionalInfo2 || null,
-        notes: patientData.notes || null,
+        code: patientData.code || undefined,
+        address: patientData.address || undefined,
+        phone: patientData.phone || undefined,
+        mobile: patientData.mobile || undefined,
+        skinColorId: patientData.skinColorId || undefined,
+        city: patientData.city || undefined,
+        state: patientData.state || undefined,
+        rg: patientData.rg || undefined,
+        cpf: patientData.cpf || undefined,
+        birthDate: patientData.birthDate || undefined,
+        birthPlace: patientData.birthPlace || undefined,
+        maritalStatusId: patientData.maritalStatusId || undefined,
+        genderId: patientData.genderId || undefined,
+        email: patientData.email || undefined,
+        referredBy: patientData.referredBy || undefined,
+        registrationDate: patientData.registrationDate || undefined,
+        occupation: patientData.occupation || undefined,
+        additionalInfo1: patientData.additionalInfo1 || undefined,
+        additionalInfo2: patientData.additionalInfo2 || undefined,
+        notes: patientData.notes || undefined,
       });
       
       successCount++;

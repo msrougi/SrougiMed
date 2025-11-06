@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO patients (name, code, address, phone, mobile, skinColorId, city, state, rg, cpf, birthDate, birthPlace, maritalStatusId, genderId, email, referredBy, registrationDate, occupation, additionalInfo1, additionalInfo2, notes) VALUES ('Teste', '000000099', 'Rua Teste', '1199999999', '1199999999', 1, 'São Paulo', 'SP', '123456789', '123.456.789-00', '01/01/2000', 'SP', 1, 1, 'teste@test.com', 'Teste', '06/11/2025', 'Teste', 'info1', 'info2', 'notas')",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3pSSAsX52w7TRP6.root --database 8aTYSERprrM7zmZrotEjLx --execute INSERT INTO patients (name, code, address, phone, mobile, skinColorId, city, state, rg, cpf, birthDate, birthPlace, maritalStatusId, genderId, email, referredBy, registrationDate, occupation, additionalInfo1, additionalInfo2, notes) VALUES ('Teste', '000000099', 'Rua Teste', '1199999999', '1199999999', 1, 'São Paulo', 'SP', '123456789', '123.456.789-00', '01/01/2000', 'SP', 1, 1, 'teste@test.com', 'Teste', '06/11/2025', 'Teste', 'info1', 'info2', 'notas')",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 69
+}
