@@ -31,18 +31,25 @@ export default function PhoneBookSearch({ onEditEntry }: PhoneBookSearchProps) {
   const [searchName, setSearchName] = useState("");
   const [page, setPage] = useState(0);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
   const limit = 10;
 
   const searchMutation = trpc.phoneBook.search.useMutation();
   const [entries, setEntries] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
+  const handleSearch = () => {
+    if (!searchName.trim()) {
+      toast.error("Digite um nome para buscar");
+      return;
+    }
+    setPage(0);
+    setHasSearched(true);
     setIsLoading(true);
     searchMutation.mutate({
-      name: searchName || undefined,
+      name: searchName,
       limit,
-      offset: page * limit,
+      offset: 0,
     }, {
       onSuccess: (data) => {
         setEntries(data);
@@ -52,7 +59,27 @@ export default function PhoneBookSearch({ onEditEntry }: PhoneBookSearchProps) {
         setIsLoading(false);
       }
     });
-  }, [searchName, page]);
+  };
+
+  // Carregar próximas páginas quando page mudar
+  useEffect(() => {
+    if (hasSearched && page > 0) {
+      setIsLoading(true);
+      searchMutation.mutate({
+        name: searchName,
+        limit,
+        offset: page * limit,
+      }, {
+        onSuccess: (data) => {
+          setEntries(data);
+          setIsLoading(false);
+        },
+        onError: () => {
+          setIsLoading(false);
+        }
+      });
+    }
+  }, [page, hasSearched]);
 
   const deleteMutation = trpc.phoneBook.delete.useMutation({
     onSuccess: () => {
@@ -79,24 +106,30 @@ export default function PhoneBookSearch({ onEditEntry }: PhoneBookSearchProps) {
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
           Buscar Contato
         </h3>
-        <div className="flex gap-4">
-          <div className="flex-1">
-            <Label htmlFor="search">Nome do Contato</Label>
-            <Input
-              id="search"
-              value={searchName}
-              onChange={(e) => {
-                setSearchName(e.target.value);
-                setPage(0);
-              }}
-              placeholder="Digite o nome para buscar"
-            />
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <Label htmlFor="search">Nome do Contato</Label>
+              <Input
+                id="search"
+                value={searchName}
+                onChange={(e) => setSearchName(e.target.value)}
+                placeholder="Digite o nome para buscar"
+              />
+            </div>
+            <div className="flex items-end">
+              <Button onClick={handleSearch} className="bg-blue-600 hover:bg-blue-700">
+                Buscar
+              </Button>
+            </div>
           </div>
-        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        {isLoading ? (
+        {!hasSearched ? (
+          <div className="p-6 text-center text-gray-600">
+            Digite um nome e clique em "Buscar" para encontrar contatos
+          </div>
+        ) : isLoading ? (
           <div className="p-6 text-center text-gray-600">
             Carregando contatos...
           </div>
