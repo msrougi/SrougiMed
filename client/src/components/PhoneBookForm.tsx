@@ -11,6 +11,15 @@ interface PhoneBookFormProps {
   initialData?: any;
 }
 
+const defaultFormData = {
+  name: "",
+  email: "",
+  occupation: "",
+  category: "",
+  phone: "",
+  observations: "",
+};
+
 export default function PhoneBookForm({ onSuccess, initialData }: PhoneBookFormProps) {
   const [formData, setFormData] = useState(initialData || {
     name: "",
@@ -65,14 +74,7 @@ export default function PhoneBookForm({ onSuccess, initialData }: PhoneBookFormP
   };
 
   const resetForm = () => {
-    setFormData({
-      name: "",
-      email: "",
-      occupation: "",
-      category: "",
-      phone: "",
-      observations: "",
-    });
+    setFormData(defaultFormData);
   };
 
   const handleSubmit = (e: React.FormEvent) => {

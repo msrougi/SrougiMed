@@ -26,34 +26,48 @@ interface PatientFormProps {
   initialData?: any;
 }
 
+const defaultFormData = {
+  name: "",
+  address: "",
+  phone: "",
+  mobile: "",
+  skinColorId: "",
+  city: "",
+  state: "",
+  rg: "",
+  cpf: "",
+  birthDate: "",
+  birthPlace: "",
+  maritalStatusId: "",
+  genderId: "",
+  email: "",
+  referredBy: "",
+  registrationDate: new Date().toLocaleDateString("pt-BR"),
+  occupation: "",
+  additionalInfo1: "",
+  additionalInfo2: "",
+  notes: "",
+};
+
 export default function PatientForm({ onSuccess, initialData }: PatientFormProps) {
-  const [formData, setFormData] = useState(initialData || {
-    name: "",
-    address: "",
-    phone: "",
-    mobile: "",
-    skinColorId: "",
-    city: "",
-    state: "",
-    rg: "",
-    cpf: "",
-    birthDate: "",
-    birthPlace: "",
-    maritalStatusId: "",
-    genderId: "",
-    email: "",
-    referredBy: "",
-    registrationDate: new Date().toLocaleDateString("pt-BR"),
-    occupation: "",
-    additionalInfo1: "",
-    additionalInfo2: "",
-    notes: "",
-  });
 
   const [age, setAge] = useState<number | null>(null);
   const [showNotesDialog, setShowNotesDialog] = useState(false);
   const [notesText, setNotesText] = useState("");
-  const [cpfValidation, setCpfValidation] = useState<'valid' | 'invalid' | null>(null);
+  const [cpfValidation, setCpfValidation] = useState<"valid" | "invalid" | null>(null);
+
+  // Inicializar formData com valores padrão
+  const [formData, setFormData] = useState(() => {
+    if (initialData?.id) {
+      // Se há dados iniciais, mesclar com valores padrão
+      return Object.entries(defaultFormData).reduce((acc, [key, defaultValue]) => {
+        const value = initialData[key];
+        acc[key] = value === null || value === undefined ? defaultValue : value;
+        return acc;
+      }, {} as any);
+    }
+    return defaultFormData;
+  });
 
   // Função para validar CPF
   const validateCPF = (cpf: string): boolean => {
@@ -90,18 +104,12 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
   };
 
   // Validar CPF em tempo real
-  // Carregar dados iniciais se for edição
+  // Atualizar notas quando initialData mudar
   useEffect(() => {
     if (initialData?.id) {
-      // Converter todos os valores null em string vazia para evitar erro de React
-      const cleanedData = Object.entries(initialData).reduce((acc, [key, value]) => {
-        acc[key] = value === null ? "" : value;
-        return acc;
-      }, {} as any);
-      setFormData(cleanedData);
       setNotesText(initialData.notes || "");
     }
-  }, [initialData]);
+  }, [initialData?.id]);
 
   useEffect(() => {
     if (formData.cpf === "") {
@@ -250,28 +258,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
   };
 
   const resetForm = () => {
-    setFormData({
-      name: "",
-      address: "",
-      phone: "",
-      mobile: "",
-      skinColorId: "",
-      city: "",
-      state: "",
-      rg: "",
-      cpf: "",
-      birthDate: "",
-      birthPlace: "",
-      maritalStatusId: "",
-      genderId: "",
-      email: "",
-      referredBy: "",
-      registrationDate: new Date().toLocaleDateString("pt-BR"),
-      occupation: "",
-      additionalInfo1: "",
-      additionalInfo2: "",
-      notes: "",
-    });
+    setFormData(defaultFormData);
     setAge(null);
     setNotesText("");
   };
