@@ -125,3 +125,8 @@
 - [x] Criar componente PhoneBookView para visualização somente leitura de agenda
 - [x] Adicionar botão "Visualizar" na lista de agenda telefônica
 - [x] Botão "Editar" no modo visualização de agenda com confirmação
+
+## Controle de Versão
+- [ ] Configurar Git no projeto
+- [ ] Criar repositório no GitHub
+- [ ] Fazer push inicial do código
