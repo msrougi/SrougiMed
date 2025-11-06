@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { X } from "lucide-react";
+import { X, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface PatientFormProps {
   onSuccess?: () => void;
@@ -52,6 +52,52 @@ export default function PatientForm({ onSuccess }: PatientFormProps) {
   const [age, setAge] = useState<number | null>(null);
   const [showNotesDialog, setShowNotesDialog] = useState(false);
   const [notesText, setNotesText] = useState("");
+  const [cpfValidation, setCpfValidation] = useState<'valid' | 'invalid' | null>(null);
+
+  // Função para validar CPF
+  const validateCPF = (cpf: string): boolean => {
+    // Remove formatação
+    const cleanCPF = cpf.replace(/\D/g, "");
+
+    // Verifica se tem 11 dígitos
+    if (cleanCPF.length !== 11) return false;
+
+    // Verifica se todos os dígitos são iguais
+    if (/^(\d)\1{10}$/.test(cleanCPF)) return false;
+
+    // Calcula primeiro dígito verificador
+    let sum = 0;
+    for (let i = 0; i < 9; i++) {
+      sum += parseInt(cleanCPF[i]) * (10 - i);
+    }
+    let firstDigit = 11 - (sum % 11);
+    firstDigit = firstDigit > 9 ? 0 : firstDigit;
+
+    // Calcula segundo dígito verificador
+    sum = 0;
+    for (let i = 0; i < 10; i++) {
+      sum += parseInt(cleanCPF[i]) * (11 - i);
+    }
+    let secondDigit = 11 - (sum % 11);
+    secondDigit = secondDigit > 9 ? 0 : secondDigit;
+
+    // Compara com os dígitos do CPF
+    return (
+      firstDigit === parseInt(cleanCPF[9]) &&
+      secondDigit === parseInt(cleanCPF[10])
+    );
+  };
+
+  // Validar CPF em tempo real
+  useEffect(() => {
+    if (formData.cpf === "") {
+      setCpfValidation(null);
+    } else if (formData.cpf.replace(/\D/g, "").length === 11) {
+      setCpfValidation(validateCPF(formData.cpf) ? "valid" : "invalid");
+    } else {
+      setCpfValidation(null);
+    }
+  }, [formData.cpf]);
 
   // Buscar opções pré-cadastradas
   const { data: skinColors = [] } = trpc.patients.getSkinColors.useQuery();
@@ -284,14 +330,25 @@ export default function PatientForm({ onSuccess }: PatientFormProps) {
 
           <div>
             <Label htmlFor="cpf">CPF</Label>
-            <Input
-              id="cpf"
-              name="cpf"
-              value={formData.cpf}
-              onChange={handleCPFChange}
-              placeholder="000.000.000-00"
-              maxLength={14}
-            />
+            <div className="flex gap-2 items-end">
+              <div className="flex-1">
+                <Input
+                  id="cpf"
+                  name="cpf"
+                  value={formData.cpf}
+                  onChange={handleCPFChange}
+                  placeholder="000.000.000-00"
+                  maxLength={14}
+                  className={cpfValidation === "valid" ? "border-green-500" : cpfValidation === "invalid" ? "border-red-500" : ""}
+                />
+              </div>
+              {cpfValidation === "valid" && (
+                <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
+              )}
+              {cpfValidation === "invalid" && (
+                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+              )}
+            </div>
           </div>
         </div>
       </div>
