@@ -113,3 +113,4 @@
 
 ## Correções de Bugs
 - [x] Corrigir erro de inserção no banco causado por caracteres especiais (crase no RG)
+- [x] Corrigir erro de inserção de paciente (schema desatualizado)
