@@ -212,14 +212,10 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
     setFormData({ ...formData, birthDate: formatted });
   };
 
-  // Handler para KeyDown na data - permite deleção completa
+  // Handler para KeyDown na data - limpa campo ao pressionar Backspace/Delete
   const handleBirthDateKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    const input = e.currentTarget;
-    const { selectionStart, selectionEnd, value } = input;
-
-    // Se Backspace ou Delete com todo o texto selecionado, limpa o campo
-    if ((e.key === 'Backspace' || e.key === 'Delete') && 
-        selectionStart === 0 && selectionEnd === value.length) {
+    // Se Backspace ou Delete, limpa o campo completamente
+    if (e.key === 'Backspace' || e.key === 'Delete') {
       e.preventDefault();
       setFormData({ ...formData, birthDate: "" });
     }
@@ -259,14 +255,10 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
     setFormData({ ...formData, cpf: formatted });
   };
 
-  // Handler para KeyDown no CPF - permite deleção completa
+  // Handler para KeyDown no CPF - limpa campo ao pressionar Backspace/Delete
   const handleCPFKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    const input = e.currentTarget;
-    const { selectionStart, selectionEnd, value } = input;
-
-    // Se Backspace ou Delete com todo o texto selecionado, limpa o campo
-    if ((e.key === 'Backspace' || e.key === 'Delete') && 
-        selectionStart === 0 && selectionEnd === value.length) {
+    // Se Backspace ou Delete, limpa o campo completamente
+    if (e.key === 'Backspace' || e.key === 'Delete') {
       e.preventDefault();
       setFormData({ ...formData, cpf: "" });
     }
