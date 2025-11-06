@@ -271,7 +271,8 @@ export async function searchPhoneBook(name?: string, limit = 10, offset = 0) {
   let query = db.select().from(phoneBook);
   
   if (name) {
-    query = query.where(like(phoneBook.name, `%${name}%`)) as any;
+    // Case-insensitive search using LOWER function
+    query = query.where(sql`LOWER(${phoneBook.name}) LIKE LOWER(${`%${name}%`})`) as any;
   }
 
   const result = await query.limit(limit).offset(offset);
