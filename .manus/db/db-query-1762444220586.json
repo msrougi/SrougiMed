@@ -1,0 +1,9 @@
+{
+  "query": "DELETE FROM patients WHERE name NOT LIKE '%marcelo%'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3pSSAsX52w7TRP6.root --database 8aTYSERprrM7zmZrotEjLx --execute DELETE FROM patients WHERE name NOT LIKE '%marcelo%'",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 57
+}

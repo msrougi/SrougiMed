@@ -106,3 +106,7 @@
 ## Melhorias de Busca
 - [x] Validação de busca com mínimo de 2 caracteres em Cadastro de Pacientes
 - [x] Validação de busca com mínimo de 2 caracteres em Agenda Telefônica
+
+## Melhorias de UX em Formulários
+- [x] Permitir deleção completa de CPF sem usar tab/mouse
+- [x] Permitir deleção completa de Data de Nascimento sem usar tab/mouse

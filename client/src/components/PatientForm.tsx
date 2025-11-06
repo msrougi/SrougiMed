@@ -183,7 +183,8 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
 
   // Formatar data enquanto digita - permite deleção completa
   const handleBirthDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value;
+    const input = e.target;
+    let value = input.value;
 
     // Se vazio, permite deleção completa
     if (value === "") {
@@ -211,9 +212,23 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
     setFormData({ ...formData, birthDate: formatted });
   };
 
+  // Handler para KeyDown na data - permite deleção completa
+  const handleBirthDateKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const input = e.currentTarget;
+    const { selectionStart, selectionEnd, value } = input;
+
+    // Se Backspace ou Delete com todo o texto selecionado, limpa o campo
+    if ((e.key === 'Backspace' || e.key === 'Delete') && 
+        selectionStart === 0 && selectionEnd === value.length) {
+      e.preventDefault();
+      setFormData({ ...formData, birthDate: "" });
+    }
+  };
+
   // Formatar CPF enquanto digita - XXX.XXX.XXX-XX
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value;
+    const input = e.target;
+    let value = input.value;
 
     // Se vazio, permite deleção completa
     if (value === "") {
@@ -242,6 +257,19 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
     }
 
     setFormData({ ...formData, cpf: formatted });
+  };
+
+  // Handler para KeyDown no CPF - permite deleção completa
+  const handleCPFKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const input = e.currentTarget;
+    const { selectionStart, selectionEnd, value } = input;
+
+    // Se Backspace ou Delete com todo o texto selecionado, limpa o campo
+    if ((e.key === 'Backspace' || e.key === 'Delete') && 
+        selectionStart === 0 && selectionEnd === value.length) {
+      e.preventDefault();
+      setFormData({ ...formData, cpf: "" });
+    }
   };
 
 
@@ -346,6 +374,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
                   name="cpf"
                   value={formData.cpf}
                   onChange={handleCPFChange}
+                  onKeyDown={handleCPFKeyDown}
                   placeholder="000.000.000-00"
                   maxLength={14}
                   className={cpfValidation === "valid" ? "border-green-500" : cpfValidation === "invalid" ? "border-red-500" : ""}
@@ -443,6 +472,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
                   name="birthDate"
                   value={formData.birthDate}
                   onChange={handleBirthDateChange}
+                  onKeyDown={handleBirthDateKeyDown}
                   placeholder="DD/MM/YYYY"
                   maxLength={10}
                 />

@@ -1,0 +1,43 @@
+{
+  "query": "SELECT * FROM phone_book",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3pSSAsX52w7TRP6.root --database 8aTYSERprrM7zmZrotEjLx --execute SELECT * FROM phone_book",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Clínica Central",
+      "email": "clinica@example.com",
+      "occupation": "Clínica",
+      "category": "Saúde",
+      "phone": "1133334444",
+      "observations": "Clínica de referência",
+      "createdAt": "2025-11-05 17:18:24",
+      "updatedAt": "2025-11-05 17:18:24"
+    },
+    {
+      "id": "2",
+      "name": "Clínica Central",
+      "email": "clinica@example.com",
+      "occupation": "Clínica",
+      "category": "Saúde",
+      "phone": "1133334444",
+      "observations": "Clínica de referência",
+      "createdAt": "2025-11-05 17:20:12",
+      "updatedAt": "2025-11-05 17:20:12"
+    },
+    {
+      "id": "30001",
+      "name": "Marcelo Srougi 1",
+      "email": "msrougi@gmail.com",
+      "occupation": "Estudante",
+      "category": "sdsdss",
+      "phone": "11989911000",
+      "observations": "lalalala",
+      "createdAt": "2025-11-06 14:51:09",
+      "updatedAt": "2025-11-06 15:19:05"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\toccupation\tcategory\tphone\tobservations\tcreatedAt\tupdatedAt\n1\tClínica Central\tclinica@example.com\tClínica\tSaúde\t1133334444\tClínica de referência\t2025-11-05 17:18:24\t2025-11-05 17:18:24\n2\tClínica Central\tclinica@example.com\tClínica\tSaúde\t1133334444\tClínica de referência\t2025-11-05 17:20:12\t2025-11-05 17:20:12\n30001\tMarcelo Srougi 1\tmsrougi@gmail.com\tEstudante\tsdsdss\t11989911000\tlalalala\t2025-11-06 14:51:09\t2025-11-06 15:19:05\n",
+  "stderr": "",
+  "execution_time_ms": 49
+}
