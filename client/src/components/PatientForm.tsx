@@ -210,71 +210,7 @@ export default function PatientForm({ onSuccess }: PatientFormProps) {
     setFormData({ ...formData, cpf: formatted });
   };
 
-  // Formatar telefone enquanto digita - (XX) XXXX-XXXX
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value;
 
-    // Se vazio, permite deleção completa
-    if (value === "") {
-      setFormData({ ...formData, phone: "" });
-      return;
-    }
-
-    // Remove tudo que não é dígito
-    let digitsOnly = value.replace(/\D/g, "");
-
-    // Limita a 10 dígitos
-    if (digitsOnly.length > 10) {
-      digitsOnly = digitsOnly.slice(0, 10);
-    }
-
-    // Formata como (XX) XXXX-XXXX
-    let formatted = digitsOnly;
-    if (digitsOnly.length >= 2) {
-      formatted = "(" + digitsOnly.slice(0, 2) + ")";
-    }
-    if (digitsOnly.length >= 3) {
-      formatted = "(" + digitsOnly.slice(0, 2) + ") " + digitsOnly.slice(2);
-    }
-    if (digitsOnly.length >= 6) {
-      formatted = "(" + digitsOnly.slice(0, 2) + ") " + digitsOnly.slice(2, 6) + "-" + digitsOnly.slice(6);
-    }
-
-    setFormData({ ...formData, phone: formatted });
-  };
-
-  // Formatar celular enquanto digita - (XX) XXXXX-XXXX
-  const handleMobileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value;
-
-    // Se vazio, permite deleção completa
-    if (value === "") {
-      setFormData({ ...formData, mobile: "" });
-      return;
-    }
-
-    // Remove tudo que não é dígito
-    let digitsOnly = value.replace(/\D/g, "");
-
-    // Limita a 11 dígitos
-    if (digitsOnly.length > 11) {
-      digitsOnly = digitsOnly.slice(0, 11);
-    }
-
-    // Formata como (XX) XXXXX-XXXX
-    let formatted = digitsOnly;
-    if (digitsOnly.length >= 2) {
-      formatted = "(" + digitsOnly.slice(0, 2) + ")";
-    }
-    if (digitsOnly.length >= 3) {
-      formatted = "(" + digitsOnly.slice(0, 2) + ") " + digitsOnly.slice(2);
-    }
-    if (digitsOnly.length >= 7) {
-      formatted = "(" + digitsOnly.slice(0, 2) + ") " + digitsOnly.slice(2, 7) + "-" + digitsOnly.slice(7);
-    }
-
-    setFormData({ ...formData, mobile: formatted });
-  };
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -429,9 +365,8 @@ export default function PatientForm({ onSuccess }: PatientFormProps) {
               id="phone"
               name="phone"
               value={formData.phone}
-              onChange={handlePhoneChange}
-              placeholder="(00) 00000-0000"
-              maxLength={14}
+              onChange={handleInputChange}
+              placeholder="Telefone"
               type="tel"
             />
           </div>
@@ -442,9 +377,8 @@ export default function PatientForm({ onSuccess }: PatientFormProps) {
               id="mobile"
               name="mobile"
               value={formData.mobile}
-              onChange={handleMobileChange}
-              placeholder="(00) 00000-0000"
-              maxLength={15}
+              onChange={handleInputChange}
+              placeholder="Celular"
               type="tel"
             />
           </div>
