@@ -167,10 +167,36 @@ export async function createPatient(data: InsertPatient) {
   
   const code = await generatePatientCode();
   
-  const result = await db.insert(patients).values({
+  // Sanitizar dados para remover caracteres especiais problemáticos
+  const sanitizeString = (str: string | null | undefined): string | null | undefined => {
+    if (!str) return str;
+    // Remove caracteres especiais que podem causar problemas no SQL
+    return str.replace(/[`\\]/g, '');
+  };
+  
+  const sanitizedData = {
     ...data,
+    name: sanitizeString(data.name as string) as string,
+    address: sanitizeString(data.address as string | undefined),
+    phone: sanitizeString(data.phone as string | undefined),
+    mobile: sanitizeString(data.mobile as string | undefined),
+    city: sanitizeString(data.city as string | undefined),
+    state: sanitizeString(data.state as string | undefined),
+    rg: sanitizeString(data.rg as string | undefined),
+    cpf: sanitizeString(data.cpf as string | undefined),
+    birthDate: sanitizeString(data.birthDate as string | undefined),
+    birthPlace: sanitizeString(data.birthPlace as string | undefined),
+    email: sanitizeString(data.email as string | undefined),
+    referredBy: sanitizeString(data.referredBy as string | undefined),
+    registrationDate: sanitizeString(data.registrationDate as string | undefined),
+    occupation: sanitizeString(data.occupation as string | undefined),
+    additionalInfo1: sanitizeString(data.additionalInfo1 as string | undefined),
+    additionalInfo2: sanitizeString(data.additionalInfo2 as string | undefined),
+    notes: sanitizeString(data.notes as string | undefined),
     code,
-  });
+  };
+  
+  const result = await db.insert(patients).values(sanitizedData);
   return result;
 }
 
@@ -226,7 +252,38 @@ export async function updatePatient(id: number, data: Partial<InsertPatient>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  await db.update(patients).set(data).where(eq(patients.id, id));
+  // Sanitizar dados para remover caracteres especiais problemáticos
+  const sanitizeString = (str: string | null | undefined): string | null | undefined => {
+    if (!str) return str;
+    return str.replace(/[`\\]/g, '');
+  };
+  
+  const sanitizedData: Partial<InsertPatient> = {};
+  
+  if (data.name !== undefined) sanitizedData.name = sanitizeString(data.name as string) as string;
+  if (data.address !== undefined) sanitizedData.address = sanitizeString(data.address as string | undefined);
+  if (data.phone !== undefined) sanitizedData.phone = sanitizeString(data.phone as string | undefined);
+  if (data.mobile !== undefined) sanitizedData.mobile = sanitizeString(data.mobile as string | undefined);
+  if (data.city !== undefined) sanitizedData.city = sanitizeString(data.city as string | undefined);
+  if (data.state !== undefined) sanitizedData.state = sanitizeString(data.state as string | undefined);
+  if (data.rg !== undefined) sanitizedData.rg = sanitizeString(data.rg as string | undefined);
+  if (data.cpf !== undefined) sanitizedData.cpf = sanitizeString(data.cpf as string | undefined);
+  if (data.birthDate !== undefined) sanitizedData.birthDate = sanitizeString(data.birthDate as string | undefined);
+  if (data.birthPlace !== undefined) sanitizedData.birthPlace = sanitizeString(data.birthPlace as string | undefined);
+  if (data.email !== undefined) sanitizedData.email = sanitizeString(data.email as string | undefined);
+  if (data.referredBy !== undefined) sanitizedData.referredBy = sanitizeString(data.referredBy as string | undefined);
+  if (data.registrationDate !== undefined) sanitizedData.registrationDate = sanitizeString(data.registrationDate as string | undefined);
+  if (data.occupation !== undefined) sanitizedData.occupation = sanitizeString(data.occupation as string | undefined);
+  if (data.additionalInfo1 !== undefined) sanitizedData.additionalInfo1 = sanitizeString(data.additionalInfo1 as string | undefined);
+  if (data.additionalInfo2 !== undefined) sanitizedData.additionalInfo2 = sanitizeString(data.additionalInfo2 as string | undefined);
+  if (data.notes !== undefined) sanitizedData.notes = sanitizeString(data.notes as string | undefined);
+  
+  // Copiar campos numéricos sem sanitização
+  if (data.skinColorId !== undefined) sanitizedData.skinColorId = data.skinColorId;
+  if (data.maritalStatusId !== undefined) sanitizedData.maritalStatusId = data.maritalStatusId;
+  if (data.genderId !== undefined) sanitizedData.genderId = data.genderId;
+  
+  await db.update(patients).set(sanitizedData).where(eq(patients.id, id));
 }
 
 export async function deletePatient(id: number) {

@@ -110,3 +110,6 @@
 ## Melhorias de UX em Formulários
 - [x] Deleção inteligente em CPF (remove separadores automaticamente)
 - [x] Deleção inteligente em Data (remove separadores automaticamente)
+
+## Correções de Bugs
+- [x] Corrigir erro de inserção no banco causado por caracteres especiais (crase no RG)
