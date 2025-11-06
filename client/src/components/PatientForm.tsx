@@ -212,15 +212,6 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
     setFormData({ ...formData, birthDate: formatted });
   };
 
-  // Handler para KeyDown na data - limpa campo ao pressionar Backspace/Delete
-  const handleBirthDateKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Se Backspace ou Delete, limpa o campo completamente
-    if (e.key === 'Backspace' || e.key === 'Delete') {
-      e.preventDefault();
-      setFormData({ ...formData, birthDate: "" });
-    }
-  };
-
   // Formatar CPF enquanto digita - XXX.XXX.XXX-XX
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target;
@@ -254,17 +245,6 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
 
     setFormData({ ...formData, cpf: formatted });
   };
-
-  // Handler para KeyDown no CPF - limpa campo ao pressionar Backspace/Delete
-  const handleCPFKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Se Backspace ou Delete, limpa o campo completamente
-    if (e.key === 'Backspace' || e.key === 'Delete') {
-      e.preventDefault();
-      setFormData({ ...formData, cpf: "" });
-    }
-  };
-
-
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -366,7 +346,6 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
                   name="cpf"
                   value={formData.cpf}
                   onChange={handleCPFChange}
-                  onKeyDown={handleCPFKeyDown}
                   placeholder="000.000.000-00"
                   maxLength={14}
                   className={cpfValidation === "valid" ? "border-green-500" : cpfValidation === "invalid" ? "border-red-500" : ""}
@@ -464,7 +443,6 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
                   name="birthDate"
                   value={formData.birthDate}
                   onChange={handleBirthDateChange}
-                  onKeyDown={handleBirthDateKeyDown}
                   placeholder="DD/MM/YYYY"
                   maxLength={10}
                 />

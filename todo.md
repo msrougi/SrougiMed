@@ -108,5 +108,5 @@
 - [x] Validação de busca com mínimo de 2 caracteres em Agenda Telefônica
 
 ## Melhorias de UX em Formulários
-- [x] Limpar campo CPF completamente ao pressionar Backspace/Delete (sem seleção prévia)
-- [x] Limpar campo Data de Nascimento completamente ao pressionar Backspace/Delete (sem seleção prévia)
+- [x] Permitir deleção caractere por caractere em CPF (comportamento normal)
+- [x] Permitir deleção caractere por caractere em Data de Nascimento (comportamento normal)
