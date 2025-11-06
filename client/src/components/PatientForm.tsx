@@ -212,6 +212,39 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
     setFormData({ ...formData, birthDate: formatted });
   };
 
+  // Handler para Backspace/Delete na Data - remove separadores automaticamente
+  const handleBirthDateKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace') {
+      const input = e.currentTarget;
+      const { selectionStart, selectionEnd, value } = input;
+      
+      // Se há seleção, deixa o comportamento padrão
+      if (selectionStart !== selectionEnd) return;
+      
+      // Se cursor está no início, não faz nada
+      if (selectionStart === 0) return;
+      
+      e.preventDefault();
+      
+      // Remove apenas dígitos
+      const digitsOnly = value.replace(/\D/g, '');
+      
+      // Remove o último dígito
+      const newDigits = digitsOnly.slice(0, -1);
+      
+      // Reformata
+      let formatted = newDigits;
+      if (newDigits.length >= 2) {
+        formatted = newDigits.slice(0, 2) + '/' + newDigits.slice(2);
+      }
+      if (newDigits.length >= 4) {
+        formatted = newDigits.slice(0, 2) + '/' + newDigits.slice(2, 4) + '/' + newDigits.slice(4);
+      }
+      
+      setFormData({ ...formData, birthDate: formatted });
+    }
+  };
+
   // Formatar CPF enquanto digita - XXX.XXX.XXX-XX
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target;
@@ -244,6 +277,42 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
     }
 
     setFormData({ ...formData, cpf: formatted });
+  };
+
+  // Handler para Backspace/Delete no CPF - remove separadores automaticamente
+  const handleCPFKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace') {
+      const input = e.currentTarget;
+      const { selectionStart, selectionEnd, value } = input;
+      
+      // Se há seleção, deixa o comportamento padrão
+      if (selectionStart !== selectionEnd) return;
+      
+      // Se cursor está no início, não faz nada
+      if (selectionStart === 0) return;
+      
+      e.preventDefault();
+      
+      // Remove apenas dígitos
+      const digitsOnly = value.replace(/\D/g, '');
+      
+      // Remove o último dígito
+      const newDigits = digitsOnly.slice(0, -1);
+      
+      // Reformata
+      let formatted = newDigits;
+      if (newDigits.length >= 3) {
+        formatted = newDigits.slice(0, 3) + '.' + newDigits.slice(3);
+      }
+      if (newDigits.length >= 6) {
+        formatted = newDigits.slice(0, 3) + '.' + newDigits.slice(3, 6) + '.' + newDigits.slice(6);
+      }
+      if (newDigits.length >= 9) {
+        formatted = newDigits.slice(0, 3) + '.' + newDigits.slice(3, 6) + '.' + newDigits.slice(6, 9) + '-' + newDigits.slice(9);
+      }
+      
+      setFormData({ ...formData, cpf: formatted });
+    }
   };
 
   const handleInputChange = (
@@ -346,6 +415,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
                   name="cpf"
                   value={formData.cpf}
                   onChange={handleCPFChange}
+                  onKeyDown={handleCPFKeyDown}
                   placeholder="000.000.000-00"
                   maxLength={14}
                   className={cpfValidation === "valid" ? "border-green-500" : cpfValidation === "invalid" ? "border-red-500" : ""}
@@ -443,6 +513,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
                   name="birthDate"
                   value={formData.birthDate}
                   onChange={handleBirthDateChange}
+                  onKeyDown={handleBirthDateKeyDown}
                   placeholder="DD/MM/YYYY"
                   maxLength={10}
                 />

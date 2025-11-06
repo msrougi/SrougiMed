@@ -108,5 +108,5 @@
 - [x] Validação de busca com mínimo de 2 caracteres em Agenda Telefônica
 
 ## Melhorias de UX em Formulários
-- [x] Permitir deleção caractere por caractere em CPF (comportamento normal)
-- [x] Permitir deleção caractere por caractere em Data de Nascimento (comportamento normal)
+- [x] Deleção inteligente em CPF (remove separadores automaticamente)
+- [x] Deleção inteligente em Data (remove separadores automaticamente)
