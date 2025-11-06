@@ -38,6 +38,7 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
   const [page, setPage] = useState(0);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [editingPatient, setEditingPatient] = useState<any | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
   const limit = 10;
 
   // Buscar pacientes
@@ -46,6 +47,8 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    if (!hasSearched) return;
+    
     setIsLoading(true);
     searchMutation.mutate({
       name: filters.name || undefined,
@@ -63,7 +66,7 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
         setIsLoading(false);
       }
     });
-  }, [filters, page]);
+  }, [page, hasSearched]);
 
   // Deletar paciente
   const deletePatientMutation = trpc.patients.delete.useMutation({
@@ -73,6 +76,8 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
       // Limpar tela de busca
       setFilters({ name: "", code: "", birthDate: "", city: "" });
       setPage(0);
+      setHasSearched(false);
+      setPatients([]);
     },
     onError: (error) => {
       toast.error(error.message || "Erro ao deletar paciente");
@@ -84,7 +89,28 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
   ) => {
     const { name, value } = e.target;
     setFilters({ ...filters, [name]: value });
+  };
+
+  const handleSearch = () => {
+    setHasSearched(true);
     setPage(0);
+    setIsLoading(true);
+    searchMutation.mutate({
+      name: filters.name || undefined,
+      code: filters.code || undefined,
+      birthDate: filters.birthDate || undefined,
+      city: filters.city || undefined,
+      limit,
+      offset: 0,
+    }, {
+      onSuccess: (data) => {
+        setPatients(data);
+        setIsLoading(false);
+      },
+      onError: () => {
+        setIsLoading(false);
+      }
+    });
   };
 
   const handleDelete = () => {
@@ -144,12 +170,21 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
               placeholder="Digite a cidade"
             />
           </div>
+          <div className="flex items-end">
+            <Button onClick={handleSearch} className="w-full">
+              Buscar
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Resultados */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        {isLoading ? (
+        {!hasSearched ? (
+          <div className="p-6 text-center text-gray-600">
+            Digite os critérios de busca e clique em "Buscar" para encontrar pacientes
+          </div>
+        ) : isLoading ? (
           <div className="p-6 text-center text-gray-600">
             Carregando pacientes...
           </div>

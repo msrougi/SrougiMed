@@ -90,6 +90,14 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
   };
 
   // Validar CPF em tempo real
+  // Carregar dados iniciais se for edição
+  useEffect(() => {
+    if (initialData?.id) {
+      setFormData(initialData);
+      setNotesText(initialData.notes || "");
+    }
+  }, [initialData]);
+
   useEffect(() => {
     if (formData.cpf === "") {
       setCpfValidation(null);
@@ -114,6 +122,18 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
     },
     onError: (error) => {
       toast.error(error.message || "Erro ao cadastrar paciente");
+    },
+  });
+
+  // Mutation para atualizar paciente
+  const updatePatientMutation = trpc.patients.update.useMutation({
+    onSuccess: () => {
+      toast.success("Paciente atualizado com sucesso!");
+      resetForm();
+      onSuccess?.();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erro ao atualizar paciente");
     },
   });
 
@@ -259,17 +279,6 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
       return;
     }
 
-    // Validar campos numéricos
-    if (formData.phone && !/^\d{0,10}$/.test(formData.phone)) {
-      toast.error("Telefone deve conter até 10 dígitos numéricos");
-      return;
-    }
-
-    if (formData.mobile && !/^\d{0,11}$/.test(formData.mobile)) {
-      toast.error("Celular deve conter até 11 dígitos numéricos");
-      return;
-    }
-
     // Preparar dados para envio
     const submitData = {
       name: formData.name,
@@ -294,7 +303,12 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
       notes: notesText || undefined,
     };
 
-    createPatientMutation.mutate(submitData);
+    // Se tem ID, é atualização, senão é criação
+    if (initialData?.id) {
+      updatePatientMutation.mutate({ id: initialData.id, data: submitData });
+    } else {
+      createPatientMutation.mutate(submitData);
+    }
   };
 
   return (
@@ -302,7 +316,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
       {/* Seção 1: Informações Básicas */}
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
-          Informações Básicas
+          {initialData?.id ? "Editar Paciente" : "Informações Básicas"}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>

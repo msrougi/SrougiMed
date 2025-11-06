@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,6 +32,24 @@ export default function PhoneBookForm({ onSuccess, initialData }: PhoneBookFormP
     },
   });
 
+  const updateMutation = trpc.phoneBook.update.useMutation({
+    onSuccess: () => {
+      toast.success("Contato atualizado com sucesso!");
+      resetForm();
+      onSuccess?.();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erro ao atualizar contato");
+    },
+  });
+
+  // Carregar dados iniciais se for edição
+  useEffect(() => {
+    if (initialData?.id) {
+      setFormData(initialData);
+    }
+  }, [initialData]);
+
 
 
   const handleInputChange = (
@@ -60,21 +78,28 @@ export default function PhoneBookForm({ onSuccess, initialData }: PhoneBookFormP
       return;
     }
 
-    createMutation.mutate({
+    const submitData = {
       name: formData.name,
       email: formData.email || undefined,
       occupation: formData.occupation || undefined,
       category: formData.category || undefined,
       phone: formData.phone || undefined,
       observations: formData.observations || undefined,
-    });
+    };
+
+    // Se tem ID, é atualização, senão é criação
+    if (initialData?.id) {
+      updateMutation.mutate({ id: initialData.id, data: submitData });
+    } else {
+      createMutation.mutate(submitData);
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
-          Novo Contato
+          {initialData?.id ? "Editar Contato" : "Novo Contato"}
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
