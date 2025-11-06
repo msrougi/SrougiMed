@@ -46,7 +46,12 @@ export default function PhoneBookForm({ onSuccess, initialData }: PhoneBookFormP
   // Carregar dados iniciais se for edição
   useEffect(() => {
     if (initialData?.id) {
-      setFormData(initialData);
+      // Converter todos os valores null em string vazia para evitar erro de React
+      const cleanedData = Object.entries(initialData).reduce((acc, [key, value]) => {
+        acc[key] = value === null ? "" : value;
+        return acc;
+      }, {} as any);
+      setFormData(cleanedData);
     }
   }, [initialData]);
 
