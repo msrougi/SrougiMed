@@ -92,6 +92,18 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
   };
 
   const handleSearch = () => {
+    // Validar se há pelo menos um campo com 2 ou mais caracteres
+    const hasValidInput = 
+      (filters.name && filters.name.trim().length >= 2) ||
+      (filters.code && filters.code.trim().length >= 2) ||
+      (filters.birthDate && filters.birthDate.trim().length >= 2) ||
+      (filters.city && filters.city.trim().length >= 2);
+
+    if (!hasValidInput) {
+      toast.error("Digite pelo menos 2 caracteres em algum campo para buscar");
+      return;
+    }
+
     setHasSearched(true);
     setPage(0);
     setIsLoading(true);

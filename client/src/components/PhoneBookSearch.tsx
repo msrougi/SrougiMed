@@ -43,6 +43,10 @@ export default function PhoneBookSearch({ onEditEntry }: PhoneBookSearchProps) {
       toast.error("Digite um nome para buscar");
       return;
     }
+    if (searchName.trim().length < 2) {
+      toast.error("Digite pelo menos 2 caracteres para buscar");
+      return;
+    }
     setPage(0);
     setHasSearched(true);
     setIsLoading(true);
