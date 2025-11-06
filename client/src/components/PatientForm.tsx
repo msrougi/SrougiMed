@@ -23,10 +23,11 @@ import { X, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface PatientFormProps {
   onSuccess?: () => void;
+  initialData?: any;
 }
 
-export default function PatientForm({ onSuccess }: PatientFormProps) {
-  const [formData, setFormData] = useState({
+export default function PatientForm({ onSuccess, initialData }: PatientFormProps) {
+  const [formData, setFormData] = useState(initialData || {
     name: "",
     address: "",
     phone: "",

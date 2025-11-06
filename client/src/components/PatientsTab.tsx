@@ -8,10 +8,18 @@ export default function PatientsTab() {
   const [showSearch, setShowSearch] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [editingPatient, setEditingPatient] = useState<any | null>(null);
 
   const handleFormSuccess = () => {
     setShowRegister(false);
+    setEditingPatient(null);
     setRefreshKey((prev) => prev + 1);
+  };
+
+  const handleEditPatient = (patient: any) => {
+    setEditingPatient(patient);
+    setShowSearch(false);
+    setShowRegister(true);
   };
 
   return (
@@ -48,13 +56,13 @@ export default function PatientsTab() {
 
       {showSearch && (
         <div key={refreshKey}>
-          <PatientSearch />
+          <PatientSearch onEditPatient={handleEditPatient} />
         </div>
       )}
 
       {showRegister && (
         <div>
-          <PatientForm onSuccess={handleFormSuccess} />
+          <PatientForm onSuccess={handleFormSuccess} initialData={editingPatient} />
         </div>
       )}
     </div>

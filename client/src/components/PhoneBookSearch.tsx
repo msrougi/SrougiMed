@@ -21,9 +21,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Trash2, ChevronLeft, ChevronRight, Edit } from "lucide-react";
 
-export default function PhoneBookSearch() {
+interface PhoneBookSearchProps {
+  onEditEntry?: (entry: any) => void;
+}
+
+export default function PhoneBookSearch({ onEditEntry }: PhoneBookSearchProps) {
   const [searchName, setSearchName] = useState("");
   const [page, setPage] = useState(0);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -54,6 +58,9 @@ export default function PhoneBookSearch() {
     onSuccess: () => {
       toast.success("Contato deletado com sucesso!");
       setDeleteId(null);
+      // Limpar tela de busca
+      setSearchName("");
+      setPage(0);
     },
     onError: (error) => {
       toast.error(error.message || "Erro ao deletar contato");
@@ -118,7 +125,17 @@ export default function PhoneBookSearch() {
                     <TableCell>{entry.email || "-"}</TableCell>
                     <TableCell>{entry.occupation || "-"}</TableCell>
                     <TableCell>{entry.category || "-"}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          if (onEditEntry) onEditEntry(entry);
+                        }}
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"

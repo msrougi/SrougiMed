@@ -8,10 +8,18 @@ export default function PhoneBookTab() {
   const [showSearch, setShowSearch] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [editingEntry, setEditingEntry] = useState<any | null>(null);
 
   const handleFormSuccess = () => {
     setShowRegister(false);
+    setEditingEntry(null);
     setRefreshKey((prev) => prev + 1);
+  };
+
+  const handleEditEntry = (entry: any) => {
+    setEditingEntry(entry);
+    setShowSearch(false);
+    setShowRegister(true);
   };
 
   return (
@@ -48,13 +56,13 @@ export default function PhoneBookTab() {
 
       {showSearch && (
         <div key={refreshKey}>
-          <PhoneBookSearch />
+          <PhoneBookSearch onEditEntry={handleEditEntry} />
         </div>
       )}
 
       {showRegister && (
         <div>
-          <PhoneBookForm onSuccess={handleFormSuccess} />
+          <PhoneBookForm onSuccess={handleFormSuccess} initialData={editingEntry} />
         </div>
       )}
     </div>

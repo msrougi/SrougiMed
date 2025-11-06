@@ -187,7 +187,8 @@ export async function searchPatients(filters: {
 
   const conditions = [];
   if (filters.name) {
-    conditions.push(like(patients.name, `%${filters.name}%`));
+    // Busca case-insensitive usando LOWER
+    conditions.push(sql`LOWER(${patients.name}) LIKE LOWER(${`%${filters.name}%`})`);
   }
   if (filters.code) {
     conditions.push(eq(patients.code, filters.code));
@@ -196,7 +197,8 @@ export async function searchPatients(filters: {
     conditions.push(eq(patients.birthDate, filters.birthDate));
   }
   if (filters.city) {
-    conditions.push(like(patients.city, `%${filters.city}%`));
+    // Busca case-insensitive usando LOWER
+    conditions.push(sql`LOWER(${patients.city}) LIKE LOWER(${`%${filters.city}%`})`);
   }
 
   let query = db.select().from(patients);

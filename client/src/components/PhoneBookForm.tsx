@@ -8,10 +8,11 @@ import { toast } from "sonner";
 
 interface PhoneBookFormProps {
   onSuccess?: () => void;
+  initialData?: any;
 }
 
-export default function PhoneBookForm({ onSuccess }: PhoneBookFormProps) {
-  const [formData, setFormData] = useState({
+export default function PhoneBookForm({ onSuccess, initialData }: PhoneBookFormProps) {
+  const [formData, setFormData] = useState(initialData || {
     name: "",
     email: "",
     occupation: "",
