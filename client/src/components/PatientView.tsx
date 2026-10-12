@@ -8,6 +8,7 @@ interface Patient {
   name: string;
   code?: string;
   address?: string;
+  zipCode?: string;
   phone?: string;
   mobile?: string;
   skinColorId?: number;
@@ -152,9 +153,13 @@ export default function PatientView({
             <label className="block text-sm font-medium text-gray-700">Celular</label>
             <p className="mt-1 text-sm text-gray-900">{patient.mobile || "-"}</p>
           </div>
-          <div className="md:col-span-2">
+          <div>
             <label className="block text-sm font-medium text-gray-700">Endereço</label>
             <p className="mt-1 text-sm text-gray-900">{patient.address || "-"}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">CEP</label>
+            <p className="mt-1 text-sm text-gray-900">{patient.zipCode || "-"}</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Cidade</label>

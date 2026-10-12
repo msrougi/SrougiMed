@@ -29,6 +29,7 @@ interface PatientFormProps {
 const defaultFormData = {
   name: "",
   address: "",
+  zipCode: "",
   phone: "",
   mobile: "",
   skinColorId: "",
@@ -344,6 +345,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
     const submitData = {
       name: formData.name,
       address: formData.address || undefined,
+      zipCode: formData.zipCode.trim(),
       phone: formData.phone || undefined,
       mobile: formData.mobile || undefined,
       skinColorId: formData.skinColorId ? parseInt(formData.skinColorId) : undefined,
@@ -460,7 +462,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
             />
           </div>
 
-          <div className="md:col-span-2">
+          <div>
             <Label htmlFor="address">Endereço</Label>
             <Input
               id="address"
@@ -469,6 +471,20 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
               onChange={handleInputChange}
               placeholder="Endereço completo"
               maxLength={200}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="zipCode">CEP</Label>
+            <Input
+              id="zipCode"
+              name="zipCode"
+              value={formData.zipCode}
+              onChange={handleInputChange}
+              placeholder="00000-000"
+              autoComplete="postal-code"
+              inputMode="numeric"
+              maxLength={10}
             />
           </div>
 
