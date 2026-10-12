@@ -179,6 +179,7 @@ export async function createPatient(data: InsertPatient) {
       ...data,
       name: sanitizeString(data.name as string) as string,
       address: sanitizeString(data.address as string | undefined),
+      zipCode: data.zipCode?.trim() || undefined,
       phone: sanitizeString(data.phone as string | undefined),
       mobile: sanitizeString(data.mobile as string | undefined),
       city: sanitizeString(data.city as string | undefined),
@@ -270,6 +271,7 @@ export async function updatePatient(id: number, data: Partial<InsertPatient>) {
   
   if (data.name !== undefined) sanitizedData.name = sanitizeString(data.name as string) as string;
   if (data.address !== undefined) sanitizedData.address = sanitizeString(data.address as string | undefined);
+  if (data.zipCode !== undefined) sanitizedData.zipCode = data.zipCode?.trim() || null;
   if (data.phone !== undefined) sanitizedData.phone = sanitizeString(data.phone as string | undefined);
   if (data.mobile !== undefined) sanitizedData.mobile = sanitizeString(data.mobile as string | undefined);
   if (data.city !== undefined) sanitizedData.city = sanitizeString(data.city as string | undefined);
@@ -419,6 +421,7 @@ export async function importPatients(patientsData: Array<{
   name: string;
   code?: string | null;
   address?: string | null;
+  zipCode?: string | null;
   phone?: string | null;
   mobile?: string | null;
   skinColorId?: number | null;
@@ -461,6 +464,7 @@ export async function importPatients(patientsData: Array<{
         name: patientData.name,
         code: patientData.code || undefined,
         address: patientData.address || undefined,
+        zipCode: patientData.zipCode?.trim() || undefined,
         phone: patientData.phone || undefined,
         mobile: patientData.mobile || undefined,
         skinColorId: patientData.skinColorId || undefined,

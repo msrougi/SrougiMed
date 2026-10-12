@@ -68,6 +68,7 @@ export const appRouter = router({
       .input(z.object({
         name: z.string(),
         address: z.string().optional(),
+        zipCode: z.string().trim().max(10).optional(),
         phone: z.string().optional(),
         mobile: z.string().optional(),
         skinColorId: z.number().optional(),
@@ -121,6 +122,7 @@ export const appRouter = router({
           name: z.string().optional(),
           code: z.string().optional(),
           address: z.string().optional(),
+          zipCode: z.string().trim().max(10).optional(),
           phone: z.string().optional(),
           mobile: z.string().optional(),
           skinColorId: z.number().optional(),
@@ -259,6 +261,7 @@ export const appRouter = router({
         name: z.string(),
         code: z.string().optional(),
         address: z.string().optional(),
+        zipCode: z.string().trim().max(10).optional(),
         phone: z.string().optional(),
         mobile: z.string().optional(),
         skinColorId: z.number().optional(),
