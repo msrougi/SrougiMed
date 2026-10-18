@@ -42,6 +42,8 @@ const defaultFormData = {
   birthPlace: "",
   motherName: "",
   fatherName: "",
+  responsibleName: "",
+  responsiblePhone: "",
   maritalStatusId: "",
   genderId: "",
   email: "",
@@ -386,6 +388,8 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
       birthPlace: formData.birthPlace || undefined,
       motherName: formData.motherName || undefined,
       fatherName: formData.fatherName || undefined,
+      responsibleName: formData.responsibleName || undefined,
+      responsiblePhone: formData.responsiblePhone || undefined,
       maritalStatusId: Number(formData.maritalStatusId),
       genderId: Number(formData.genderId),
       email: formData.email || undefined,
@@ -500,6 +504,17 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
               type="tel"
               maxLength={40}
             />
+          </div>
+
+          <div>
+            <Label htmlFor="responsibleName">Nome do responsável</Label>
+            <Input id="responsibleName" name="responsibleName" value={formData.responsibleName}
+              onChange={handleInputChange} placeholder="Nome do responsável" maxLength={200} />
+          </div>
+          <div>
+            <Label htmlFor="responsiblePhone">Telefone do responsável</Label>
+            <Input id="responsiblePhone" name="responsiblePhone" value={formData.responsiblePhone}
+              onChange={handleInputChange} placeholder="Telefone do responsável" type="tel" maxLength={40} />
           </div>
 
           <div className="md:col-span-2">

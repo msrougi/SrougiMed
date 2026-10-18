@@ -19,6 +19,8 @@ export interface PatientImportData {
   birthPlace?: string;
   motherName?: string;
   fatherName?: string;
+  responsibleName?: string;
+  responsiblePhone?: string;
   maritalStatusId?: number;
   genderId?: number;
   email?: string;
@@ -59,7 +61,9 @@ export function parseCSV(csvContent: string): PatientImportData[] {
       if (!value) return; // Skip empty values
 
       // Map column names to patient properties
-      if (['nome da mãe', 'nome da mae', 'mãe', 'mae', 'mothername'].includes(lowerCol)) patient.motherName = value;
+      if (['nome do responsável', 'nome do responsavel', 'responsável', 'responsavel', 'responsiblename', 'responsavel_nome'].includes(lowerCol)) patient.responsibleName = value;
+      else if (['telefone do responsável', 'telefone do responsavel', 'responsiblephone', 'responsavel_fone'].includes(lowerCol)) patient.responsiblePhone = value;
+      else if (['nome da mãe', 'nome da mae', 'mãe', 'mae', 'mothername'].includes(lowerCol)) patient.motherName = value;
       else if (['nome do pai', 'pai', 'fathername'].includes(lowerCol)) patient.fatherName = value;
       else if (lowerCol.includes('nome')) patient.name = value;
       else if (lowerCol.includes('código') || lowerCol.includes('codigo')) patient.code = value;
@@ -162,7 +166,9 @@ export async function parseExcel(file: File): Promise<PatientImportData[]> {
 
         const lowerKey = key.toLowerCase().trim();
 
-        if (['nome da mãe', 'nome da mae', 'mãe', 'mae', 'mothername'].includes(lowerKey)) patient.motherName = String(value);
+        if (['nome do responsável', 'nome do responsavel', 'responsável', 'responsavel', 'responsiblename', 'responsavel_nome'].includes(lowerKey)) patient.responsibleName = String(value);
+      else if (['telefone do responsável', 'telefone do responsavel', 'responsiblephone', 'responsavel_fone'].includes(lowerKey)) patient.responsiblePhone = String(value);
+      else if (['nome da mãe', 'nome da mae', 'mãe', 'mae', 'mothername'].includes(lowerKey)) patient.motherName = String(value);
         else if (['nome do pai', 'pai', 'fathername'].includes(lowerKey)) patient.fatherName = String(value);
         else if (lowerKey.includes('nome')) patient.name = String(value);
         else if (lowerKey.includes('código') || lowerKey.includes('codigo')) patient.code = String(value);

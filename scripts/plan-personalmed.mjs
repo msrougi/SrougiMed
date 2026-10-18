@@ -6,12 +6,13 @@ import { createInterface } from 'node:readline';
 import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-export const mappingVersion = 8;
+export const mappingVersion = 9;
 const direct = {
   Name: ['name', 200], Address: ['address', 200], District: ['district', 100], Phone: ['phone', 40],
   City: ['city', 100], State: ['state', 100], ID: ['rg', 100],
   Clini_01_CPF: ['cpf', 100], HomeBorn: ['birthPlace', 100], EMail: ['email', 200],
   IndicatedBy: ['referredBy', 100], Occupation: ['occupation', 200],
+  RESPONSAVEL_NOME: ['responsibleName', 200], RESPONSAVEL_FONE: ['responsiblePhone', 40],
   Observation: ['notes', 65535], Mother: ['motherName', 200], Father: ['fatherName', 200],
 };
 const special = ['Unit', 'PCod', 'Zip', 'BirthDate', 'DATA_CRIACAO', 'CivilStatus',

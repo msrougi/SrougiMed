@@ -45,7 +45,7 @@ tinham oito dígitos com ou sem hífen padrão. Os 8.189 restantes ficam pendent
 o valor original permanece na linha completa. Não se completam zeros nem se
 truncam dígitos. Ausência de CEP continua ausente (8.323 pacientes).
 A padronização não consulta os Correios nem comprova que o CEP existe.
-A regra de CEP foi introduzida na versão 2. A versão atual é 8, após as decisões
+A regra de CEP foi introduzida na versão 2. A versão atual é 9, após as decisões
 sobre cor da pele; planos antigos precisam ser regenerados antes da comparação.
 DDD e celular são combinados quando ambos existem; não se inventa DDD nem o nono
 dígito. DDD sem número fica sinalizado e preservado no original.
@@ -120,3 +120,13 @@ criação, edição, consulta e importação. A versão 8 associa Mother → mot
 (817 valores) e Father → fatherName (366 valores). Ausências continuam nulas.
 Os nomes originais não são concatenados às observações nem usados para deduplicar.
 O preparador cria as colunas com backup antes da publicação do novo aplicativo.
+
+## Responsável
+
+Marcelo aprovou em 18/10/2026 Nome do responsável e Telefone do responsável na
+seção Contato. Os campos opcionais responsibleName/responsiblePhone aceitam
+respectivamente 200/40 caracteres e NULL. A versão 9 associa RESPONSAVEL_NOME
+(690 preenchidos) e RESPONSAVEL_FONE (36) sem alterar a grafia ou completar DDD.
+São dados distintos da filiação e dos telefones do próprio paciente.
+A importação de CSV/Excel reconhece seus cabeçalhos antes de Nome/Telefone genéricos.
+As colunas são preparadas com backup antes de ativar o novo aplicativo.

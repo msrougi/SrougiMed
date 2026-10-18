@@ -21,6 +21,8 @@ interface Patient {
   birthPlace?: string;
   motherName?: string | null;
   fatherName?: string | null;
+  responsibleName?: string | null;
+  responsiblePhone?: string | null;
   maritalStatusId?: number;
   genderId?: number;
   email?: string;
@@ -163,6 +165,14 @@ export default function PatientView({
           <div>
             <label className="block text-sm font-medium text-gray-700">Celular</label>
             <p className="mt-1 text-sm text-gray-900">{patient.mobile || "-"}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Nome do responsável</label>
+            <p className="mt-1 text-sm text-gray-900">{patient.responsibleName || "-"}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Telefone do responsável</label>
+            <p className="mt-1 text-sm text-gray-900">{patient.responsiblePhone || "-"}</p>
           </div>
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700">Endereço</label>

@@ -80,6 +80,8 @@ export const patients = mysqlTable("patients", {
   birthPlace: varchar("birthPlace", { length: 100 }),
   motherName: varchar("motherName", { length: 200 }),
   fatherName: varchar("fatherName", { length: 200 }),
+  responsibleName: varchar("responsibleName", { length: 200 }),
+  responsiblePhone: varchar("responsiblePhone", { length: 40 }),
   maritalStatusId: int("maritalStatusId"),
   genderId: int("genderId"),
   email: varchar("email", { length: 200 }),
