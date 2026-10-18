@@ -13,7 +13,7 @@ const row = (changes = {}) => ({
   Sex: null, Race: null, DDDCellular: null, Cellular: null, ...changes,
 });
 
-test('maps approved P/O to single, preserves raw values and flags unknown skin colors', () => {
+test('maps approved P/O to single and records the decision to preserve unclassified skin colors', () => {
   for (const code of ['P', 'O']) {
     const raw = row({ CivilStatus: code, Race: 'BR', District: 'Centro', ATIVO: 'F' });
     const plan = planPatient(raw);
@@ -21,7 +21,8 @@ test('maps approved P/O to single, preserves raw values and flags unknown skin c
     assert.equal(plan.patient.maritalStatusId, 1);
     assert.equal(plan.patient.skinColorId, null);
     assert.deepEqual(plan.unassignedFields, ['District', 'ATIVO']);
-    assert.equal(plan.issues.filter(x => x.reason === 'category_review').length, 1);
+    assert.equal(plan.issues.filter(x => x.reason === 'category_review').length, 0);
+    assert.deepEqual(plan.decisions, [{ field: 'Race', target: 'skinColorId', action: 'leave_blank_preserve_original' }]);
     assert.equal(plan.raw.CivilStatus, code);
     assert.equal(plan.patient.registrationDate, null);
   }
@@ -59,7 +60,7 @@ test('approved CEP punctuation normalization preserves digits, incomplete values
   }
 });
 
-test('maps only the approved white variants and retains unapproved categories for review', () => {
+test('maps only approved white variants and preserves other categories without classification', () => {
   for (const value of ['BRANCO', 'BCA.', 'BCA', 'BRC', 'bca.', ' brc ']) {
     const plan = planPatient(row({ Race: value }));
     assert.equal(plan.patient.skinColorId, 1);
@@ -70,7 +71,8 @@ test('maps only the approved white variants and retains unapproved categories fo
     const plan = planPatient(row({ Race: value }));
     assert.equal(plan.patient.skinColorId, null);
     assert.equal(plan.raw.Race, value);
-    assert.equal(plan.issues[0].reason, 'category_review');
+    assert.equal(plan.issues.length, 0);
+    assert.equal(plan.decisions[0].action, 'leave_blank_preserve_original');
   }
 });
 

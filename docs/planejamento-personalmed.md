@@ -33,7 +33,7 @@ BRANCO, BCA., BCA e BRC também correspondem a branca (ID 1), conservando o orig
 São 24.229 registros adicionais no backup de teste. Demais abreviações e variantes
 continuam pendentes. Esta decisão elevou a versão do mapeamento para 3.
 Na aprovação seguinte, PRETO (7) e NEGRA (5) passam a preta (ID 2), e PARDO (3)
-a parda (ID 3). São mais 15 registros e a versão atual do mapeamento passa a 4.
+a parda (ID 3). São mais 15 registros (versão 4).
 O texto original continua preservado em todos eles.
 Os IDs são os conferidos
 na Aiven em 18/10/2026 e precisam ser validados novamente antes da carga.
@@ -45,7 +45,7 @@ tinham oito dígitos com ou sem hífen padrão. Os 8.189 restantes ficam pendent
 o valor original permanece na linha completa. Não se completam zeros nem se
 truncam dígitos. Ausência de CEP continua ausente (8.323 pacientes).
 A padronização não consulta os Correios nem comprova que o CEP existe.
-A regra de CEP foi introduzida na versão 2. A versão atual é 4, após as decisões
+A regra de CEP foi introduzida na versão 2. A versão atual é 5, após as decisões
 sobre cor da pele; planos antigos precisam ser regenerados antes da comparação.
 DDD e celular são combinados quando ambos existem; não se inventa DDD nem o nono
 dígito. DDD sem número fica sinalizado e preservado no original.
@@ -85,3 +85,12 @@ Testes com dados sintéticos cobrem categorias pendentes, datas, CEP, capacidade
 preservação do original, chaves distintas com CPF igual, comparação entre arquivos,
 rejeição de duplicidades e remoção de saídas incompletas. Dados reais não entram
 nos testes nem no repositório.
+
+## Valores de cor da pele sem classificação
+
+Marcelo aprovou em 18/10/2026 que os 235 valores restantes, sem correspondência
+confirmada, fiquem com skinColorId nulo e com o original preservado. A versão 5
+registra essa escolha em decisions como leave_blank_preserve_original, em vez de
+continuar sinalizando esses casos como uma decisão pendente. O resumo informa
+a quantidade em approvedDecisions. Não se infere cor da pele de outros campos.
+Registros sem valor na origem continuam nulos e não são contados nesses 235.

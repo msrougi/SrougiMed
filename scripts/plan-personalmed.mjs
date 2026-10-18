@@ -6,7 +6,7 @@ import { createInterface } from 'node:readline';
 import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-export const mappingVersion = 4;
+export const mappingVersion = 5;
 const direct = {
   Name: ['name', 200], Address: ['address', 200], Phone: ['phone', 40],
   City: ['city', 100], State: ['state', 100], ID: ['rg', 100],
@@ -48,6 +48,7 @@ export function planPatient(raw) {
   const key = sourceKey(raw);
   const patient = { legacyImported: true };
   const issues = [];
+  const decisions = [];
   function put(target, value, max, source) {
     if (!present(value)) { patient[target] = null; return; }
     if (typeof value !== 'string') throw new Error('INVALID_SOURCE_TEXT');
@@ -74,12 +75,17 @@ export function planPatient(raw) {
   const category = (source, target, options) => {
     const value = present(raw[source]) ? String(raw[source]).trim().toLocaleLowerCase('pt-BR') : null;
     patient[target] = value === null ? null : options[value] ?? null;
-    if (value !== null && patient[target] === null) issues.push({ field: source, target, reason: 'category_review' });
+    if (value !== null && patient[target] === null) {
+      if (source === 'Race') {
+        decisions.push({ field: source, target, action: 'leave_blank_preserve_original' });
+      } else issues.push({ field: source, target, reason: 'category_review' });
+    }
   };
   category('CivilStatus', 'maritalStatusId', { s: 1, p: 1, o: 1, c: 2, v: 3, d: 4 });
   category('Sex', 'genderId', { m: 1, f: 2 });
   // P/O -> single explicitly approved on 2026-10-18, alongside source S.
-  // Add only explicitly approved variants; keep all other source categories pending.
+  // Approved variants receive IDs; other skin-color values remain unclassified,
+  // with their original text retained, as explicitly approved on 2026-10-18.
   category('Race', 'skinColorId', {
     branca: 1, branco: 1, 'bca.': 1, bca: 1, brc: 1,
     preta: 2, preto: 2, negra: 2, parda: 3, pardo: 3, amarela: 4, indígena: 5,
@@ -91,7 +97,7 @@ export function planPatient(raw) {
   patient.additionalInfo1 = null;
   patient.additionalInfo2 = null;
   const unassignedFields = Object.keys(raw).filter(field => !consumed.has(field) && present(raw[field]));
-  return { mappingVersion, key, sourceHash: fingerprint(raw), patient, issues, unassignedFields, raw };
+  return { mappingVersion, key, sourceHash: fingerprint(raw), patient, issues, decisions, unassignedFields, raw };
 }
 
 async function* lines(path) {
@@ -121,7 +127,7 @@ export async function createPlan({ input, output, previous }) {
     out = await open(join(output, 'patients-plan.jsonl'), 'wx', 0o600);
     const seen = new Set();
     const summary = { mappingVersion, rows: 0, newInSnapshot: 0, unchangedInSnapshot: 0,
-      changedInSnapshot: 0, absentFromSnapshot: 0, rowsWithReview: 0, reasons: {}, unassignedFields: {},
+      changedInSnapshot: 0, absentFromSnapshot: 0, rowsWithReview: 0, reasons: {}, approvedDecisions: {}, unassignedFields: {},
       previousSnapshotProvided: Boolean(previous), databaseWritten: false };
     for await (const raw of lines(input)) {
       const row = planPatient(raw);
@@ -134,6 +140,10 @@ export async function createPlan({ input, output, previous }) {
       for (const issue of row.issues) {
         const key = `${issue.field}:${issue.reason}`;
         summary.reasons[key] = (summary.reasons[key] ?? 0) + 1;
+      }
+      for (const decision of row.decisions) {
+        const key = `${decision.field}:${decision.action}`;
+        summary.approvedDecisions[key] = (summary.approvedDecisions[key] ?? 0) + 1;
       }
       for (const field of row.unassignedFields) summary.unassignedFields[field] = (summary.unassignedFields[field] ?? 0) + 1;
       await out.writeFile(`${JSON.stringify(row)}\n`);
