@@ -28,7 +28,11 @@ Por decisão explícita de Marcelo em 18/10/2026, P e O também correspondem a
 1 (solteiro/a): 723 registros P e 42 O no backup de teste. O código original
 continua preservado no plano. Sexo M/F corresponde a 1/2. Cor da pele só recebe ID
 quando o texto corresponde literalmente ao rótulo do destino, sem distinguir
-maiúsculas/minúsculas; abreviações continuam pendentes. Os IDs são os conferidos
+maiúsculas/minúsculas. Por decisão explícita de Marcelo em 18/10/2026,
+BRANCO, BCA., BCA e BRC também correspondem a branca (ID 1), conservando o original.
+São 24.229 registros adicionais no backup de teste. Demais abreviações e variantes
+continuam pendentes. Esta decisão eleva a versão do mapeamento para 3.
+Os IDs são os conferidos
 na Aiven em 18/10/2026 e precisam ser validados novamente antes da carga.
 
 Por decisão explícita de Marcelo em 18/10/2026, CEP com exatamente oito dígitos,
@@ -38,8 +42,8 @@ tinham oito dígitos com ou sem hífen padrão. Os 8.189 restantes ficam pendent
 o valor original permanece na linha completa. Não se completam zeros nem se
 truncam dígitos. Ausência de CEP continua ausente (8.323 pacientes).
 A padronização não consulta os Correios nem comprova que o CEP existe.
-Esta regra corresponde à versão 2 do mapeamento; planos anteriores devem ser
-regenerados antes de comparar arquivos com essa versão.
+A regra de CEP foi introduzida na versão 2. A versão atual é 3, após a decisão
+sobre cor da pele; planos antigos precisam ser regenerados antes da comparação.
 DDD e celular são combinados quando ambos existem; não se inventa DDD nem o nono
 dígito. DDD sem número fica sinalizado e preservado no original.
 

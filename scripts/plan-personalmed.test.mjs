@@ -15,7 +15,7 @@ const row = (changes = {}) => ({
 
 test('maps approved P/O to single, preserves raw values and flags unknown skin colors', () => {
   for (const code of ['P', 'O']) {
-    const raw = row({ CivilStatus: code, Race: 'BCA.', District: 'Centro', ATIVO: 'F' });
+    const raw = row({ CivilStatus: code, Race: 'BR', District: 'Centro', ATIVO: 'F' });
     const plan = planPatient(raw);
     assert.deepEqual(plan.raw, raw);
     assert.equal(plan.patient.maritalStatusId, 1);
@@ -56,6 +56,21 @@ test('approved CEP punctuation normalization preserves digits, incomplete values
     assert.equal(plan.patient.cep, null);
     assert.equal(plan.raw.Zip, value);
     assert.equal(plan.issues[0].reason, 'cep_review');
+  }
+});
+
+test('maps only the approved white variants and retains unapproved categories for review', () => {
+  for (const value of ['BRANCO', 'BCA.', 'BCA', 'BRC', 'bca.', ' brc ']) {
+    const plan = planPatient(row({ Race: value }));
+    assert.equal(plan.patient.skinColorId, 1);
+    assert.equal(plan.raw.Race, value);
+    assert.equal(plan.issues.length, 0);
+  }
+  for (const value of ['BR', 'BCA;', 'PRETO', 'NEGRA', 'PARDO', 'OUTRO']) {
+    const plan = planPatient(row({ Race: value }));
+    assert.equal(plan.patient.skinColorId, null);
+    assert.equal(plan.raw.Race, value);
+    assert.equal(plan.issues[0].reason, 'category_review');
   }
 });
 

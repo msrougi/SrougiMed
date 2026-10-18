@@ -6,7 +6,7 @@ import { createInterface } from 'node:readline';
 import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-export const mappingVersion = 2;
+export const mappingVersion = 3;
 const direct = {
   Name: ['name', 200], Address: ['address', 200], Phone: ['phone', 40],
   City: ['city', 100], State: ['state', 100], ID: ['rg', 100],
@@ -78,9 +78,12 @@ export function planPatient(raw) {
   };
   category('CivilStatus', 'maritalStatusId', { s: 1, p: 1, o: 1, c: 2, v: 3, d: 4 });
   category('Sex', 'genderId', { m: 1, f: 2 });
-  // Only literal skin-color labels; abbreviations remain pending.
   // P/O -> single explicitly approved on 2026-10-18, alongside source S.
-  category('Race', 'skinColorId', { branca: 1, preta: 2, parda: 3, amarela: 4, indígena: 5 });
+  // Only the four explicitly approved white variants are added to literal labels.
+  category('Race', 'skinColorId', {
+    branca: 1, branco: 1, 'bca.': 1, bca: 1, brc: 1,
+    preta: 2, parda: 3, amarela: 4, indígena: 5,
+  });
   const cell = present(raw.Cellular) ? raw.Cellular : null;
   const ddd = present(raw.DDDCellular) ? raw.DDDCellular : null;
   put('mobile', cell ? (ddd ? `${ddd} ${cell}` : cell) : null, 40, 'DDDCellular+Cellular');
