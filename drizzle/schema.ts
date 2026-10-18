@@ -1,4 +1,5 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { sql } from "drizzle-orm";
+import { boolean, index, int, uniqueIndex, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -61,13 +62,19 @@ export const patients = mysqlTable("patients", {
   code: varchar("code", { length: 10 }).notNull().unique().$defaultFn(() => ''),
   address: varchar("address", { length: 200 }),
   cep: varchar("cep", { length: 9 }),
-  phone: varchar("phone", { length: 20 }),
-  mobile: varchar("mobile", { length: 20 }),
+  phone: varchar("phone", { length: 40 }),
+  mobile: varchar("mobile", { length: 40 }),
   skinColorId: int("skinColorId"),
   city: varchar("city", { length: 100 }),
   state: varchar("state", { length: 100 }),
   rg: varchar("rg", { length: 100 }),
-  cpf: varchar("cpf", { length: 100 }).unique(),
+  cpf: varchar("cpf", { length: 100 }),
+  legacyImported: boolean("legacyImported").notNull().default(false),
+  // Legacy CPFs can repeat; new registrations retain a database uniqueness guard.
+  cpfForNewPatients: varchar("cpfForNewPatients", { length: 100 }).generatedAlwaysAs(
+    sql`CASE WHEN \`legacyImported\` = 0 THEN NULLIF(TRIM(\`cpf\`), '') ELSE NULL END`,
+    { mode: "stored" },
+  ),
   birthDate: varchar("birthDate", { length: 10 }),
   birthPlace: varchar("birthPlace", { length: 100 }),
   maritalStatusId: int("maritalStatusId"),
@@ -81,7 +88,10 @@ export const patients = mysqlTable("patients", {
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => [
+  index("patients_cpf_idx").on(table.cpf),
+  uniqueIndex("patients_new_cpf_unique").on(table.cpfForNewPatients),
+]);
 
 export type Patient = typeof patients.$inferSelect;
 export type InsertPatient = typeof patients.$inferInsert;
@@ -101,3 +111,4 @@ export const phoneBook = mysqlTable("phone_book", {
 
 export type PhoneBookEntry = typeof phoneBook.$inferSelect;
 export type InsertPhoneBookEntry = typeof phoneBook.$inferInsert;
+

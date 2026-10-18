@@ -3,6 +3,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { z } from "zod";
+import { patientImportSchema } from "../shared/patientImport";
 import jwtModule from "jsonwebtoken";
 const jwt = jwtModule as any;
 import { ENV } from "./_core/env";
@@ -69,8 +70,8 @@ export const appRouter = router({
         name: z.string().trim().min(1, "Nome é obrigatório"),
         address: z.string().trim().min(1, "Endereço é obrigatório"),
         cep: z.string().trim().min(1, "CEP é obrigatório"),
-        phone: z.string().optional(),
-        mobile: z.string().optional(),
+        phone: z.string().max(40).optional(),
+        mobile: z.string().max(40).optional(),
         skinColorId: z.number().optional(),
         city: z.string().trim().min(1, "Cidade é obrigatória"),
         state: z.string().trim().min(1, "Estado é obrigatório"),
@@ -118,30 +119,7 @@ export const appRouter = router({
     update: protectedProcedure
       .input(z.object({
         id: z.number(),
-        data: z.object({
-          name: z.string().optional(),
-          code: z.string().optional(),
-          address: z.string().optional(),
-          cep: z.string().optional(),
-          phone: z.string().optional(),
-          mobile: z.string().optional(),
-          skinColorId: z.number().optional(),
-          city: z.string().optional(),
-          state: z.string().optional(),
-          rg: z.string().optional(),
-          cpf: z.string().optional(),
-          birthDate: z.string().optional(),
-          birthPlace: z.string().optional(),
-          maritalStatusId: z.number().optional(),
-          genderId: z.number().optional(),
-          email: z.string().optional(),
-          referredBy: z.string().optional(),
-          registrationDate: z.string().optional(),
-          occupation: z.string().optional(),
-          additionalInfo1: z.string().optional(),
-          additionalInfo2: z.string().optional(),
-          notes: z.string().optional(),
-        }),
+        data: patientImportSchema.partial(),
       }))
       .mutation(async ({ input }) => {
         const { updatePatient } = await import("./db");
@@ -257,30 +235,7 @@ export const appRouter = router({
   // Importação de dados
   importData: router({
     importPatients: protectedProcedure
-      .input(z.array(z.object({
-        name: z.string(),
-        code: z.string().optional(),
-        address: z.string().optional(),
-        cep: z.string().optional(),
-        phone: z.string().optional(),
-        mobile: z.string().optional(),
-        skinColorId: z.number().optional(),
-        city: z.string().optional(),
-        state: z.string().optional(),
-        rg: z.string().optional(),
-        cpf: z.string().optional(),
-        birthDate: z.string().optional(),
-        birthPlace: z.string().optional(),
-        maritalStatusId: z.number().optional(),
-        genderId: z.number().optional(),
-        email: z.string().optional(),
-        referredBy: z.string().optional(),
-        registrationDate: z.string().optional(),
-        occupation: z.string().optional(),
-        additionalInfo1: z.string().optional(),
-        additionalInfo2: z.string().optional(),
-        notes: z.string().optional(),
-      })))
+      .input(z.array(patientImportSchema).max(1000))
       .mutation(async ({ ctx, input }) => {
         if (ctx.user?.role !== "admin") {
           throw new Error("Acesso negado");
@@ -344,3 +299,4 @@ export const appRouter = router({
 });
 
 export type AppRouter = typeof appRouter;
+

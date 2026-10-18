@@ -52,6 +52,7 @@ const defaultFormData = {
 
 export default function PatientForm({ onSuccess, initialData }: PatientFormProps) {
 
+  const isLegacy = Boolean(initialData?.id && initialData?.legacyImported);
   const [age, setAge] = useState<number | null>(null);
   const [showNotesDialog, setShowNotesDialog] = useState(false);
   const [notesText, setNotesText] = useState("");
@@ -63,7 +64,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
       // Se há dados iniciais, mesclar com valores padrão
       return Object.entries(defaultFormData).reduce((acc, [key, defaultValue]) => {
         const value = initialData[key];
-        acc[key] = value === null || value === undefined ? defaultValue : value;
+        acc[key] = value === null || value === undefined ? (key === "registrationDate" ? "" : defaultValue) : value;
         return acc;
       }, {} as any);
     }
@@ -357,7 +358,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
     ];
 
     const missingFields = requiredFields
-      .filter(([field]) => !String(formData[field] ?? "").trim())
+      .filter(([field]) => (!isLegacy || field === "name") && !String(formData[field] ?? "").trim())
       .map(([, label]) => label);
 
     if (missingFields.length > 0) {
@@ -392,7 +393,13 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
 
     // Se tem ID, é atualização, senão é criação
     if (initialData?.id) {
-      updatePatientMutation.mutate({ id: initialData.id, data: submitData });
+      const updateData = Object.fromEntries(
+        Object.entries(submitData).map(([key, value]) => [key, value === undefined ? null : value]),
+      );
+      // Empty lookup options are absent information, never a synthetic ID of zero.
+      updateData.maritalStatusId = formData.maritalStatusId ? Number(formData.maritalStatusId) : null;
+      updateData.genderId = formData.genderId ? Number(formData.genderId) : null;
+      updatePatientMutation.mutate({ id: initialData.id, data: updateData });
     } else {
       createPatientMutation.mutate(submitData);
     }
@@ -400,6 +407,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {isLegacy && <p className="text-sm text-amber-800">Cadastro importado: informações ausentes podem ser preenchidas depois.</p>}
       {/* Seção 1: Informações Básicas */}
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
@@ -433,7 +441,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
           </div>
 
           <div>
-            <Label htmlFor="cpf">CPF *</Label>
+            <Label htmlFor="cpf">CPF{isLegacy ? "" : " *"}</Label>
             <div className="flex gap-2 items-end">
               <div className="flex-1">
                 <Input
@@ -471,6 +479,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
               onChange={handleInputChange}
               placeholder="Telefone"
               type="tel"
+              maxLength={40}
             />
           </div>
 
@@ -483,11 +492,12 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
               onChange={handleInputChange}
               placeholder="Celular"
               type="tel"
+              maxLength={40}
             />
           </div>
 
           <div className="md:col-span-2">
-            <Label htmlFor="address">Endereço *</Label>
+            <Label htmlFor="address">Endereço{isLegacy ? "" : " *"}</Label>
             <Input
               id="address"
               name="address"
@@ -499,7 +509,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
           </div>
 
           <div>
-            <Label htmlFor="cep">CEP *</Label>
+            <Label htmlFor="cep">CEP{isLegacy ? "" : " *"}</Label>
             <Input
               id="cep"
               name="cep"
@@ -512,7 +522,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
           </div>
 
           <div>
-            <Label htmlFor="city">Cidade *</Label>
+            <Label htmlFor="city">Cidade{isLegacy ? "" : " *"}</Label>
             <Input
               id="city"
               name="city"
@@ -524,7 +534,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
           </div>
 
           <div>
-            <Label htmlFor="state">Estado *</Label>
+            <Label htmlFor="state">Estado{isLegacy ? "" : " *"}</Label>
             <Input
               id="state"
               name="state"
@@ -544,7 +554,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="birthDate">Data de Nascimento *</Label>
+            <Label htmlFor="birthDate">Data de Nascimento{isLegacy ? "" : " *"}</Label>
             <div className="flex gap-2 items-end">
               <div className="flex-1">
                 <Input
@@ -590,7 +600,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
           </div>
 
           <div>
-            <Label htmlFor="genderId">Sexo *</Label>
+            <Label htmlFor="genderId">Sexo{isLegacy ? "" : " *"}</Label>
             <Select
               value={formData.genderId}
               onValueChange={(value) => handleSelectChange("genderId", value)}
@@ -628,7 +638,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
           </div>
 
           <div>
-            <Label htmlFor="maritalStatusId">Estado Civil *</Label>
+            <Label htmlFor="maritalStatusId">Estado Civil{isLegacy ? "" : " *"}</Label>
             <Select
               value={formData.maritalStatusId}
               onValueChange={(value) =>
@@ -808,3 +818,4 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
     </form>
   );
 }
+
