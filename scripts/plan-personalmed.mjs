@@ -6,7 +6,7 @@ import { createInterface } from 'node:readline';
 import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-export const mappingVersion = 9;
+export const mappingVersion = 12;
 const direct = {
   Name: ['name', 200], Address: ['address', 200], District: ['district', 100], Phone: ['phone', 40],
   City: ['city', 100], State: ['state', 100], ID: ['rg', 100],
@@ -16,8 +16,8 @@ const direct = {
   Observation: ['notes', 65535], Mother: ['motherName', 200], Father: ['fatherName', 200],
 };
 const special = ['Unit', 'PCod', 'Zip', 'BirthDate', 'DATA_CRIACAO', 'CivilStatus',
-  'Sex', 'Race', 'DDDCellular', 'Cellular'];
-const ignoredSourceFields = new Set(['FAX']);
+  'Sex', 'Race', 'DDDCellular', 'Cellular', 'ATIVO'];
+const ignoredSourceFields = new Set(['FAX', 'IDUF', 'IDDispatcherOrgan', 'IDEmission', 'CNS', 'BloodType']);
 const consumed = new Set([...Object.keys(direct), ...special, ...ignoredSourceFields]);
 const present = value => value !== null && value !== undefined && String(value).trim() !== '';
 const canonical = value => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object'
@@ -51,6 +51,10 @@ export function planPatient(raw) {
   const patient = { legacyImported: true };
   const issues = [];
   const decisions = [];
+  const sourceActive = String(raw.ATIVO ?? '').trim().toUpperCase();
+  const importDisposition = sourceActive === 'T' ? 'include' : sourceActive === 'F' ? 'exclude_inactive' : 'review_status';
+  if (importDisposition === 'exclude_inactive') decisions.push({ field: 'ATIVO', target: null, action: 'exclude_inactive_patient' });
+  if (importDisposition === 'review_status') issues.push({ field: 'ATIVO', target: null, reason: 'unknown_active_status' });
   function put(target, value, max, source) {
     if (!present(value)) { patient[target] = null; return; }
     if (typeof value !== 'string') throw new Error('INVALID_SOURCE_TEXT');
@@ -102,7 +106,7 @@ export function planPatient(raw) {
     if (present(raw[field])) decisions.push({ field, target: null, action: 'ignore_in_app_preserve_original' });
   }
   const unassignedFields = Object.keys(raw).filter(field => !consumed.has(field) && present(raw[field]));
-  return { mappingVersion, key, sourceHash: fingerprint(raw), patient, issues, decisions, unassignedFields, raw };
+  return { mappingVersion, key, sourceHash: fingerprint(raw), importDisposition, patient, issues, decisions, unassignedFields, raw };
 }
 
 async function* lines(path) {
@@ -132,6 +136,7 @@ export async function createPlan({ input, output, previous }) {
     out = await open(join(output, 'patients-plan.jsonl'), 'wx', 0o600);
     const seen = new Set();
     const summary = { mappingVersion, rows: 0, newInSnapshot: 0, unchangedInSnapshot: 0,
+      rowsToImport: 0, excludedInactivePatients: 0, reviewActiveStatus: 0,
       changedInSnapshot: 0, absentFromSnapshot: 0, rowsWithReview: 0, reasons: {}, approvedDecisions: {}, unassignedFields: {},
       previousSnapshotProvided: Boolean(previous), databaseWritten: false };
     for await (const raw of lines(input)) {
@@ -141,6 +146,9 @@ export async function createPlan({ input, output, previous }) {
       row.snapshotStatus = !prior.has(row.key) ? 'new' : prior.get(row.key) === row.sourceHash ? 'unchanged' : 'changed';
       summary[`${row.snapshotStatus}InSnapshot`]++;
       summary.rows++;
+      if (row.importDisposition === 'include') summary.rowsToImport++;
+      else if (row.importDisposition === 'exclude_inactive') summary.excludedInactivePatients++;
+      else summary.reviewActiveStatus++;
       if (row.issues.length) summary.rowsWithReview++;
       for (const issue of row.issues) {
         const key = `${issue.field}:${issue.reason}`;

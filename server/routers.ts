@@ -8,7 +8,10 @@ import jwtModule from "jsonwebtoken";
 const jwt = jwtModule as any;
 import { ENV } from "./_core/env";
 
+import { migrationUpload } from "./personalmedUpload";
+
 export const appRouter = router({
+  migrationUpload,
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
   auth: router({

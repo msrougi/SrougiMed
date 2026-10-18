@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { LogOut, Users, UserPlus, Phone } from "lucide-react";
 import PatientsTab from "@/components/PatientsTab";
 import PhoneBookTab from "@/components/PhoneBookTab";
+import MigrationUpload from "@/components/MigrationUpload";
 import AdminTab from "@/components/AdminTab";
 
 export default function Dashboard() {
@@ -112,6 +113,7 @@ export default function Dashboard() {
             </TabsContent>
           )}
         </Tabs>
+        <MigrationUpload />
       </main>
     </div>
   );
