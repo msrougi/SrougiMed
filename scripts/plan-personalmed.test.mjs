@@ -66,7 +66,7 @@ test('maps only the approved white variants and retains unapproved categories fo
     assert.equal(plan.raw.Race, value);
     assert.equal(plan.issues.length, 0);
   }
-  for (const value of ['BR', 'BCA;', 'PRETO', 'NEGRA', 'PARDO', 'OUTRO']) {
+  for (const value of ['BR', 'BCA;', 'NEGRO', 'OUTRO']) {
     const plan = planPatient(row({ Race: value }));
     assert.equal(plan.patient.skinColorId, null);
     assert.equal(plan.raw.Race, value);
@@ -114,4 +114,14 @@ test('invalid/duplicate/empty input removes incomplete outputs; incomplete sourc
       await assert.rejects(access(output), { code: 'ENOENT' });
     }
   } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+
+test('maps approved PRETO/NEGRA/PARDO while retaining each original', () => {
+  for (const [value, id] of [['PRETO', 2], ['NEGRA', 2], ['PARDO', 3], [' negra ', 2]]) {
+    const plan = planPatient(row({ Race: value }));
+    assert.equal(plan.patient.skinColorId, id);
+    assert.equal(plan.raw.Race, value);
+    assert.equal(plan.issues.length, 0);
+  }
 });
