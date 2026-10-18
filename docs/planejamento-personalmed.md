@@ -45,13 +45,14 @@ tinham oito dígitos com ou sem hífen padrão. Os 8.189 restantes ficam pendent
 o valor original permanece na linha completa. Não se completam zeros nem se
 truncam dígitos. Ausência de CEP continua ausente (8.323 pacientes).
 A padronização não consulta os Correios nem comprova que o CEP existe.
-A regra de CEP foi introduzida na versão 2. A versão atual é 11, após as decisões
+A regra de CEP foi introduzida na versão 2. A versão atual é 12, após as decisões
 sobre cor da pele; planos antigos precisam ser regenerados antes da comparação.
 DDD e celular são combinados quando ambos existem; não se inventa DDD nem o nono
 dígito. DDD sem número fica sinalizado e preservado no original.
 
-Campos sem destino, incluindo ATIVO, são enumerados no plano e nas
-contagens. A coluna de ativo/inativo do aplicativo ainda precisa ser implementada.
+Por decisão de Marcelo em 18/10/2026, somente ATIVO=T entra na carga.
+ATIVO=F fica excluído; valores desconhecidos bloqueiam a linha para revisão.
+No backup atual são 46.005 ativos e 128 inativos. Não se cria campo de status no app.
 Informações adicionais 1/2 não são usadas para esconder campos sem correspondência.
 
 ## Comparar o backup atualizado

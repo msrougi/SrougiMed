@@ -9,18 +9,18 @@ const row = (changes = {}) => ({
   Unit: 0, PCod: 123, Name: 'Paciente sintético', Address: null, District: null, Phone: null,
   City: null, State: null, ID: null, Clini_01_CPF: null, HomeBorn: null,
   EMail: null, IndicatedBy: null, Occupation: null, Observation: null,
-  Mother: null, Father: null, RESPONSAVEL_NOME: null, RESPONSAVEL_FONE: null, Zip: null, BirthDate: null, DATA_CRIACAO: null, CivilStatus: null,
+  Mother: null, Father: null, RESPONSAVEL_NOME: null, RESPONSAVEL_FONE: null, ATIVO: 'T', Zip: null, BirthDate: null, DATA_CRIACAO: null, CivilStatus: null,
   Sex: null, Race: null, DDDCellular: null, Cellular: null, ...changes,
 });
 
 test('maps approved P/O to single and records the decision to preserve unclassified skin colors', () => {
   for (const code of ['P', 'O']) {
-    const raw = row({ CivilStatus: code, Race: 'BR', District: 'Centro', ATIVO: 'F' });
+    const raw = row({ CivilStatus: code, Race: 'BR', District: 'Centro', ATIVO: 'T' });
     const plan = planPatient(raw);
     assert.deepEqual(plan.raw, raw);
     assert.equal(plan.patient.maritalStatusId, 1);
     assert.equal(plan.patient.skinColorId, null);
-    assert.deepEqual(plan.unassignedFields, ['ATIVO']);
+    assert.deepEqual(plan.unassignedFields, []);
     assert.equal(plan.patient.district, 'Centro');
     assert.equal(plan.issues.filter(x => x.reason === 'category_review').length, 0);
     assert.deepEqual(plan.decisions, [{ field: 'Race', target: 'skinColorId', action: 'leave_blank_preserve_original' }]);
@@ -127,4 +127,16 @@ test('maps approved PRETO/NEGRA/PARDO while retaining each original', () => {
     assert.equal(plan.raw.Race, value);
     assert.equal(plan.issues.length, 0);
   }
+});
+
+
+test('only active source patients are eligible; inactive and unknown status cannot enter the load', () => {
+  const inactive = planPatient(row({ ATIVO: 'F' }));
+  assert.equal(inactive.importDisposition, 'exclude_inactive');
+  assert.equal(inactive.raw.ATIVO, 'F');
+  assert.ok(inactive.decisions.some(d => d.action === 'exclude_inactive_patient'));
+  assert.equal(planPatient(row({ ATIVO: 'T' })).importDisposition, 'include');
+  const unknown = planPatient(row({ ATIVO: '?' }));
+  assert.equal(unknown.importDisposition, 'review_status');
+  assert.ok(unknown.issues.some(i => i.reason === 'unknown_active_status'));
 });
