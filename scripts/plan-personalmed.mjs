@@ -6,7 +6,7 @@ import { createInterface } from 'node:readline';
 import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-export const mappingVersion = 9;
+export const mappingVersion = 10;
 const direct = {
   Name: ['name', 200], Address: ['address', 200], District: ['district', 100], Phone: ['phone', 40],
   City: ['city', 100], State: ['state', 100], ID: ['rg', 100],
@@ -17,7 +17,7 @@ const direct = {
 };
 const special = ['Unit', 'PCod', 'Zip', 'BirthDate', 'DATA_CRIACAO', 'CivilStatus',
   'Sex', 'Race', 'DDDCellular', 'Cellular'];
-const ignoredSourceFields = new Set(['FAX']);
+const ignoredSourceFields = new Set(['FAX', 'IDUF', 'IDDispatcherOrgan', 'IDEmission']);
 const consumed = new Set([...Object.keys(direct), ...special, ...ignoredSourceFields]);
 const present = value => value !== null && value !== undefined && String(value).trim() !== '';
 const canonical = value => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object'
