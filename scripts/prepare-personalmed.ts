@@ -19,6 +19,14 @@ export function migrationPlan(structure: Structure): string[] {
     throw new Error("Estrutura incompatível com o aplicativo atual. Não aplicar ao dump antigo ou a um banco sem as tabelas de opções.");
   }
   const plan: string[] = [];
+  const district = columns.get("district");
+  if (!district) plan.push("ALTER TABLE `patients` ADD COLUMN `district` varchar(100) NULL AFTER `address`");
+  else {
+    const size = /^varchar\((\d+)\)$/i.exec(district.type);
+    if (!size || Number(size[1]) < 100 || district.nullable !== "YES") {
+      throw new Error("district existe com definição inesperada; revisar antes de alterar.");
+    }
+  }
   const legacy = columns.get("legacyImported");
   if (legacy && (!/^tinyint\(1\)$/i.test(legacy.type) || legacy.nullable !== "NO")) {
     throw new Error("legacyImported já existe com definição inesperada.");
