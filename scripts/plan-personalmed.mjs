@@ -6,17 +6,18 @@ import { createInterface } from 'node:readline';
 import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-export const mappingVersion = 6;
+export const mappingVersion = 8;
 const direct = {
   Name: ['name', 200], Address: ['address', 200], District: ['district', 100], Phone: ['phone', 40],
   City: ['city', 100], State: ['state', 100], ID: ['rg', 100],
   Clini_01_CPF: ['cpf', 100], HomeBorn: ['birthPlace', 100], EMail: ['email', 200],
   IndicatedBy: ['referredBy', 100], Occupation: ['occupation', 200],
-  Observation: ['notes', 65535],
+  Observation: ['notes', 65535], Mother: ['motherName', 200], Father: ['fatherName', 200],
 };
 const special = ['Unit', 'PCod', 'Zip', 'BirthDate', 'DATA_CRIACAO', 'CivilStatus',
   'Sex', 'Race', 'DDDCellular', 'Cellular'];
-const consumed = new Set([...Object.keys(direct), ...special]);
+const ignoredSourceFields = new Set(['FAX']);
+const consumed = new Set([...Object.keys(direct), ...special, ...ignoredSourceFields]);
 const present = value => value !== null && value !== undefined && String(value).trim() !== '';
 const canonical = value => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object'
   ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
@@ -96,6 +97,9 @@ export function planPatient(raw) {
   if (ddd && !cell) issues.push({ field: 'DDDCellular', target: 'mobile', reason: 'ddd_without_number' });
   patient.additionalInfo1 = null;
   patient.additionalInfo2 = null;
+  for (const field of ignoredSourceFields) {
+    if (present(raw[field])) decisions.push({ field, target: null, action: 'ignore_in_app_preserve_original' });
+  }
   const unassignedFields = Object.keys(raw).filter(field => !consumed.has(field) && present(raw[field]));
   return { mappingVersion, key, sourceHash: fingerprint(raw), patient, issues, decisions, unassignedFields, raw };
 }

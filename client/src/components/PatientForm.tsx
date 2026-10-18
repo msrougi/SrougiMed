@@ -40,6 +40,8 @@ const defaultFormData = {
   cpf: "",
   birthDate: "",
   birthPlace: "",
+  motherName: "",
+  fatherName: "",
   maritalStatusId: "",
   genderId: "",
   email: "",
@@ -382,6 +384,8 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
       cpf: formData.cpf || undefined,
       birthDate: formData.birthDate || undefined,
       birthPlace: formData.birthPlace || undefined,
+      motherName: formData.motherName || undefined,
+      fatherName: formData.fatherName || undefined,
       maritalStatusId: Number(formData.maritalStatusId),
       genderId: Number(formData.genderId),
       email: formData.email || undefined,
@@ -611,6 +615,17 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
               placeholder="Naturalidade"
               maxLength={100}
             />
+          </div>
+
+          <div>
+            <Label htmlFor="motherName">Nome da mãe</Label>
+            <Input id="motherName" name="motherName" value={formData.motherName}
+              onChange={handleInputChange} placeholder="Nome da mãe" maxLength={200} />
+          </div>
+          <div>
+            <Label htmlFor="fatherName">Nome do pai</Label>
+            <Input id="fatherName" name="fatherName" value={formData.fatherName}
+              onChange={handleInputChange} placeholder="Nome do pai" maxLength={200} />
           </div>
 
           <div>

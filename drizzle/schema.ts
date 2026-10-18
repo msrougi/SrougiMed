@@ -78,6 +78,8 @@ export const patients = mysqlTable("patients", {
   ),
   birthDate: varchar("birthDate", { length: 10 }),
   birthPlace: varchar("birthPlace", { length: 100 }),
+  motherName: varchar("motherName", { length: 200 }),
+  fatherName: varchar("fatherName", { length: 200 }),
   maritalStatusId: int("maritalStatusId"),
   genderId: int("genderId"),
   email: varchar("email", { length: 200 }),

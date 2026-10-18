@@ -19,6 +19,8 @@ interface Patient {
   cpf?: string;
   birthDate?: string;
   birthPlace?: string;
+  motherName?: string | null;
+  fatherName?: string | null;
   maritalStatusId?: number;
   genderId?: number;
   email?: string;
@@ -118,6 +120,14 @@ export default function PatientView({
           <div>
             <label className="block text-sm font-medium text-gray-700">Natural de</label>
             <p className="mt-1 text-sm text-gray-900">{patient.birthPlace || "-"}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Nome da mãe</label>
+            <p className="mt-1 text-sm text-gray-900">{patient.motherName || "-"}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Nome do pai</label>
+            <p className="mt-1 text-sm text-gray-900">{patient.fatherName || "-"}</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Sexo</label>

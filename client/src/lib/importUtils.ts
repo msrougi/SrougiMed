@@ -17,6 +17,8 @@ export interface PatientImportData {
   cpf?: string;
   birthDate?: string;
   birthPlace?: string;
+  motherName?: string;
+  fatherName?: string;
   maritalStatusId?: number;
   genderId?: number;
   email?: string;
@@ -57,7 +59,9 @@ export function parseCSV(csvContent: string): PatientImportData[] {
       if (!value) return; // Skip empty values
 
       // Map column names to patient properties
-      if (lowerCol.includes('nome')) patient.name = value;
+      if (['nome da mãe', 'nome da mae', 'mãe', 'mae', 'mothername'].includes(lowerCol)) patient.motherName = value;
+      else if (['nome do pai', 'pai', 'fathername'].includes(lowerCol)) patient.fatherName = value;
+      else if (lowerCol.includes('nome')) patient.name = value;
       else if (lowerCol.includes('código') || lowerCol.includes('codigo')) patient.code = value;
       else if (lowerCol.includes('endereço') || lowerCol.includes('endereco')) patient.address = value;
       else if (lowerCol === 'bairro' || lowerCol === 'district') patient.district = value;
@@ -158,7 +162,9 @@ export async function parseExcel(file: File): Promise<PatientImportData[]> {
 
         const lowerKey = key.toLowerCase().trim();
 
-        if (lowerKey.includes('nome')) patient.name = String(value);
+        if (['nome da mãe', 'nome da mae', 'mãe', 'mae', 'mothername'].includes(lowerKey)) patient.motherName = String(value);
+        else if (['nome do pai', 'pai', 'fathername'].includes(lowerKey)) patient.fatherName = String(value);
+        else if (lowerKey.includes('nome')) patient.name = String(value);
         else if (lowerKey.includes('código') || lowerKey.includes('codigo')) patient.code = String(value);
         else if (lowerKey.includes('endereço') || lowerKey.includes('endereco')) patient.address = String(value);
         else if (lowerKey === 'bairro' || lowerKey === 'district') patient.district = String(value);

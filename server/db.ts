@@ -177,6 +177,8 @@ export async function createPatient(data: InsertPatient) {
       cpf: sanitizeString(data.cpf as string | undefined),
       birthDate: sanitizeString(data.birthDate as string | undefined),
       birthPlace: sanitizeString(data.birthPlace as string | undefined),
+      motherName: sanitizeString(data.motherName as string | undefined),
+      fatherName: sanitizeString(data.fatherName as string | undefined),
       email: sanitizeString(data.email as string | undefined),
       referredBy: sanitizeString(data.referredBy as string | undefined),
       registrationDate: sanitizeString(data.registrationDate as string | undefined),
@@ -280,6 +282,8 @@ export async function updatePatient(id: number, data: Partial<InsertPatient>) {
   if (data.cpf !== undefined) sanitizedData.cpf = sanitizeString(data.cpf as string | undefined);
   if (data.birthDate !== undefined) sanitizedData.birthDate = sanitizeString(data.birthDate as string | undefined);
   if (data.birthPlace !== undefined) sanitizedData.birthPlace = sanitizeString(data.birthPlace as string | undefined);
+  if (data.motherName !== undefined) sanitizedData.motherName = sanitizeString(data.motherName as string | undefined);
+  if (data.fatherName !== undefined) sanitizedData.fatherName = sanitizeString(data.fatherName as string | undefined);
   if (data.email !== undefined) sanitizedData.email = sanitizeString(data.email as string | undefined);
   if (data.referredBy !== undefined) sanitizedData.referredBy = sanitizeString(data.referredBy as string | undefined);
   if (data.registrationDate !== undefined) sanitizedData.registrationDate = sanitizeString(data.registrationDate as string | undefined);
@@ -444,6 +448,8 @@ export async function importPatients(patientsData: Array<{
   cpf?: string | null;
   birthDate?: string | null;
   birthPlace?: string | null;
+  motherName?: string | null;
+  fatherName?: string | null;
   maritalStatusId?: number | null;
   genderId?: number | null;
   email?: string | null;
@@ -489,6 +495,8 @@ export async function importPatients(patientsData: Array<{
         cpf: patientData.cpf || undefined,
         birthDate: patientData.birthDate || undefined,
         birthPlace: patientData.birthPlace || undefined,
+        motherName: patientData.motherName || undefined,
+        fatherName: patientData.fatherName || undefined,
         maritalStatusId: patientData.maritalStatusId || undefined,
         genderId: patientData.genderId || undefined,
         email: patientData.email || undefined,

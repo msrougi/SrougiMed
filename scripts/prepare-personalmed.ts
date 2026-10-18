@@ -27,6 +27,16 @@ export function migrationPlan(structure: Structure): string[] {
       throw new Error("district existe com definição inesperada; revisar antes de alterar.");
     }
   }
+  for (const field of ["motherName", "fatherName"]) {
+    const column = columns.get(field);
+    if (!column) plan.push(`ALTER TABLE \`patients\` ADD COLUMN \`${field}\` varchar(200) NULL`);
+    else {
+      const size = /^varchar\((\d+)\)$/i.exec(column.type);
+      if (!size || Number(size[1]) < 200 || column.nullable !== "YES") {
+        throw new Error(`${field} existe com definição inesperada; revisar antes de alterar.`);
+      }
+    }
+  }
   const legacy = columns.get("legacyImported");
   if (legacy && (!/^tinyint\(1\)$/i.test(legacy.type) || legacy.nullable !== "NO")) {
     throw new Error("legacyImported já existe com definição inesperada.");
