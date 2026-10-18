@@ -45,7 +45,7 @@ tinham oito dígitos com ou sem hífen padrão. Os 8.189 restantes ficam pendent
 o valor original permanece na linha completa. Não se completam zeros nem se
 truncam dígitos. Ausência de CEP continua ausente (8.323 pacientes).
 A padronização não consulta os Correios nem comprova que o CEP existe.
-A regra de CEP foi introduzida na versão 2. A versão atual é 6, após as decisões
+A regra de CEP foi introduzida na versão 2. A versão atual é 7, após as decisões
 sobre cor da pele; planos antigos precisam ser regenerados antes da comparação.
 DDD e celular são combinados quando ambos existem; não se inventa DDD nem o nono
 dígito. DDD sem número fica sinalizado e preservado no original.
@@ -103,3 +103,11 @@ opcional, sem tornar dados antigos obrigatórios. A versão 6 do planejador asso
 `Clini_01.District` diretamente a `district` (9.008 valores no backup de teste).
 Não há concatenação com endereço nem uso dos campos de informações adicionais.
 O preparador adiciona a coluna após cópia de segurança, antes de publicar o aplicativo.
+
+## Fax ignorado no aplicativo
+
+Em 18/10/2026, Marcelo determinou ignorar o campo FAX. Nenhum campo Fax é criado
+no aplicativo e nenhum valor é associado a telefone, celular ou observações.
+Na versão 7, os 7.267 valores preenchidos continuam no original completo do plano
+e recebem a decisão ignore_in_app_preserve_original; deixam de ser listados como
+campos sem destino que ainda precisam de decisão. O arquivo de origem não é alterado.
