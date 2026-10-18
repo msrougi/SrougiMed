@@ -9,7 +9,7 @@ export const patientImportSchema = z.object({
   code: z.string().trim().min(1).max(10).optional(),
   address: text(200), district: text(100), cep: text(9), phone: text(40), mobile: text(40),
   skinColorId: lookup, city: text(100), state: text(100), rg: text(100),
-  cpf: text(100), birthDate: text(10), birthPlace: text(100),
+  cpf: text(100), birthDate: text(10), birthPlace: text(100), motherName: text(200), fatherName: text(200),
   maritalStatusId: lookup, genderId: lookup, email: text(200),
   referredBy: text(100), registrationDate: text(10), occupation: text(200),
   additionalInfo1: text(200), additionalInfo2: text(200), notes: text(65535),
