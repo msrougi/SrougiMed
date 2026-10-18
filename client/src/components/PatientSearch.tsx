@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,27 +54,25 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
   const [patients, setPatients] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (!hasSearched) return;
-    
+  const runSearch = async (offsetPage = 0) => {
     setIsLoading(true);
-    searchMutation.mutate({
-      name: filters.name || undefined,
-      code: filters.code || undefined,
-      birthDate: filters.birthDate || undefined,
-      city: filters.city || undefined,
-      limit,
-      offset: page * limit,
-    }, {
-      onSuccess: (data) => {
-        setPatients(data);
-        setIsLoading(false);
-      },
-      onError: () => {
-        setIsLoading(false);
-      }
-    });
-  }, [page, hasSearched]);
+    try {
+      const data = await searchMutation.mutateAsync({
+        name: filters.name || undefined,
+        code: filters.code || undefined,
+        birthDate: filters.birthDate || undefined,
+        city: filters.city || undefined,
+        limit,
+        offset: offsetPage * limit,
+      });
+      setPatients(data);
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao buscar pacientes");
+      setPatients([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Deletar paciente
   const deletePatientMutation = trpc.patients.delete.useMutation({
@@ -114,23 +112,7 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
 
     setHasSearched(true);
     setPage(0);
-    setIsLoading(true);
-    searchMutation.mutate({
-      name: filters.name || undefined,
-      code: filters.code || undefined,
-      birthDate: filters.birthDate || undefined,
-      city: filters.city || undefined,
-      limit,
-      offset: 0,
-    }, {
-      onSuccess: (data) => {
-        setPatients(data);
-        setIsLoading(false);
-      },
-      onError: () => {
-        setIsLoading(false);
-      }
-    });
+    void runSearch(0);
   };
 
   const handleDelete = () => {
@@ -276,7 +258,11 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setPage(Math.max(0, page - 1))}
+                  onClick={() => {
+                    const nextPage = Math.max(0, page - 1);
+                    setPage(nextPage);
+                    void runSearch(nextPage);
+                  }}
                   disabled={page === 0}
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -284,7 +270,11 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setPage(page + 1)}
+                  onClick={() => {
+                    const nextPage = page + 1;
+                    setPage(nextPage);
+                    void runSearch(nextPage);
+                  }}
                   disabled={patients.length < limit}
                 >
                   <ChevronRight className="w-4 h-4" />
