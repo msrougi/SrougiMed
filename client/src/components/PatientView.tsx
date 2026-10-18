@@ -8,6 +8,7 @@ interface Patient {
   name: string;
   code?: string;
   address?: string;
+  district?: string | null;
   cep?: string;
   phone?: string;
   mobile?: string;
@@ -158,6 +159,10 @@ export default function PatientView({
             <p className="mt-1 text-sm text-gray-900">{patient.address || "-"}</p>
           </div>
           <div>
+            <label className="block text-sm font-medium text-gray-700">Bairro</label>
+            <p className="mt-1 text-sm text-gray-900">{patient.district || "-"}</p>
+          </div>
+          <div>
             <label className="block text-sm font-medium text-gray-700">CEP</label>
             <p className="mt-1 text-sm text-gray-900">{patient.cep || "-"}</p>
           </div>
@@ -268,3 +273,4 @@ export default function PatientView({
     </div>
   );
 }
+

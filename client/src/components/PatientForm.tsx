@@ -29,6 +29,7 @@ interface PatientFormProps {
 const defaultFormData = {
   name: "",
   address: "",
+  district: "",
   cep: "",
   phone: "",
   mobile: "",
@@ -370,6 +371,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
     const submitData = {
       name: formData.name,
       address: formData.address || undefined,
+      district: formData.district || undefined,
       cep: formData.cep || undefined,
       phone: formData.phone || undefined,
       mobile: formData.mobile || undefined,
@@ -505,6 +507,18 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
               onChange={handleInputChange}
               placeholder="Endereço completo"
               maxLength={200}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="district">Bairro</Label>
+            <Input
+              id="district"
+              name="district"
+              value={formData.district}
+              onChange={handleInputChange}
+              placeholder="Bairro"
+              maxLength={100}
             />
           </div>
 

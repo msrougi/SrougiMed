@@ -7,7 +7,7 @@ const lookup = z.number().int().positive().nullish();
 export const patientImportSchema = z.object({
   name: z.string().trim().min(1, "Nome é obrigatório").max(200),
   code: z.string().trim().min(1).max(10).optional(),
-  address: text(200), cep: text(9), phone: text(40), mobile: text(40),
+  address: text(200), district: text(100), cep: text(9), phone: text(40), mobile: text(40),
   skinColorId: lookup, city: text(100), state: text(100), rg: text(100),
   cpf: text(100), birthDate: text(10), birthPlace: text(100),
   maritalStatusId: lookup, genderId: lookup, email: text(200),

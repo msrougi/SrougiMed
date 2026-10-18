@@ -61,6 +61,7 @@ export const patients = mysqlTable("patients", {
   name: varchar("name", { length: 200 }).notNull(),
   code: varchar("code", { length: 10 }).notNull().unique().$defaultFn(() => ''),
   address: varchar("address", { length: 200 }),
+  district: varchar("district", { length: 100 }),
   cep: varchar("cep", { length: 9 }),
   phone: varchar("phone", { length: 40 }),
   mobile: varchar("mobile", { length: 40 }),

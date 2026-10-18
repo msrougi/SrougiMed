@@ -6,6 +6,7 @@ export interface PatientImportData {
   name?: string;
   code?: string;
   address?: string;
+  district?: string;
   cep?: string;
   phone?: string;
   mobile?: string;
@@ -59,6 +60,7 @@ export function parseCSV(csvContent: string): PatientImportData[] {
       if (lowerCol.includes('nome')) patient.name = value;
       else if (lowerCol.includes('código') || lowerCol.includes('codigo')) patient.code = value;
       else if (lowerCol.includes('endereço') || lowerCol.includes('endereco')) patient.address = value;
+      else if (lowerCol === 'bairro' || lowerCol === 'district') patient.district = value;
       else if (lowerCol === 'cep' || lowerCol.includes('cep')) patient.cep = value;
       else if (lowerCol.includes('telefone')) patient.phone = value;
       else if (lowerCol.includes('celular')) patient.mobile = value;
@@ -159,6 +161,7 @@ export async function parseExcel(file: File): Promise<PatientImportData[]> {
         if (lowerKey.includes('nome')) patient.name = String(value);
         else if (lowerKey.includes('código') || lowerKey.includes('codigo')) patient.code = String(value);
         else if (lowerKey.includes('endereço') || lowerKey.includes('endereco')) patient.address = String(value);
+        else if (lowerKey === 'bairro' || lowerKey === 'district') patient.district = String(value);
         else if (lowerKey === 'cep' || lowerKey.includes('cep')) patient.cep = String(value);
         else if (lowerKey.includes('telefone')) patient.phone = String(value);
         else if (lowerKey.includes('celular')) patient.mobile = String(value);
@@ -189,3 +192,4 @@ export async function parseExcel(file: File): Promise<PatientImportData[]> {
     throw new Error(`Erro ao processar arquivo Excel: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
   }
 }
+
