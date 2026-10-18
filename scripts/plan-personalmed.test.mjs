@@ -9,7 +9,7 @@ const row = (changes = {}) => ({
   Unit: 0, PCod: 123, Name: 'Paciente sintético', Address: null, District: null, Phone: null,
   City: null, State: null, ID: null, Clini_01_CPF: null, HomeBorn: null,
   EMail: null, IndicatedBy: null, Occupation: null, Observation: null,
-  Mother: null, Father: null, Zip: null, BirthDate: null, DATA_CRIACAO: null, CivilStatus: null,
+  Mother: null, Father: null, RESPONSAVEL_NOME: null, RESPONSAVEL_FONE: null, Zip: null, BirthDate: null, DATA_CRIACAO: null, CivilStatus: null,
   Sex: null, Race: null, DDDCellular: null, Cellular: null, ...changes,
 });
 

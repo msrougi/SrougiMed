@@ -27,12 +27,12 @@ export function migrationPlan(structure: Structure): string[] {
       throw new Error("district existe com definição inesperada; revisar antes de alterar.");
     }
   }
-  for (const field of ["motherName", "fatherName"]) {
+  for (const [field, capacity] of [["motherName", 200], ["fatherName", 200], ["responsibleName", 200], ["responsiblePhone", 40]] as const) {
     const column = columns.get(field);
-    if (!column) plan.push(`ALTER TABLE \`patients\` ADD COLUMN \`${field}\` varchar(200) NULL`);
+    if (!column) plan.push(`ALTER TABLE \`patients\` ADD COLUMN \`${field}\` varchar(${capacity}) NULL`);
     else {
       const size = /^varchar\((\d+)\)$/i.exec(column.type);
-      if (!size || Number(size[1]) < 200 || column.nullable !== "YES") {
+      if (!size || Number(size[1]) < capacity || column.nullable !== "YES") {
         throw new Error(`${field} existe com definição inesperada; revisar antes de alterar.`);
       }
     }

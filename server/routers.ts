@@ -82,6 +82,8 @@ export const appRouter = router({
         birthPlace: z.string().optional(),
         motherName: z.string().max(200).optional(),
         fatherName: z.string().max(200).optional(),
+        responsibleName: z.string().max(200).optional(),
+        responsiblePhone: z.string().max(40).optional(),
         maritalStatusId: z.number().min(1, "Estado civil é obrigatório"),
         genderId: z.number().min(1, "Sexo é obrigatório"),
         email: z.string().optional(),

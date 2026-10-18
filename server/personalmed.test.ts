@@ -24,7 +24,7 @@ describe("Preparação da estrutura para PersonalMed", () => {
     const drop = plan.findIndex(s => s.includes("DROP INDEX"));
     expect(add).toBeGreaterThan(-1);
     expect(drop).toBeGreaterThan(add);
-    expect(plan.filter(s => s.includes("varchar(40)")).length).toBe(2);
+    expect(plan.filter(s => s.includes("MODIFY COLUMN") && s.includes("varchar(40)")).length).toBe(2);
     expect(plan.some(s => /DELETE|UPDATE|TRUNCATE/.test(s))).toBe(false);
   });
   it("não depende da existência da migração manual de CPF", () => {
@@ -38,6 +38,8 @@ describe("Preparação da estrutura para PersonalMed", () => {
       { name: "district", type: "varchar(100)", nullable: "YES", generated: "" },
       { name: "motherName", type: "varchar(200)", nullable: "YES", generated: "" },
       { name: "fatherName", type: "varchar(200)", nullable: "YES", generated: "" },
+      { name: "responsibleName", type: "varchar(200)", nullable: "YES", generated: "" },
+      { name: "responsiblePhone", type: "varchar(40)", nullable: "YES", generated: "" },
       { name: "cpfForNewPatients", type: "varchar(100)", nullable: "YES", generated: "case when legacyImported = 0 then nullif(trim(cpf), '') else null end" });
     structure.indexes = [{ name: "patients_new_cpf_unique", unique: true, columns: ["cpfForNewPatients"] },
       { name: "patients_cpf_idx", unique: false, columns: ["cpf"] }];
