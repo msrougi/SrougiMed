@@ -6,7 +6,7 @@ import { createInterface } from 'node:readline';
 import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-export const mappingVersion = 1;
+export const mappingVersion = 2;
 const direct = {
   Name: ['name', 200], Address: ['address', 200], Phone: ['phone', 40],
   City: ['city', 100], State: ['state', 100], ID: ['rg', 100],
@@ -61,7 +61,10 @@ export function planPatient(raw) {
   for (const [source, [target, max]] of Object.entries(direct)) put(target, raw[source], max, source);
   if (!patient.name?.trim()) issues.push({ field: 'Name', target: 'name', reason: 'name_required' });
   const cep = present(raw.Zip) ? String(raw.Zip).trim() : null;
-  patient.cep = cep && /^\d{5}-?\d{3}$/.test(cep) ? cep.replace('-', '') : null;
+  // Approved: remove dots, hyphens and whitespace only, retaining exactly 8 digits.
+  // Other characters and incomplete/excess digits need review; never pad/truncate.
+  const cepDigits = cep?.replace(/[.\-\s]/g, '');
+  patient.cep = cep && /^[0-9.\-\s]+$/.test(cep) && /^[0-9]{8}$/.test(cepDigits) ? cepDigits : null;
   if (cep && !patient.cep) issues.push({ field: 'Zip', target: 'cep', reason: 'cep_review' });
   for (const [source, target] of [['BirthDate', 'birthDate'], ['DATA_CRIACAO', 'registrationDate']]) {
     const date = dateOnly(raw[source]);

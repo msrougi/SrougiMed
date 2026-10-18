@@ -31,9 +31,15 @@ quando o texto corresponde literalmente ao rótulo do destino, sem distinguir
 maiúsculas/minúsculas; abreviações continuam pendentes. Os IDs são os conferidos
 na Aiven em 18/10/2026 e precisam ser validados novamente antes da carga.
 
-CEP com exatamente oito dígitos, com ou sem hífen padrão, é proposto como oito
-dígitos. Os demais ficam pendentes; o valor original permanece na linha completa.
-Esta é uma proposta para revisão, não autorização para descartar CEPs na carga.
+Por decisão explícita de Marcelo em 18/10/2026, CEP com exatamente oito dígitos,
+após remover apenas pontos, hífens e espaços, é proposto como oito dígitos.
+Isso padroniza mais 2.344 registros do backup de teste, além dos 27.277 que já
+tinham oito dígitos com ou sem hífen padrão. Os 8.189 restantes ficam pendentes;
+o valor original permanece na linha completa. Não se completam zeros nem se
+truncam dígitos. Ausência de CEP continua ausente (8.323 pacientes).
+A padronização não consulta os Correios nem comprova que o CEP existe.
+Esta regra corresponde à versão 2 do mapeamento; planos anteriores devem ser
+regenerados antes de comparar arquivos com essa versão.
 DDD e celular são combinados quando ambos existem; não se inventa DDD nem o nono
 dígito. DDD sem número fica sinalizado e preservado no original.
 

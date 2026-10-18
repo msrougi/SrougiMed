@@ -44,6 +44,21 @@ test('converts unambiguous dates/options/CEPs; never invents a DDD or birth date
   assert.equal(invalid.issues.length, 2);
 });
 
+test('approved CEP punctuation normalization preserves digits, incomplete values and raw original', () => {
+  for (const value of ['01234.567', '01.234-567', '01.234.567', '01 234 567', '01234-567', '01234567']) {
+    const plan = planPatient(row({ Zip: value }));
+    assert.equal(plan.patient.cep, '01234567');
+    assert.equal(plan.raw.Zip, value);
+    assert.equal(plan.issues.length, 0);
+  }
+  for (const value of ['01234', '0123456', '012345678', '01234,567', "01234'567", 'CEP01234567', '-']) {
+    const plan = planPatient(row({ Zip: value }));
+    assert.equal(plan.patient.cep, null);
+    assert.equal(plan.raw.Zip, value);
+    assert.equal(plan.issues[0].reason, 'cep_review');
+  }
+});
+
 test('does not truncate long phones, merge by CPF, or discard punctuation', () => {
   const a = planPatient(row({ Phone: '1'.repeat(40), Clini_01_CPF: '000.000.000-00', Observation: 'A ` B \\ C' }));
   const b = planPatient(row({ PCod: 124, Clini_01_CPF: '000.000.000-00', Phone: '1'.repeat(41) }));
