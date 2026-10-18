@@ -89,12 +89,6 @@ export default function Login() {
             </Button>
           </form>
 
-          {/* Informações de teste */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg text-xs text-gray-600">
-            <p className="font-semibold mb-2">Usuários de teste:</p>
-            <p>Admin: usuário <strong>admin</strong> / senha <strong>admin</strong></p>
-            <p>Usuário: usuário <strong>teste</strong> / senha <strong>teste</strong></p>
-          </div>
         </div>
       </div>
     </div>
