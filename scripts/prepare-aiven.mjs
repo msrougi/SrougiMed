@@ -11,7 +11,7 @@ const identifier = name => {
 
 export async function structure(db) {
   const [columns] = await db.query(`SELECT COLUMN_NAME AS name, COLUMN_TYPE AS type,
-    IS_NULLABLE AS nullable, GENERATION_EXPRESSION AS generated FROM information_schema.COLUMNS
+    IS_NULLABLE AS nullable, GENERATION_EXPRESSION AS generationExpression FROM information_schema.COLUMNS
     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'patients'`);
   const [rows] = await db.query(`SELECT INDEX_NAME AS name, NON_UNIQUE AS nonUnique,
     COLUMN_NAME AS col FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE()
@@ -22,7 +22,7 @@ export async function structure(db) {
     index.columns.push(row.col); indexes.set(row.name, index);
   }
   const [tables] = await db.query('SELECT TABLE_NAME AS name FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE()');
-  return { columns, indexes: [...indexes.values()], tables: tables.map(t => t.name) };
+  return { columns: columns.map(c => ({ ...c, generated: c.generationExpression ?? c.generated ?? '' })), indexes: [...indexes.values()], tables: tables.map(t => t.name) };
 }
 
 export async function prepare(db, emit, now = Date.now()) {

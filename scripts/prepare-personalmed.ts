@@ -57,7 +57,7 @@ export function migrationPlan(structure: Structure): string[] {
 
 async function inspect(db: mysql.Connection): Promise<Structure> {
   const [columns] = await db.query<RowDataPacket[]>(`SELECT COLUMN_NAME AS name, COLUMN_TYPE AS type,
-    IS_NULLABLE AS nullable, GENERATION_EXPRESSION AS generated FROM information_schema.COLUMNS
+    IS_NULLABLE AS nullable, GENERATION_EXPRESSION AS generationExpression FROM information_schema.COLUMNS
     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'patients'`);
   const [indexes] = await db.query<RowDataPacket[]>(`SELECT INDEX_NAME AS name, NON_UNIQUE AS nonUnique,
     COLUMN_NAME AS col FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE()
@@ -68,7 +68,7 @@ async function inspect(db: mysql.Connection): Promise<Structure> {
     index.columns.push(row.col); grouped.set(row.name, index);
   }
   const [tables] = await db.query<RowDataPacket[]>("SELECT TABLE_NAME AS name FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE()");
-  return { columns: columns as Column[], indexes: Array.from(grouped.values()), tables: tables.map(t => t.name) };
+  return { columns: columns.map(c => ({ ...c, generated: c.generationExpression ?? c.generated ?? "" })) as Column[], indexes: Array.from(grouped.values()), tables: tables.map(t => t.name) };
 }
 
 async function main() {

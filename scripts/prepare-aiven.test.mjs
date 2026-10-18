@@ -26,6 +26,7 @@ test('creates the patient backup before DDL and verifies the final structure', a
   assert.ok(db.queries.findIndex(q=>q.startsWith('INSERT INTO')) < db.queries.findIndex(q=>q.startsWith('ALTER TABLE')));
   assert.deepEqual(output.at(-1),{kind:'prepared',value:{patients:4,imported:0}});
   assert.ok(db.queries.at(-1).includes('RELEASE_LOCK'));
+  assert.ok(!db.queries.some(q => /AS generated\b/i.test(q)));
   assert.ok(!db.queries.some(q=>/^UPDATE|^DELETE|^TRUNCATE/.test(q)));
 });
 test('existing CPF conflicts stop the operation before backup or DDL', async () => {
@@ -33,4 +34,5 @@ test('existing CPF conflicts stop the operation before backup or DDL', async () 
   await assert.rejects(()=>prepare(db,()=>{},123),/CONFLICTS/);
   assert.ok(!db.queries.some(q=>/^(CREATE|INSERT|ALTER)/.test(q)));
   assert.ok(db.queries.at(-1).includes('RELEASE_LOCK'));
+  assert.ok(!db.queries.some(q => /AS generated\b/i.test(q)));
 });
