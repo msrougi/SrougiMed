@@ -60,6 +60,7 @@ export const patients = mysqlTable("patients", {
   name: varchar("name", { length: 200 }).notNull(),
   code: varchar("code", { length: 10 }).notNull().unique().$defaultFn(() => ''),
   address: varchar("address", { length: 200 }),
+  cep: varchar("cep", { length: 9 }),
   phone: varchar("phone", { length: 20 }),
   mobile: varchar("mobile", { length: 20 }),
   skinColorId: int("skinColorId"),

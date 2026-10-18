@@ -29,6 +29,7 @@ interface PatientFormProps {
 const defaultFormData = {
   name: "",
   address: "",
+  cep: "",
   phone: "",
   mobile: "",
   skinColorId: "",
@@ -315,6 +316,14 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
     }
   };
 
+  const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const digitsOnly = e.target.value.replace(/\D/g, "").slice(0, 8);
+    const formatted = digitsOnly.length > 5
+      ? `${digitsOnly.slice(0, 5)}-${digitsOnly.slice(5)}`
+      : digitsOnly;
+    setFormData({ ...formData, cep: formatted });
+  };
+
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -344,6 +353,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
     const submitData = {
       name: formData.name,
       address: formData.address || undefined,
+      cep: formData.cep || undefined,
       phone: formData.phone || undefined,
       mobile: formData.mobile || undefined,
       skinColorId: formData.skinColorId ? parseInt(formData.skinColorId) : undefined,
@@ -469,6 +479,19 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
               onChange={handleInputChange}
               placeholder="Endereço completo"
               maxLength={200}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="cep">CEP</Label>
+            <Input
+              id="cep"
+              name="cep"
+              value={formData.cep}
+              onChange={handleCepChange}
+              placeholder="00000-000"
+              inputMode="numeric"
+              maxLength={9}
             />
           </div>
 
