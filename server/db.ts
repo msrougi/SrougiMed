@@ -1,6 +1,7 @@
 import { eq, like, or, and, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, patients, skinColors, maritalStatuses, genders, phoneBook, InsertPatient, InsertPhoneBookEntry } from "../drizzle/schema";
+import { cpfChanged } from "../shared/patientImport";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -159,13 +160,9 @@ export async function createPatient(data: InsertPatient) {
   try {
     const code = await generatePatientCode();
     
-    // Sanitizar dados para remover caracteres especiais problemáticos
-    const sanitizeString = (str: string | null | undefined): string | undefined => {
-      if (!str) return undefined;
-      // Remove caracteres especiais que podem causar problemas no SQL
-      return str.replace(/[`\\]/g, '');
-    };
-    
+    const sanitizeString = (str: string | null | undefined): string | null =>
+      str == null || !str.trim() ? null : str;
+
     const sanitizedData = {
       ...data,
       name: sanitizeString(data.name as string) as string,
@@ -187,6 +184,7 @@ export async function createPatient(data: InsertPatient) {
       additionalInfo2: sanitizeString(data.additionalInfo2 as string | undefined),
       notes: sanitizeString(data.notes as string | undefined),
       code,
+      legacyImported: false,
     };
 
     if (sanitizedData.cpf) {
@@ -201,13 +199,11 @@ export async function createPatient(data: InsertPatient) {
       }
     }
     
-    console.log("[createPatient] Tentando inserir:", JSON.stringify(sanitizedData, null, 2));
     const result = await db.insert(patients).values(sanitizedData);
     console.log("[createPatient] Inserção bem-sucedida");
     return result;
   } catch (error) {
     console.error("[createPatient] Erro ao inserir paciente:", error);
-    console.error("[createPatient] Dados recebidos:", JSON.stringify(data, null, 2));
     throw error;
   }
 }
@@ -264,12 +260,11 @@ export async function updatePatient(id: number, data: Partial<InsertPatient>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  // Sanitizar dados para remover caracteres especiais problemáticos
-  const sanitizeString = (str: string | null | undefined): string | undefined => {
-    if (!str) return undefined;
-    return str.replace(/[`\\]/g, '');
-  };
-  
+  const current = await getPatientById(id);
+  if (!current) throw new Error("Paciente não encontrado");
+  const sanitizeString = (str: string | null | undefined): string | null =>
+    str == null || !str.trim() ? null : str;
+
   const sanitizedData: Partial<InsertPatient> = {};
   
   if (data.name !== undefined) sanitizedData.name = sanitizeString(data.name as string) as string;
@@ -291,7 +286,7 @@ export async function updatePatient(id: number, data: Partial<InsertPatient>) {
   if (data.additionalInfo2 !== undefined) sanitizedData.additionalInfo2 = sanitizeString(data.additionalInfo2 as string | undefined);
   if (data.notes !== undefined) sanitizedData.notes = sanitizeString(data.notes as string | undefined);
 
-  if (sanitizedData.cpf) {
+  if (sanitizedData.cpf && (!current.legacyImported || cpfChanged(current.cpf, sanitizedData.cpf))) {
     const existing = await db
       .select({ id: patients.id })
       .from(patients)
@@ -477,7 +472,8 @@ export async function importPatients(patientsData: Array<{
       // Inserir paciente
       await db.insert(patients).values({
         name: patientData.name,
-        code: patientData.code || undefined,
+        code: patientData.code || await generatePatientCode(),
+        legacyImported: true,
         address: patientData.address || undefined,
         cep: patientData.cep || undefined,
         phone: patientData.phone || undefined,
@@ -545,3 +541,4 @@ export async function authenticateCustomToken(token: string) {
     return null;
   }
 }
+
