@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { createPlan, planPatient, fingerprint } from './plan-personalmed.mjs';
 
 const row = (changes = {}) => ({
-  Unit: 0, PCod: 123, Name: 'Paciente sintético', Address: null, Phone: null,
+  Unit: 0, PCod: 123, Name: 'Paciente sintético', Address: null, District: null, Phone: null,
   City: null, State: null, ID: null, Clini_01_CPF: null, HomeBorn: null,
   EMail: null, IndicatedBy: null, Occupation: null, Observation: null,
   Zip: null, BirthDate: null, DATA_CRIACAO: null, CivilStatus: null,
@@ -20,7 +20,8 @@ test('maps approved P/O to single and records the decision to preserve unclassif
     assert.deepEqual(plan.raw, raw);
     assert.equal(plan.patient.maritalStatusId, 1);
     assert.equal(plan.patient.skinColorId, null);
-    assert.deepEqual(plan.unassignedFields, ['District', 'ATIVO']);
+    assert.deepEqual(plan.unassignedFields, ['ATIVO']);
+    assert.equal(plan.patient.district, 'Centro');
     assert.equal(plan.issues.filter(x => x.reason === 'category_review').length, 0);
     assert.deepEqual(plan.decisions, [{ field: 'Race', target: 'skinColorId', action: 'leave_blank_preserve_original' }]);
     assert.equal(plan.raw.CivilStatus, code);

@@ -45,12 +45,12 @@ tinham oito dígitos com ou sem hífen padrão. Os 8.189 restantes ficam pendent
 o valor original permanece na linha completa. Não se completam zeros nem se
 truncam dígitos. Ausência de CEP continua ausente (8.323 pacientes).
 A padronização não consulta os Correios nem comprova que o CEP existe.
-A regra de CEP foi introduzida na versão 2. A versão atual é 5, após as decisões
+A regra de CEP foi introduzida na versão 2. A versão atual é 6, após as decisões
 sobre cor da pele; planos antigos precisam ser regenerados antes da comparação.
 DDD e celular são combinados quando ambos existem; não se inventa DDD nem o nono
 dígito. DDD sem número fica sinalizado e preservado no original.
 
-Campos sem destino, incluindo ATIVO e District, são enumerados no plano e nas
+Campos sem destino, incluindo ATIVO, são enumerados no plano e nas
 contagens. A coluna de ativo/inativo do aplicativo ainda precisa ser implementada.
 Informações adicionais 1/2 não são usadas para esconder campos sem correspondência.
 
@@ -94,3 +94,12 @@ registra essa escolha em decisions como leave_blank_preserve_original, em vez de
 continuar sinalizando esses casos como uma decisão pendente. O resumo informa
 a quantidade em approvedDecisions. Não se infere cor da pele de outros campos.
 Registros sem valor na origem continuam nulos e não são contados nesses 235.
+
+## Bairro
+
+Marcelo aprovou em 18/10/2026 a criação de Bairro em Cadastro de Pacientes → Contato.
+`patients.district` é VARCHAR(100) NULL; criação/edição/importação aceitam o campo
+opcional, sem tornar dados antigos obrigatórios. A versão 6 do planejador associa
+`Clini_01.District` diretamente a `district` (9.008 valores no backup de teste).
+Não há concatenação com endereço nem uso dos campos de informações adicionais.
+O preparador adiciona a coluna após cópia de segurança, antes de publicar o aplicativo.

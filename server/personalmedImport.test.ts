@@ -25,20 +25,21 @@ describe("Persistência dos pacientes migrados", () => {
   it("preserva dois pacientes com CPF igual e gera códigos distintos quando não fornecidos", async () => {
     fake.select.mockReturnValueOnce(rows([{ maxCode: 2 }])).mockReturnValueOnce(rows([{ maxCode: 3 }]));
     const result = await importPatients([
-      { name: "Paciente de teste A", cpf: "12345678900", phone: "11 1111-1111 / 11 2222-2222" },
+      { name: "Paciente de teste A", cpf: "12345678900", phone: "11 1111-1111 / 11 2222-2222", district: "Bairro sintético" },
       { name: "Paciente de teste B", cpf: "12345678900" },
     ]);
     expect(result).toMatchObject({ successCount: 2, errorCount: 0 });
     expect(fake.values.mock.calls.map(([value]) => [value.code, value.cpf, value.legacyImported])).toEqual([
       ["000000003", "12345678900", true], ["000000004", "12345678900", true],
     ]);
+    expect(fake.values.mock.calls[0][0].district).toBe("Bairro sintético");
     expect(fake.values.mock.calls[1][0].birthDate).toBeUndefined();
   });
   it("permite editar endereço sem bloquear CPF repetido inalterado", async () => {
     fake.select.mockReturnValueOnce(rows([{ id: 20, legacyImported: true, cpf: "12345678900" }]));
-    await updatePatient(20, { cpf: "123.456.789-00", address: "Rua de teste", birthDate: null });
+    await updatePatient(20, { cpf: "123.456.789-00", address: "Rua de teste", district: "Bairro sintético", birthDate: null });
     expect(fake.select).toHaveBeenCalledTimes(1);
-    expect(fake.set).toHaveBeenCalledWith(expect.objectContaining({ address: "Rua de teste", birthDate: null }));
+    expect(fake.set).toHaveBeenCalledWith(expect.objectContaining({ address: "Rua de teste", district: "Bairro sintético", birthDate: null }));
   });
   it("recusa mudar o CPF legado para o de outro paciente", async () => {
     fake.select.mockReturnValueOnce(rows([{ id: 20, legacyImported: true, cpf: "12345678900" }]))

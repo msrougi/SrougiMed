@@ -69,6 +69,7 @@ export const appRouter = router({
       .input(z.object({
         name: z.string().trim().min(1, "Nome é obrigatório"),
         address: z.string().trim().min(1, "Endereço é obrigatório"),
+        district: z.string().max(100).optional(),
         cep: z.string().trim().min(1, "CEP é obrigatório"),
         phone: z.string().max(40).optional(),
         mobile: z.string().max(40).optional(),

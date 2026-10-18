@@ -167,6 +167,7 @@ export async function createPatient(data: InsertPatient) {
       ...data,
       name: sanitizeString(data.name as string) as string,
       address: sanitizeString(data.address as string | undefined),
+      district: sanitizeString(data.district as string | undefined),
       cep: sanitizeString(data.cep as string | undefined),
       phone: sanitizeString(data.phone as string | undefined),
       mobile: sanitizeString(data.mobile as string | undefined),
@@ -269,6 +270,7 @@ export async function updatePatient(id: number, data: Partial<InsertPatient>) {
   
   if (data.name !== undefined) sanitizedData.name = sanitizeString(data.name as string) as string;
   if (data.address !== undefined) sanitizedData.address = sanitizeString(data.address as string | undefined);
+  if (data.district !== undefined) sanitizedData.district = sanitizeString(data.district as string | undefined);
   if (data.cep !== undefined) sanitizedData.cep = sanitizeString(data.cep as string | undefined);
   if (data.phone !== undefined) sanitizedData.phone = sanitizeString(data.phone as string | undefined);
   if (data.mobile !== undefined) sanitizedData.mobile = sanitizeString(data.mobile as string | undefined);
@@ -431,6 +433,7 @@ export async function importPatients(patientsData: Array<{
   name?: string | null;
   code?: string | null;
   address?: string | null;
+  district?: string | null;
   cep?: string | null;
   phone?: string | null;
   mobile?: string | null;
@@ -475,6 +478,7 @@ export async function importPatients(patientsData: Array<{
         code: patientData.code || await generatePatientCode(),
         legacyImported: true,
         address: patientData.address || undefined,
+        district: patientData.district || undefined,
         cep: patientData.cep || undefined,
         phone: patientData.phone || undefined,
         mobile: patientData.mobile || undefined,
