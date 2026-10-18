@@ -106,3 +106,7 @@ temp/
 *.sqlite
 *.sqlite3
 srougimed.env
+
+
+# Private migration plans (patient data must never be committed)
+patients-plan.jsonl
