@@ -35,6 +35,7 @@ describe("Preparação da estrutura para PersonalMed", () => {
     const structure = currentStructure();
     structure.columns.forEach(c => { if (["phone", "mobile"].includes(c.name)) c.type = "varchar(80)"; });
     structure.columns.push({ name: "legacyImported", type: "tinyint(1)", nullable: "NO", generated: "" },
+      { name: "district", type: "varchar(100)", nullable: "YES", generated: "" },
       { name: "cpfForNewPatients", type: "varchar(100)", nullable: "YES", generated: "case when legacyImported = 0 then nullif(trim(cpf), '') else null end" });
     structure.indexes = [{ name: "patients_new_cpf_unique", unique: true, columns: ["cpfForNewPatients"] },
       { name: "patients_cpf_idx", unique: false, columns: ["cpf"] }];
@@ -44,6 +45,12 @@ describe("Preparação da estrutura para PersonalMed", () => {
     const structure = currentStructure();
     structure.indexes.push({ name: "patients_new_cpf_unique", unique: false, columns: ["name"] });
     expect(() => migrationPlan(structure)).toThrow("incompatível");
+  });
+  it("adiciona bairro opcional e recusa um campo existente incompatível", () => {
+    const structure = currentStructure();
+    expect(migrationPlan(structure)).toContain("ALTER TABLE `patients` ADD COLUMN `district` varchar(100) NULL AFTER `address`");
+    structure.columns.push({ name: "district", type: "varchar(20)", nullable: "YES", generated: "" });
+    expect(() => migrationPlan(structure)).toThrow("district existe");
   });
 });
 

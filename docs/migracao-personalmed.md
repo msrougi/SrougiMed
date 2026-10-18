@@ -82,6 +82,14 @@ de `AGENDAFONECODE` para o contato, além de reconciliar cadastros já existente
 Não reenviar o mesmo lote para tentar identificar novidades: o CPF e o nome não são
 chaves seguras de migração. O incremento do backup atualizado usará as chaves de origem.
 
-CEP irregular, cor da pele, estado civil P/O, indicador ativo/inativo e demais campos
+CEP irregular, cor da pele, indicador ativo/inativo e demais campos
 sem equivalente permanecem conforme o mapeamento; esta alteração não inventa decisões
 para eles. Nenhum arquivo com dados de pacientes ou credenciais faz parte deste PR.
+
+## Decisão posterior de estado civil
+
+Em 18/10/2026, Marcelo definiu que todos os códigos P e O serão convertidos para
+solteiro(a), ID 1 no destino confirmado: 723 P e 42 O no backup de teste.
+O planejador offline em `scripts/plan-personalmed.mjs` aplica essa regra e conserva
+o código original. Isso não executa a carga na Aiven. Consulte
+[planejamento-personalmed.md](planejamento-personalmed.md) para gerar e comparar os planos.
