@@ -344,8 +344,24 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name.trim()) {
-      toast.error("Nome do paciente é obrigatório");
+    const requiredFields: Array<[string, string]> = [
+      ["name", "Nome"],
+      ["cpf", "CPF"],
+      ["cep", "CEP"],
+      ["address", "Endereço"],
+      ["city", "Cidade"],
+      ["state", "Estado"],
+      ["birthDate", "Data de nascimento"],
+      ["maritalStatusId", "Estado civil"],
+      ["genderId", "Sexo"],
+    ];
+
+    const missingFields = requiredFields
+      .filter(([field]) => !String(formData[field] ?? "").trim())
+      .map(([, label]) => label);
+
+    if (missingFields.length > 0) {
+      toast.error(`Preencha os campos obrigatórios: ${missingFields.join(", ")}.`);
       return;
     }
 
@@ -363,8 +379,8 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
       cpf: formData.cpf || undefined,
       birthDate: formData.birthDate || undefined,
       birthPlace: formData.birthPlace || undefined,
-      maritalStatusId: formData.maritalStatusId ? parseInt(formData.maritalStatusId) : undefined,
-      genderId: formData.genderId ? parseInt(formData.genderId) : undefined,
+      maritalStatusId: Number(formData.maritalStatusId),
+      genderId: Number(formData.genderId),
       email: formData.email || undefined,
       referredBy: formData.referredBy || undefined,
       registrationDate: formData.registrationDate || undefined,
@@ -417,7 +433,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
           </div>
 
           <div>
-            <Label htmlFor="cpf">CPF</Label>
+            <Label htmlFor="cpf">CPF *</Label>
             <div className="flex gap-2 items-end">
               <div className="flex-1">
                 <Input
@@ -471,7 +487,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
           </div>
 
           <div className="md:col-span-2">
-            <Label htmlFor="address">Endereço</Label>
+            <Label htmlFor="address">Endereço *</Label>
             <Input
               id="address"
               name="address"
@@ -483,7 +499,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
           </div>
 
           <div>
-            <Label htmlFor="cep">CEP</Label>
+            <Label htmlFor="cep">CEP *</Label>
             <Input
               id="cep"
               name="cep"
@@ -496,7 +512,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
           </div>
 
           <div>
-            <Label htmlFor="city">Cidade</Label>
+            <Label htmlFor="city">Cidade *</Label>
             <Input
               id="city"
               name="city"
@@ -508,7 +524,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
           </div>
 
           <div>
-            <Label htmlFor="state">Estado</Label>
+            <Label htmlFor="state">Estado *</Label>
             <Input
               id="state"
               name="state"
@@ -528,7 +544,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="birthDate">Data de Nascimento</Label>
+            <Label htmlFor="birthDate">Data de Nascimento *</Label>
             <div className="flex gap-2 items-end">
               <div className="flex-1">
                 <Input
@@ -574,7 +590,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
           </div>
 
           <div>
-            <Label htmlFor="genderId">Sexo</Label>
+            <Label htmlFor="genderId">Sexo *</Label>
             <Select
               value={formData.genderId}
               onValueChange={(value) => handleSelectChange("genderId", value)}
@@ -612,7 +628,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
           </div>
 
           <div>
-            <Label htmlFor="maritalStatusId">Estado Civil</Label>
+            <Label htmlFor="maritalStatusId">Estado Civil *</Label>
             <Select
               value={formData.maritalStatusId}
               onValueChange={(value) =>

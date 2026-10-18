@@ -67,7 +67,7 @@ export const patients = mysqlTable("patients", {
   city: varchar("city", { length: 100 }),
   state: varchar("state", { length: 100 }),
   rg: varchar("rg", { length: 100 }),
-  cpf: varchar("cpf", { length: 100 }),
+  cpf: varchar("cpf", { length: 100 }).unique(),
   birthDate: varchar("birthDate", { length: 10 }),
   birthPlace: varchar("birthPlace", { length: 100 }),
   maritalStatusId: int("maritalStatusId"),

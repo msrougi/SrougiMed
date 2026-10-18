@@ -133,26 +133,17 @@ export async function getUserById(id: number) {
 export async function generatePatientCode(): Promise<string> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-
+  
   try {
-    const lastPatient = await db
-      .select({ code: patients.code })
-      .from(patients)
-      .orderBy(patients.id)
-      .limit(1)
-      .offset(0);
+    // Usa o maior código numérico existente, não o primeiro registro por ID.
+    // Isso evita reutilizar códigos quando os pacientes foram importados,
+    // cadastrados fora de ordem ou quando o primeiro registro não é o maior.
+    const result = await db
+      .select({ maxCode: sql<number>`MAX(CAST(${patients.code} AS UNSIGNED))` })
+      .from(patients);
 
-    let nextNumber = 1;
-
-    if (lastPatient && lastPatient.length > 0) {
-      const lastCode = lastPatient[0].code;
-      if (lastCode) {
-        const lastNumber = parseInt(lastCode, 10);
-        if (!isNaN(lastNumber)) {
-          nextNumber = lastNumber + 1;
-        }
-      }
-    }
+    const maxCode = result[0]?.maxCode;
+    const nextNumber = maxCode ? Number(maxCode) + 1 : 1;
 
     return String(nextNumber).padStart(9, "0");
   } catch (error) {
@@ -197,6 +188,18 @@ export async function createPatient(data: InsertPatient) {
       notes: sanitizeString(data.notes as string | undefined),
       code,
     };
+
+    if (sanitizedData.cpf) {
+      const existing = await db
+        .select({ id: patients.id })
+        .from(patients)
+        .where(eq(patients.cpf, sanitizedData.cpf))
+        .limit(1);
+
+      if (existing.length > 0) {
+        throw new Error("Este CPF já está cadastrado para outro paciente.");
+      }
+    }
     
     console.log("[createPatient] Tentando inserir:", JSON.stringify(sanitizedData, null, 2));
     const result = await db.insert(patients).values(sanitizedData);
@@ -287,6 +290,18 @@ export async function updatePatient(id: number, data: Partial<InsertPatient>) {
   if (data.additionalInfo1 !== undefined) sanitizedData.additionalInfo1 = sanitizeString(data.additionalInfo1 as string | undefined);
   if (data.additionalInfo2 !== undefined) sanitizedData.additionalInfo2 = sanitizeString(data.additionalInfo2 as string | undefined);
   if (data.notes !== undefined) sanitizedData.notes = sanitizeString(data.notes as string | undefined);
+
+  if (sanitizedData.cpf) {
+    const existing = await db
+      .select({ id: patients.id })
+      .from(patients)
+      .where(and(eq(patients.cpf, sanitizedData.cpf), sql`${patients.id} <> ${id}`))
+      .limit(1);
+
+    if (existing.length > 0) {
+      throw new Error("Este CPF já está cadastrado para outro paciente.");
+    }
+  }
   
   // Copiar campos numéricos sem sanitização
   if (data.skinColorId !== undefined) sanitizedData.skinColorId = data.skinColorId;
