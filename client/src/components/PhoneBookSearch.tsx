@@ -92,9 +92,11 @@ export default function PhoneBookSearch({ onEditEntry }: PhoneBookSearchProps) {
     onSuccess: () => {
       toast.success("Contato deletado com sucesso!");
       setDeleteId(null);
-      // Limpar tela de busca
+      // Limpar tela de busca e remover o resultado excluído imediatamente.
       setSearchName("");
       setPage(0);
+      setHasSearched(false);
+      setEntries([]);
     },
     onError: (error) => {
       toast.error(error.message || "Erro ao deletar contato");
