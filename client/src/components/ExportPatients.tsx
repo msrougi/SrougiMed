@@ -55,13 +55,13 @@ export default function ExportPatients() {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+    <div className="bg-white dark:bg-card rounded-lg shadow p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
-          <h3 className="text-lg font-semibold text-gray-800">
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-100">
             Exportar Dados de Pacientes
           </h3>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-gray-600 dark:text-slate-300 mt-1">
             Total de pacientes: <strong>{patients.length}</strong>
           </p>
         </div>
@@ -95,8 +95,8 @@ export default function ExportPatients() {
         </Button>
       </div>
 
-      <div className="mt-6 p-4 bg-teal-50 border border-teal-200 rounded-lg">
-        <p className="text-sm text-teal-800">
+      <div className="mt-6 p-4 bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/60 rounded-lg">
+        <p className="text-sm text-teal-800 dark:text-teal-200">
           <strong>Informação:</strong> Os arquivos exportados incluem todos os dados dos pacientes
           cadastrados no sistema, incluindo informações pessoais, contato e dados adicionais.
         </p>

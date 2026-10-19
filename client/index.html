@@ -12,6 +12,20 @@
     <meta name="theme-color" content="#087e78" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="SrougiMed" />
+    <script>
+      // Apply the saved choice before rendering to avoid a light flash.
+      (() => {
+        let preference = "light";
+        try {
+          const saved = localStorage.getItem("srougimed-theme") ?? localStorage.getItem("theme");
+          if (["light", "dark", "system"].includes(saved)) preference = saved;
+        } catch {}
+        const dark = preference === "dark" || (preference === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.classList.toggle("dark", dark);
+        document.documentElement.style.colorScheme = dark ? "dark" : "light";
+        document.querySelector('meta[name="theme-color"]').setAttribute("content", dark ? "#0b1519" : "#087e78");
+      })();
+    </script>
     <title>SrougiMed</title>
     <!-- Add Google Fonts here, example:
     <link rel="preconnect" href="https://fonts.googleapis.com" />

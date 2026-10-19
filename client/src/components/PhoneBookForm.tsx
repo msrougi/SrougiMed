@@ -104,8 +104,8 @@ export default function PhoneBookForm({ onSuccess, initialData }: PhoneBookFormP
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">
+      <div className="bg-white dark:bg-card rounded-lg shadow p-4 sm:p-6">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-100 mb-4">
           {initialData?.id ? "Editar Contato" : "Novo Contato"}
         </h3>
 
@@ -183,7 +183,7 @@ export default function PhoneBookForm({ onSuccess, initialData }: PhoneBookFormP
               maxLength={2000}
               rows={4}
             />
-            <div className="text-sm text-gray-500 mt-1">
+            <div className="text-sm text-gray-500 dark:text-slate-400 mt-1">
               {formData.observations.length}/2000 caracteres
             </div>
           </div>

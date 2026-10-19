@@ -11,7 +11,7 @@ export default function AdminTab() {
   return (
     <div className="space-y-6">
       {/* Abas */}
-      <div className="grid grid-cols-3 gap-2 rounded-2xl border border-slate-100 bg-white p-2 shadow-sm">
+      <div className="grid grid-cols-3 gap-2 rounded-2xl border border-slate-100 dark:border-border bg-white dark:bg-card p-2 shadow-sm">
         <Button
           variant={activeTab === "users" ? "default" : "ghost"}
           onClick={() => setActiveTab("users")}

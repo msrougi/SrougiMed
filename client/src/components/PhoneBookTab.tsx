@@ -24,8 +24,8 @@ export default function PhoneBookTab() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm sm:p-6">
-        <h2 className="mb-4 text-center text-lg font-semibold tracking-tight text-[#087e78] sm:mb-6 sm:text-left sm:text-2xl">
+      <div className="rounded-2xl border border-slate-100 dark:border-border bg-white dark:bg-card p-4 shadow-sm sm:p-6">
+        <h2 className="mb-4 text-center text-lg font-semibold tracking-tight text-brand sm:mb-6 sm:text-left sm:text-2xl">
           Agenda Telefônica
         </h2>
 
@@ -47,7 +47,7 @@ export default function PhoneBookTab() {
               setShowSearch(false);
             }}
             variant="outline"
-            className="flex min-h-12 items-center justify-center gap-2 rounded-xl border-teal-100 bg-teal-50 text-[#087e78] hover:bg-teal-100 sm:min-h-11"
+            className="flex min-h-12 items-center justify-center gap-2 rounded-xl border-teal-100 dark:border-teal-800/60 bg-teal-50 dark:bg-teal-950/40 text-brand hover:bg-teal-100 dark:hover:bg-teal-900/50 sm:min-h-11"
           >
             <UserPlus className="w-4 h-4" />
             Cadastrar

@@ -1,64 +1,67 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-
-type Theme = "light" | "dark";
+import React, { createContext, useCallback, useContext, useEffect, useLayoutEffect, useState } from "react";
+import { isThemePreference, readThemePreference, resolveTheme, THEME_STORAGE_KEY, type Theme, type ThemePreference } from "@/lib/theme";
 
 interface ThemeContextType {
   theme: Theme;
+  preference: ThemePreference;
+  setTheme: (preference: ThemePreference) => void;
   toggleTheme?: () => void;
   switchable: boolean;
 }
-
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-interface ThemeProviderProps {
+export function ThemeProvider({ children, defaultTheme = "light", switchable = false }: {
   children: React.ReactNode;
-  defaultTheme?: Theme;
+  defaultTheme?: ThemePreference;
   switchable?: boolean;
-}
-
-export function ThemeProvider({
-  children,
-  defaultTheme = "light",
-  switchable = false,
-}: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (switchable) {
-      const stored = localStorage.getItem("theme");
-      return (stored as Theme) || defaultTheme;
-    }
-    return defaultTheme;
+}) {
+  const [preference, setPreference] = useState<ThemePreference>(() => {
+    if (!switchable || typeof window === "undefined") return defaultTheme;
+    try { return readThemePreference(window.localStorage, defaultTheme); }
+    catch { return defaultTheme; }
   });
+  const [systemDark, setSystemDark] = useState(() => typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  const theme = resolveTheme(preference, systemDark);
 
   useEffect(() => {
-    const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const update = () => setSystemDark(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
 
-    if (switchable) {
-      localStorage.setItem("theme", theme);
-    }
-  }, [theme, switchable]);
+  useEffect(() => {
+    if (!switchable) return;
+    const sync = (event: StorageEvent) => {
+      if (event.key !== THEME_STORAGE_KEY && event.key !== null) return;
+      try { setPreference(readThemePreference(window.localStorage, defaultTheme)); }
+      catch { setPreference(defaultTheme); }
+    };
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
+  }, [defaultTheme, switchable]);
 
-  const toggleTheme = switchable
-    ? () => {
-        setTheme(prev => (prev === "light" ? "dark" : "light"));
-      }
-    : undefined;
+  useLayoutEffect(() => {
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    document.documentElement.style.colorScheme = theme;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme === "dark" ? "#0b1519" : "#087e78");
+  }, [theme]);
 
-  return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, switchable }}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  const setTheme = useCallback((next: ThemePreference) => {
+    if (!switchable || !isThemePreference(next)) return;
+    setPreference(next);
+    try { window.localStorage.setItem(THEME_STORAGE_KEY, next); }
+    catch { /* Keep the choice for this session when storage is unavailable. */ }
+  }, [switchable]);
+
+  return <ThemeContext.Provider value={{ theme, preference, setTheme, switchable,
+    toggleTheme: switchable ? () => setTheme(theme === "dark" ? "light" : "dark") : undefined,
+  }}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme() {
   const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error("useTheme must be used within ThemeProvider");
-  }
+  if (!context) throw new Error("useTheme must be used within ThemeProvider");
   return context;
 }

@@ -417,10 +417,10 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {isLegacy && <p className="text-sm text-amber-800">Cadastro importado: informações ausentes podem ser preenchidas depois.</p>}
+      {isLegacy && <p className="text-sm text-amber-800 dark:text-amber-200">Cadastro importado: informações ausentes podem ser preenchidas depois.</p>}
       {/* Seção 1: Informações Básicas */}
-      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">
+      <div className="bg-white dark:bg-card rounded-lg shadow p-4 sm:p-6">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-100 mb-4">
           {initialData?.id ? "Editar Paciente" : "Informações Básicas"}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -466,10 +466,10 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
                 />
               </div>
               {cpfValidation === "valid" && (
-                <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
+                <CheckCircle2 className="w-5 h-5 text-green-500 dark:text-green-400 flex-shrink-0" />
               )}
               {cpfValidation === "invalid" && (
-                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                <AlertCircle className="w-5 h-5 text-red-500 dark:text-red-400 flex-shrink-0" />
               )}
             </div>
           </div>
@@ -477,8 +477,8 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
       </div>
 
       {/* Seção 2: Contato */}
-      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Contato</h3>
+      <div className="bg-white dark:bg-card rounded-lg shadow p-4 sm:p-6">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-100 mb-4">Contato</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="phone">Telefone</Label>
@@ -581,8 +581,8 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
       </div>
 
       {/* Seção 3: Dados Pessoais */}
-      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">
+      <div className="bg-white dark:bg-card rounded-lg shadow p-4 sm:p-6">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-100 mb-4">
           Dados Pessoais
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -601,7 +601,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
                 />
               </div>
               {age !== null && (
-                <div className="text-sm font-semibold text-[#087e78] whitespace-nowrap">
+                <div className="text-sm font-semibold text-brand whitespace-nowrap">
                   {age} anos
                 </div>
               )}
@@ -705,8 +705,8 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
       </div>
 
       {/* Seção 4: Informações Profissionais e Adicionais */}
-      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">
+      <div className="bg-white dark:bg-card rounded-lg shadow p-4 sm:p-6">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-100 mb-4">
           Informações Adicionais
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -742,7 +742,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
               value={formData.registrationDate}
               onChange={handleInputChange}
               disabled
-              className="bg-gray-100"
+              className="bg-gray-100 dark:bg-muted"
             />
           </div>
 
@@ -773,9 +773,9 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
       </div>
 
       {/* Seção 5: Notas */}
-      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+      <div className="bg-white dark:bg-card rounded-lg shadow p-4 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <h3 className="text-lg font-semibold text-gray-800">Notas</h3>
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-100">Notas</h3>
           <Button
             type="button"
             variant="outline"
@@ -786,15 +786,15 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
         </div>
 
         {notesText && (
-          <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="p-4 bg-gray-50 dark:bg-background rounded-lg border border-gray-200 dark:border-border">
             <div className="flex justify-between items-start">
-              <p className="min-w-0 flex-1 text-sm text-gray-700 whitespace-pre-wrap [overflow-wrap:anywhere]">
+              <p className="min-w-0 flex-1 text-sm text-gray-700 dark:text-slate-200 whitespace-pre-wrap [overflow-wrap:anywhere]">
                 {notesText}
               </p>
               <button
                 type="button"
                 onClick={() => setNotesText("")}
-                aria-label="Remover notas" className="flex h-11 w-11 shrink-0 items-center justify-center text-gray-400 hover:text-gray-600"
+                aria-label="Remover notas" className="flex h-11 w-11 shrink-0 items-center justify-center text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -839,7 +839,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
               maxLength={2000}
               rows={6}
             />
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-gray-500 dark:text-slate-400">
               {notesText.length}/2000 caracteres
             </div>
             <div className="flex flex-wrap gap-2 justify-end">

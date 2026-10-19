@@ -94,128 +94,128 @@ export default function PatientView({
     <div className="min-w-0 space-y-6 [overflow-wrap:anywhere]">
       {/* Informações Pessoais */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900">Informações Pessoais</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Informações Pessoais</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Nome</label>
-            <p className="mt-1 text-sm text-gray-900">{patient.name || "-"}</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Nome</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{patient.name || "-"}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Código</label>
-            <p className="mt-1 text-sm text-gray-900">{patient.code || "-"}</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Código</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{patient.code || "-"}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">CPF</label>
-            <p className="mt-1 text-sm text-gray-900">{patient.cpf || "-"}</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">CPF</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{patient.cpf || "-"}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">RG</label>
-            <p className="mt-1 text-sm text-gray-900">{patient.rg || "-"}</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">RG</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{patient.rg || "-"}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Data de Nascimento</label>
-            <p className="mt-1 text-sm text-gray-900">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Data de Nascimento</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">
               {patient.birthDate || "-"}
               {patient.birthDate && ` (${calculateAge(patient.birthDate)} anos)`}
             </p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Natural de</label>
-            <p className="mt-1 text-sm text-gray-900">{patient.birthPlace || "-"}</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Natural de</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{patient.birthPlace || "-"}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Nome da mãe</label>
-            <p className="mt-1 text-sm text-gray-900">{patient.motherName || "-"}</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Nome da mãe</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{patient.motherName || "-"}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Nome do pai</label>
-            <p className="mt-1 text-sm text-gray-900">{patient.fatherName || "-"}</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Nome do pai</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{patient.fatherName || "-"}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Sexo</label>
-            <p className="mt-1 text-sm text-gray-900">{getGenderName(patient.genderId)}</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Sexo</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{getGenderName(patient.genderId)}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Estado Civil</label>
-            <p className="mt-1 text-sm text-gray-900">{getMaritalStatusName(patient.maritalStatusId)}</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Estado Civil</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{getMaritalStatusName(patient.maritalStatusId)}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Cor da Pele</label>
-            <p className="mt-1 text-sm text-gray-900">{getSkinColorName(patient.skinColorId)}</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Cor da Pele</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{getSkinColorName(patient.skinColorId)}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Ocupação</label>
-            <p className="mt-1 text-sm text-gray-900">{patient.occupation || "-"}</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Ocupação</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{patient.occupation || "-"}</p>
           </div>
         </div>
       </div>
 
       {/* Contato */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900">Contato</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Contato</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">E-mail</label>
-            <p className="mt-1 text-sm text-gray-900">{patient.email || "-"}</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">E-mail</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{patient.email || "-"}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Telefone</label>
-            <p className="mt-1 text-sm text-gray-900">{patient.phone || "-"}</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Telefone</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{patient.phone || "-"}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Celular</label>
-            <p className="mt-1 text-sm text-gray-900">{patient.mobile || "-"}</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Celular</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{patient.mobile || "-"}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Nome do responsável</label>
-            <p className="mt-1 text-sm text-gray-900">{patient.responsibleName || "-"}</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Nome do responsável</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{patient.responsibleName || "-"}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Telefone do responsável</label>
-            <p className="mt-1 text-sm text-gray-900">{patient.responsiblePhone || "-"}</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Telefone do responsável</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{patient.responsiblePhone || "-"}</p>
           </div>
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700">Endereço</label>
-            <p className="mt-1 text-sm text-gray-900">{patient.address || "-"}</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Endereço</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{patient.address || "-"}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Bairro</label>
-            <p className="mt-1 text-sm text-gray-900">{patient.district || "-"}</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Bairro</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{patient.district || "-"}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">CEP</label>
-            <p className="mt-1 text-sm text-gray-900">{patient.cep || "-"}</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">CEP</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{patient.cep || "-"}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Cidade</label>
-            <p className="mt-1 text-sm text-gray-900">{patient.city || "-"}</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Cidade</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{patient.city || "-"}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Estado</label>
-            <p className="mt-1 text-sm text-gray-900">{patient.state || "-"}</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Estado</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{patient.state || "-"}</p>
           </div>
         </div>
       </div>
 
       {/* Informações Adicionais */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900">Informações Adicionais</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Informações Adicionais</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Indicado Por</label>
-            <p className="mt-1 text-sm text-gray-900">{patient.referredBy || "-"}</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Indicado Por</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{patient.referredBy || "-"}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Data de Cadastro</label>
-            <p className="mt-1 text-sm text-gray-900">{patient.registrationDate || "-"}</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Data de Cadastro</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{patient.registrationDate || "-"}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Info Adicional 1</label>
-            <p className="mt-1 text-sm text-gray-900">{patient.additionalInfo1 || "-"}</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Info Adicional 1</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{patient.additionalInfo1 || "-"}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Info Adicional 2</label>
-            <p className="mt-1 text-sm text-gray-900">{patient.additionalInfo2 || "-"}</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Info Adicional 2</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{patient.additionalInfo2 || "-"}</p>
           </div>
         </div>
       </div>
@@ -255,8 +255,8 @@ export default function PatientView({
               Informações adicionais sobre {patient.name}
             </DialogDescription>
           </DialogHeader>
-          <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 max-h-[50dvh] overflow-y-auto">
-            <p className="text-sm text-gray-700 whitespace-pre-wrap">
+          <div className="p-4 bg-gray-50 dark:bg-background rounded-lg border border-gray-200 dark:border-border max-h-[50dvh] overflow-y-auto">
+            <p className="text-sm text-gray-700 dark:text-slate-200 whitespace-pre-wrap">
               {patient.notes}
             </p>
           </div>

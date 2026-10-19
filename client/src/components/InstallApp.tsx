@@ -41,7 +41,7 @@ export default function InstallApp({ userId, compact = false }: { userId: number
 
   return <>
     <Button type="button" variant="outline" aria-label="Instalar aplicativo" title="Instalar aplicativo"
-      className={cn("bg-white text-[#087e78] hover:bg-gray-100", compact && "h-11 w-11 rounded-2xl border-white/15 bg-white/10 p-0 text-white shadow-none hover:bg-white/20 hover:text-white lg:w-auto lg:rounded-xl lg:px-3")}
+      className={cn("bg-white dark:bg-card text-brand hover:bg-gray-100 dark:hover:bg-muted", compact && "h-11 w-11 rounded-2xl border-white/15 bg-white/10 p-0 text-white shadow-none hover:bg-white/20 hover:text-white lg:w-auto lg:rounded-xl lg:px-3")}
       onClick={() => { setError(""); setOpen(true); }}>
       <Download className={cn("h-4 w-4", !compact && "mr-2")} /><span className={compact ? "sr-only lg:not-sr-only" : undefined}>Instalar aplicativo</span>
     </Button>
@@ -52,8 +52,8 @@ export default function InstallApp({ userId, compact = false }: { userId: number
           <DialogTitle>Instalar o SrougiMed?</DialogTitle>
           <DialogDescription>Adicione o ícone ao seu aparelho para abrir o sistema com mais facilidade. Você pode continuar usando pelo navegador.</DialogDescription>
         </DialogHeader>
-        {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
-        {!state.prompt && <div className="rounded-lg bg-slate-50 p-4 text-sm space-y-3">
+        {error && <p role="alert" className="text-sm text-red-700 dark:text-red-300">{error}</p>}
+        {!state.prompt && <div className="rounded-lg bg-slate-50 dark:bg-background p-4 text-sm space-y-3">
           {platform === "ios" ? <>
             <p className="font-medium">No iPhone ou iPad</p>
             <ol className="list-decimal pl-5 space-y-2">

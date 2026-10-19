@@ -138,9 +138,9 @@ export default function AdminPanel() {
   return (
     <div className="space-y-6">
       {/* Botão para criar usuário */}
-      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+      <div className="bg-white dark:bg-card rounded-lg shadow p-4 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h3 className="text-lg font-semibold text-gray-800">
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-100">
             Gerenciamento de Usuários
           </h3>
           <Button
@@ -153,9 +153,9 @@ export default function AdminPanel() {
       </div>
 
       {/* Lista de usuários */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white dark:bg-card rounded-lg shadow overflow-hidden">
         {users.length === 0 ? (
-          <div className="p-6 text-center text-gray-600">
+          <div className="p-6 text-center text-gray-600 dark:text-slate-300">
             Nenhum usuário encontrado
           </div>
         ) : (
@@ -178,15 +178,15 @@ export default function AdminPanel() {
                     <div className="flex items-center gap-2">
                       {user.role === "admin" ? (
                         <>
-                          <Shield className="w-4 h-4 text-red-600" />
-                          <span className="text-red-600 font-semibold">
+                          <Shield className="w-4 h-4 text-red-600 dark:text-red-300" />
+                          <span className="text-red-600 dark:text-red-300 font-semibold">
                             Administrador
                           </span>
                         </>
                       ) : (
                         <>
-                          <User className="w-4 h-4 text-[#087e78]" />
-                          <span className="text-[#087e78]">Usuário</span>
+                          <User className="w-4 h-4 text-brand" />
+                          <span className="text-brand">Usuário</span>
                         </>
                       )}
                     </div>
@@ -211,7 +211,7 @@ export default function AdminPanel() {
                       variant="ghost"
                       size="sm"
                       onClick={() => setDeleteId(user.id)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="text-red-600 dark:text-red-300 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/50"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
