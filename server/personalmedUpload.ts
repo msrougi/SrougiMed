@@ -1,4 +1,4 @@
-// Write-only staging of two immutable, explicitly authorized migration inputs.
+// Private staging of immutable, explicitly authorized migration inputs.
 // No access to patients, contacts, users or downloadable source data.
 import { createHash } from "node:crypto";
 import mysql from "mysql2/promise";
@@ -18,6 +18,17 @@ async function connect() {
  return db;
 }
 export const migrationUpload = router({
+ status: protectedProcedure.query(async () => {
+ const db = await connect();
+ try {
+ const [parts]:any = await db.query("SELECT fileKey,SUM(OCTET_LENGTH(payload)) AS bytes FROM srougi_personalmed_upload_chunks GROUP BY fileKey");
+ const [completed]:any = await db.query("SELECT fileKey,digest,bytes FROM srougi_personalmed_uploads");
+ return (Object.keys(sourceFiles) as (keyof typeof sourceFiles)[]).map(key => ({
+ key, bytes: Number(parts.find((row:any) => row.fileKey === key)?.bytes ?? 0),
+ verified: completed.some((row:any) => row.fileKey === key && row.digest === sourceFiles[key].sha256 && row.bytes === sourceFiles[key].bytes)
+ }));
+ } finally { await db.end(); }
+ }),
  put: protectedProcedure.input(z.object({key,part:z.number().int().min(0).max(1023),
  data:z.string().max(Math.ceil(chunkSize/3)*4).regex(/^[A-Za-z0-9+/]+={0,2}$/)}))
  .mutation(async ({input}) => {
