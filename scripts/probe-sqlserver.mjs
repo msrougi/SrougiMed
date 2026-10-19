@@ -1,5 +1,5 @@
 // Operator-only probe in the Render build environment. Does not read medical data.
-import {mkdtemp,readFile,writeFile,mkdir,open,rm} from 'node:fs/promises';
+import {mkdtemp,readFile,writeFile,mkdir,open,rm,access} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {spawn} from 'node:child_process';
@@ -13,7 +13,7 @@ const run=(cmd,args,env=process.env,timeout=180000)=>new Promise((resolve,reject
  child.on('error',()=>{clearTimeout(timer);reject(new Error('COMMAND_UNAVAILABLE'));});
  child.on('close',code=>{clearTimeout(timer);resolve({code,output});});
 });
-let root,server,logHandle;
+let root,server,logHandle,systemDir,removeSystemDir=false;
 try {
  root=await mkdtemp(join(tmpdir(),'personalmed-sql-probe-'));
  const platform=(await readFile('/etc/os-release','utf8')).match(/^PRETTY_NAME=(.*)$/m)?.[1]??'unknown';
@@ -43,9 +43,14 @@ try {
  const binary=join(root,'opt/mssql/bin/sqlservr');const deps=await run('ldd',[binary],{...process.env,LD_LIBRARY_PATH:libraryPath});
  const missing=deps.output.split('\n').filter(line=>line.includes('not found')).map(line=>line.trim().split(' ')[0]);
  if(missing.length){emit('missing-libraries',missing);throw new Error('RUNTIME_LIBRARIES_MISSING');}
+ if(!process.env.HOME)throw new Error('USER_HOME_MISSING');
+ systemDir=join(process.env.HOME,'.system');
+ try{await access(systemDir);throw new Error('EXISTING_SQL_RUNTIME_DATA');}catch(error){if(error.code!=='ENOENT')throw error;}
+ removeSystemDir=true;
  for(const name of ['data','log','dump','backup','secrets'])await mkdir(join(root,name),{mode:0o700});
  logHandle=await open(join(root,'startup.log'),'wx',0o600);
- const env={PATH:process.env.PATH,LANG:process.env.LANG??"C.UTF-8",ACCEPT_EULA:'Y',MSSQL_PID:'Developer',MSSQL_SA_PASSWORD:'Aa1!'+randomBytes(32).toString('hex'),
+ // Preserve the existing user home; do not redefine it to a task directory.
+ const env={PATH:process.env.PATH,HOME:process.env.HOME,LANG:process.env.LANG??"C.UTF-8",ACCEPT_EULA:'Y',MSSQL_PID:'Developer',MSSQL_SA_PASSWORD:'Aa1!'+randomBytes(32).toString('hex'),
  MSSQL_MEMORY_LIMIT_MB:'2048',MSSQL_TCP_PORT:'15433',MSSQL_DATA_DIR:join(root,'data'),MSSQL_LOG_DIR:join(root,'log'),MSSQL_DUMP_DIR:join(root,'dump'),MSSQL_BACKUP_DIR:join(root,'backup'),
  MSSQL_MASTER_DATA_FILE:join(root,'data/master.mdf'),MSSQL_MASTER_LOG_FILE:join(root,'log/mastlog.ldf'),MSSQL_ERROR_LOG_FILE:join(root,'log/errorlog'),MSSQL_MACHINE_KEY_FILE:join(root,'secrets/machine.key'),
  LD_LIBRARY_PATH:libraryPath};
@@ -68,5 +73,6 @@ try {
 finally {
  if(server&&server.exitCode===null){server.kill('SIGTERM');await new Promise(resolve=>{const timeout=setTimeout(()=>{server.kill('SIGKILL');resolve();},5000);server.once('close',()=>{clearTimeout(timeout);resolve();});});}
  await logHandle?.close();
+ if(removeSystemDir&&systemDir)await rm(systemDir,{recursive:true,force:true});
  if(root)await rm(root,{recursive:true,force:true});
 }
