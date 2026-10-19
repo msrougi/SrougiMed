@@ -9,7 +9,7 @@ class FakeDB{
  async commit(){this.commits++;}
  async rollback(){Object.assign(this,this.before);this.rollbacks++;}
  async query(sql,args=[]){this.calls.push(sql);
- if(sql.startsWith('CREATE TABLE'))return [[]];
+ if(sql.startsWith('CREATE TABLE')||sql.startsWith('SET TRANSACTION')||sql.endsWith('ORDER BY id FOR UPDATE'))return [[]];
  if(sql.includes('GET_LOCK'))return [[{ok:1}]];
  if(sql.includes('RELEASE_LOCK'))return [[{ok:1}]];
  if(sql.startsWith('SELECT sourceKey'))return [structuredClone(this.links)];
@@ -54,4 +54,12 @@ test('missing imported target cannot silently recreate it',async()=>{
 test('test-data fingerprint includes timestamp values',async()=>{
  const db=new FakeDB();db.patients=[{id:1,createdAt:new Date('2026-01-01T00:00:00Z')}];const a=await destinationFingerprint(db);
  db.patients[0].createdAt=new Date('2026-01-02T00:00:00Z');assert.notEqual(a.hash,(await destinationFingerprint(db)).hash);
+});
+test('contacts retain inactive status in the original and reject duplicate IDs and overlong fields',async()=>{
+ const {makeContactPlan}=await import('./import-personalmed.mjs');
+ const c={AGENDAFONECODE:1,NAME:'Contato sintético',EMAIL:null,OCCUPATION:null,CATEGORIA:null,FONE:'(11) 1234-5678',OBSERVATION:null,ATIVO:'F'};
+ const p=makeContactPlan([c]);assert.equal(p.length,1);assert.equal(p[0].raw.ATIVO,'F');assert.equal(p[0].contact.phone,c.FONE);
+ assert.throws(()=>makeContactPlan([c,c]),/DUPLICATE_CONTACT_KEY/);
+ assert.throws(()=>makeContactPlan([{...c,NAME:'x'.repeat(201)}]),/CONTACT_EXCEEDS_CAPACITY/);
+ assert.throws(()=>makeContactPlan([{...c,NAME:' '}]),/CONTACT_NAME_REQUIRED/);
 });

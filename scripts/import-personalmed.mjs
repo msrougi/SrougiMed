@@ -35,15 +35,34 @@ export async function destinationFingerprint(db){
  const [contacts]=await db.query('SELECT * FROM phone_book ORDER BY id');
  return {patients:patients.length,contacts:contacts.length,hash:fingerprint(JSON.parse(JSON.stringify({patients,contacts})))};
 }
-export async function importPlan(db,plans,{cleanupHash}={}){
+export function makeContactPlan(rows){
+ const seen=new Set();const fields={NAME:['name',200],EMAIL:['email',200],OCCUPATION:['occupation',200],CATEGORIA:['category',200],FONE:['phone',200],OBSERVATION:['observations',65535]};
+ return rows.map(raw=>{
+ if(!Number.isSafeInteger(raw.AGENDAFONECODE)||raw.AGENDAFONECODE<=0)throw new Error('INVALID_CONTACT_KEY');
+ const key='personalmed:AGFONE:'+raw.AGENDAFONECODE;if(seen.has(key))throw new Error('DUPLICATE_CONTACT_KEY');seen.add(key);
+ const contact={};for(const [source,[target,max]]of Object.entries(fields)){
+ if(!Object.hasOwn(raw,source))throw new Error('INCOMPLETE_CONTACT_ROW');const value=raw[source];
+ if(value!==null&&typeof value!=='string')throw new Error('INVALID_CONTACT_TEXT');
+ if(value!==null&&(target==='observations'?Buffer.byteLength(value,'utf8'):[...value].length)>max)throw new Error('CONTACT_EXCEEDS_CAPACITY');
+ contact[target]=value?.trim()?value:null;
+ }
+ if(!contact.name)throw new Error('CONTACT_NAME_REQUIRED');
+ return {key,contact,raw,sourceHash:fingerprint(raw),decisions:[{action:'preserve_contact_status_in_original',status:raw.ATIVO}]};
+ });
+}
+export async function importPlan(db,plans,{cleanupHash,contacts=[]}={}){
  const [locked]=await db.query("SELECT GET_LOCK('srougi_personalmed_import',0) AS ok");
  if(locked[0].ok!==1)throw new Error('IMPORT_ALREADY_RUNNING');
  try{
  await prepareLedger(db);
  // DDL outside the transaction; no live data touched until all prerequisites pass.
  if(cleanupHash){await db.query('CREATE TABLE IF NOT EXISTS __srougi_test_patients_20261018 LIKE patients');await db.query('CREATE TABLE IF NOT EXISTS __srougi_test_contacts_20261018 LIKE phone_book');}
+ await db.query('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
  await db.beginTransaction();
  try{
+ // Complete indexed range locks also block application writes that do not use GET_LOCK.
+ await db.query('SELECT id FROM patients ORDER BY id FOR UPDATE');
+ await db.query('SELECT id FROM phone_book ORDER BY id FOR UPDATE');
  const [links]=await db.query("SELECT sourceKey,targetId,sourceHash,mappedHash,disposition FROM srougi_personalmed_links WHERE entity='patient'");
  const previous=new Map(links.map(r=>[r.sourceKey,r]));
  const summary={inserted:0,unchanged:0,excludedInactive:0,conflicts:0,deletedTestPatients:0,deletedTestContacts:0};
@@ -80,6 +99,29 @@ export async function importPlan(db,plans,{cleanupHash}={}){
  for(const {p,code}of fresh){if(!ids.has(code))throw new Error('INSERTED_TARGET_MISSING');ledger.push({p,id:ids.get(code)});summary.inserted++;}
  }
  if(ledger.length)await db.query('INSERT INTO srougi_personalmed_links (sourceKey,entity,targetId,sourceHash,mappedHash,mappingVersion,disposition,original,decisions) VALUES '+ledger.map(()=>'(?,?,?,?,?,?,?,?,?)').join(','),ledger.flatMap(({p,id})=>[p.key,'patient',id,p.sourceHash,fingerprint(p.patient),mappingVersion,p.importDisposition,JSON.stringify(p.raw),JSON.stringify({issues:p.issues,decisions:p.decisions})]));
+ }
+ if(contacts.length){
+ const [priorContacts]=await db.query("SELECT sourceKey,targetId,sourceHash,mappedHash,disposition FROM srougi_personalmed_links WHERE entity='contact'");
+ const prior=new Map(priorContacts.map(p=>[p.sourceKey,p]));
+ const [maximum]=await db.query('SELECT COALESCE(MAX(id),0) AS n FROM phone_book');let nextContact=Number(maximum[0].n)+1;
+ summary.insertedContacts=0;summary.unchangedContacts=0;
+ for(let start=0;start<contacts.length;start+=100){
+ const fresh=[];
+ for(const p of contacts.slice(start,start+100)){
+ const old=prior.get(p.key);if(old){
+ if(old.sourceHash!==p.sourceHash||old.mappedHash!==fingerprint(p.contact))throw new Error('CONTACT_SOURCE_CHANGED_REQUIRES_REVIEW');
+ const [target]=await db.query('SELECT id FROM phone_book WHERE id=?',[old.targetId]);if(target.length!==1)throw new Error('IMPORTED_CONTACT_MISSING');
+ summary.unchangedContacts++;continue;
+ }
+ if(nextContact>2147483647)throw new Error('CONTACT_ID_EXHAUSTED');fresh.push({p,id:nextContact++});
+ }
+ if(fresh.length){
+ const fields=['name','email','occupation','category','phone','observations'];
+ await db.query('INSERT INTO phone_book (`id`,'+fields.map(f=>'`'+f+'`').join(',')+') VALUES '+fresh.map(()=>'(?,?,?,?,?,?,?)').join(','),fresh.flatMap(({p,id})=>[id,...fields.map(f=>p.contact[f])]));
+ await db.query('INSERT INTO srougi_personalmed_links (sourceKey,entity,targetId,sourceHash,mappedHash,mappingVersion,disposition,original,decisions) VALUES '+fresh.map(()=>'(?,?,?,?,?,?,?,?,?)').join(','),fresh.flatMap(({p,id})=>[p.key,'contact',id,p.sourceHash,fingerprint(p.contact),mappingVersion,'include',JSON.stringify(p.raw),JSON.stringify(p.decisions)]));
+ summary.insertedContacts+=fresh.length;
+ }
+ }
  }
  await db.query('INSERT INTO srougi_personalmed_runs (sourceHash,summary) VALUES (?,?)',[fingerprint(plans.map(p=>[p.key,p.sourceHash])),JSON.stringify(summary)]);
  await db.commit();return summary;
