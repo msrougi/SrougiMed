@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { Heart } from "lucide-react";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
 import { useState } from "react";
@@ -9,6 +10,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
 export default function Login() {
+  const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -16,6 +18,7 @@ export default function Login() {
 
   const loginMutation = trpc.customAuth.login.useMutation({
     onSuccess: () => {
+      queryClient.clear();
       toast.success("Login realizado com sucesso!");
       setLocation("/dashboard");
     },

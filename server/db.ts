@@ -1,6 +1,8 @@
+import type { PatientSearchInput, PhoneBookSearchInput } from "../shared/pagination";
+import { pagination, patientSearchSchema, phoneBookSearchSchema, searchPattern } from "../shared/pagination";
 import { TRPCError } from "@trpc/server";
 import type { UpdateUserInput } from "../shared/userManagement";
-import { eq, like, or, and, sql } from "drizzle-orm";
+import { eq, like, or, and, sql, asc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, patients, skinColors, maritalStatuses, genders, phoneBook, InsertPatient, InsertPhoneBookEntry } from "../drizzle/schema";
 import { cpfChanged } from "../shared/patientImport";
@@ -215,44 +217,68 @@ export async function createPatient(data: InsertPatient) {
   }
 }
 
-export async function searchPatients(filters: {
-  name?: string;
-  code?: string;
-  birthDate?: string;
-  city?: string;
-  limit?: number;
-  offset?: number;
-}) {
+function patientSearchWhere(filters: PatientSearchInput) {
+  const conditions = [];
+  if (filters.name)
+    conditions.push(
+      sql`LOWER(${patients.name}) LIKE LOWER(${searchPattern(filters.name)})`
+    );
+  if (filters.code) conditions.push(eq(patients.code, filters.code));
+  if (filters.birthDate)
+    conditions.push(eq(patients.birthDate, filters.birthDate));
+  if (filters.city)
+    conditions.push(
+      sql`LOWER(${patients.city}) LIKE LOWER(${searchPattern(filters.city)})`
+    );
+  return and(...conditions);
+}
+
+// Compatibility for existing browser tabs: same array contract and exact offset.
+export async function searchPatientsLegacy(
+  filters: PatientSearchInput & { limit: number; offset: number }
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db
+    .select()
+    .from(patients)
+    .where(patientSearchWhere(filters))
+    .orderBy(asc(patients.id))
+    .limit(filters.limit)
+    .offset(filters.offset);
+}
+
+export async function searchPatients(input: PatientSearchInput) {
+  const filters = patientSearchSchema.parse(input);
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const conditions = [];
-  if (filters.name) {
-    // Busca case-insensitive usando LOWER
-    conditions.push(sql`LOWER(${patients.name}) LIKE LOWER(${`%${filters.name}%`})`);
-  }
-  if (filters.code) {
-    conditions.push(eq(patients.code, filters.code));
-  }
-  if (filters.birthDate) {
-    conditions.push(eq(patients.birthDate, filters.birthDate));
-  }
-  if (filters.city) {
-    // Busca case-insensitive usando LOWER
-    conditions.push(sql`LOWER(${patients.city}) LIKE LOWER(${`%${filters.city}%`})`);
-  }
-
-  let query = db.select().from(patients);
-  
-  if (conditions.length > 0) {
-    query = query.where(and(...conditions)) as any;
-  }
-
-  const result = await query
-    .limit(filters.limit || 10)
-    .offset(filters.offset || 0);
-
-  return result;
+  const where = patientSearchWhere(filters);
+  return db.transaction(
+    async tx => {
+      const [count] = await tx
+        .select({ total: sql<number>`count(*)` })
+        .from(patients)
+        .where(where);
+      const meta = pagination(
+        Number(count.total),
+        filters.page,
+        filters.pageSize
+      );
+      const items =
+        meta.total === 0
+          ? []
+          : await tx
+              .select()
+              .from(patients)
+              .where(where)
+              .orderBy(asc(patients.id))
+              .limit(meta.pageSize)
+              .offset((meta.page - 1) * meta.pageSize);
+      return { items, ...meta };
+    },
+    { isolationLevel: "repeatable read", accessMode: "read only" }
+  );
 }
 
 export async function getPatientById(id: number) {
@@ -353,19 +379,55 @@ export async function createPhoneBookEntry(data: InsertPhoneBookEntry) {
   return result;
 }
 
-export async function searchPhoneBook(name?: string, limit = 10, offset = 0) {
+export async function searchPhoneBookLegacy(
+  filters: PhoneBookSearchInput & { limit: number; offset: number }
+) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  const where = filters.name
+    ? sql`LOWER(${phoneBook.name}) LIKE LOWER(${searchPattern(filters.name)})`
+    : undefined;
+  return db
+    .select()
+    .from(phoneBook)
+    .where(where)
+    .orderBy(asc(phoneBook.id))
+    .limit(filters.limit)
+    .offset(filters.offset);
+}
 
-  let query = db.select().from(phoneBook);
-  
-  if (name) {
-    // Case-insensitive search using LOWER function
-    query = query.where(sql`LOWER(${phoneBook.name}) LIKE LOWER(${`%${name}%`})`) as any;
-  }
-
-  const result = await query.limit(limit).offset(offset);
-  return result;
+export async function searchPhoneBook(input: PhoneBookSearchInput) {
+  const filters = phoneBookSearchSchema.parse(input);
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const where = filters.name
+    ? sql`LOWER(${phoneBook.name}) LIKE LOWER(${searchPattern(filters.name)})`
+    : undefined;
+  return db.transaction(
+    async tx => {
+      const [count] = await tx
+        .select({ total: sql<number>`count(*)` })
+        .from(phoneBook)
+        .where(where);
+      const meta = pagination(
+        Number(count.total),
+        filters.page,
+        filters.pageSize
+      );
+      const items =
+        meta.total === 0
+          ? []
+          : await tx
+              .select()
+              .from(phoneBook)
+              .where(where)
+              .orderBy(asc(phoneBook.id))
+              .limit(meta.pageSize)
+              .offset((meta.page - 1) * meta.pageSize);
+      return { items, ...meta };
+    },
+    { isolationLevel: "repeatable read", accessMode: "read only" }
+  );
 }
 
 export async function getPhoneBookEntryById(id: number) {

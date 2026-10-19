@@ -22,8 +22,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import SearchPagination from "./SearchPagination";
+import { usePaginatedSearch } from "@/lib/usePaginatedSearch";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import PatientView from "@/components/PatientView";
 
 interface PatientSearchProps {
@@ -38,42 +44,22 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
     city: "",
   });
 
-  const [page, setPage] = useState(0);
   const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [editingPatient, setEditingPatient] = useState<any | null>(null);
   const [viewingPatient, setViewingPatient] = useState<any | null>(null);
-  const [hasSearched, setHasSearched] = useState(false);
-  const limit = 10;
 
   // Buscar opções pré-cadastradas
   const { data: skinColors = [] } = trpc.patients.getSkinColors.useQuery();
-  const { data: maritalStatuses = [] } = trpc.patients.getMaritalStatuses.useQuery();
+  const { data: maritalStatuses = [] } =
+    trpc.patients.getMaritalStatuses.useQuery();
   const { data: genders = [] } = trpc.patients.getGenders.useQuery();
 
   // Buscar pacientes
-  const searchMutation = trpc.patients.search.useMutation();
-  const [patients, setPatients] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const runSearch = async (offsetPage = 0) => {
-    setIsLoading(true);
-    try {
-      const data = await searchMutation.mutateAsync({
-        name: filters.name || undefined,
-        code: filters.code || undefined,
-        birthDate: filters.birthDate || undefined,
-        city: filters.city || undefined,
-        limit,
-        offset: offsetPage * limit,
-      });
-      setPatients(data);
-    } catch (error: any) {
-      toast.error(error?.message || "Erro ao buscar pacientes");
-      setPatients([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const searchMutation = trpc.patients.searchPage.useMutation();
+  const search = usePaginatedSearch((applied: typeof filters, page: number) =>
+    searchMutation.mutateAsync({ ...applied, page, pageSize: 10 })
+  );
+  const { result, isLoading, hasSearched, error } = search;
+  const patients = result?.items ?? [];
 
   // Deletar paciente
   const deletePatientMutation = trpc.patients.delete.useMutation({
@@ -82,25 +68,21 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
       setDeleteId(null);
       // Limpar tela de busca
       setFilters({ name: "", code: "", birthDate: "", city: "" });
-      setPage(0);
-      setHasSearched(false);
-      setPatients([]);
+      search.reset();
     },
-    onError: (error) => {
+    onError: error => {
       toast.error(error.message || "Erro ao deletar paciente");
     },
   });
 
-  const handleFilterChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFilters({ ...filters, [name]: value });
   };
 
   const handleSearch = () => {
     // Validar se há pelo menos um campo com 2 ou mais caracteres
-    const hasValidInput = 
+    const hasValidInput =
       (filters.name && filters.name.trim().length >= 2) ||
       (filters.code && filters.code.trim().length >= 2) ||
       (filters.birthDate && filters.birthDate.trim().length >= 2) ||
@@ -111,9 +93,7 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
       return;
     }
 
-    setHasSearched(true);
-    setPage(0);
-    void runSearch(0);
+    search.search({ ...filters });
   };
 
   const handleDelete = () => {
@@ -174,7 +154,11 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
             />
           </div>
           <div className="flex items-end [&>button]:w-full">
-            <Button onClick={handleSearch} className="w-full">
+            <Button
+              onClick={handleSearch}
+              disabled={isLoading}
+              className="w-full"
+            >
               Buscar
             </Button>
           </div>
@@ -183,15 +167,34 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
 
       {/* Resultados */}
       <div className="bg-white dark:bg-card rounded-lg shadow overflow-hidden">
+        {error && (
+          <div
+            role="alert"
+            className="p-4 text-sm text-red-700 dark:text-red-300"
+          >
+            {error}{" "}
+            {result && "Os resultados abaixo são da última busca concluída."}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={search.retry}
+              disabled={isLoading}
+              className="ml-2"
+            >
+              Tentar novamente
+            </Button>
+          </div>
+        )}
         {!hasSearched ? (
           <div className="p-6 text-center text-gray-600 dark:text-slate-300">
-            Digite os critérios de busca e clique em "Buscar" para encontrar pacientes
+            Digite os critérios de busca e clique em "Buscar" para encontrar
+            pacientes
           </div>
         ) : isLoading ? (
           <div className="p-6 text-center text-gray-600 dark:text-slate-300">
             Carregando pacientes...
           </div>
-        ) : patients.length === 0 ? (
+        ) : !result ? null : patients.length === 0 ? (
           <div className="p-6 text-center text-gray-600 dark:text-slate-300">
             Nenhum paciente encontrado
           </div>
@@ -205,68 +208,76 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
                   <TableHead>Cidade</TableHead>
                   <TableHead>Telefone</TableHead>
                   <TableHead>E-mail</TableHead>
-                  <TableHead className="sticky right-0 z-20 w-36 min-w-36 border-l bg-white dark:bg-card text-right">Ações</TableHead>
+                  <TableHead className="sticky right-0 z-20 w-36 min-w-36 border-l bg-white dark:bg-card text-right">
+                    Ações
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {patients.map((patient) => (
+                {patients.map(patient => (
                   <TableRow key={patient.id}>
-                    <TableCell data-label="Nome" className="min-w-48 max-w-72 whitespace-normal [overflow-wrap:anywhere] font-medium">{patient.name}</TableCell>
-                    <TableCell data-label="Código">{patient.code || "-"}</TableCell>
-                    <TableCell data-label="Cidade" className="max-w-60 whitespace-normal [overflow-wrap:anywhere]">{patient.city || "-"}</TableCell>
-                    <TableCell data-label="Telefone" className="max-w-60 whitespace-normal [overflow-wrap:anywhere]">{patient.phone || "-"}</TableCell>
-                    <TableCell data-label="E-mail" className="max-w-60 whitespace-normal [overflow-wrap:anywhere]">{patient.email || "-"}</TableCell>
-                    <TableCell data-label="Ações" className="record-actions sticky right-0 z-10 w-36 min-w-36 border-l bg-white dark:bg-card text-right">
-                      <RecordActions subject="paciente" onView={() => setViewingPatient(patient)}
-                        onEdit={() => { setEditingPatient(patient); onEditPatient?.(patient); }} onDelete={() => setDeleteId(patient.id)} />
+                    <TableCell
+                      data-label="Nome"
+                      className="min-w-48 max-w-72 whitespace-normal [overflow-wrap:anywhere] font-medium"
+                    >
+                      {patient.name}
+                    </TableCell>
+                    <TableCell data-label="Código">
+                      {patient.code || "-"}
+                    </TableCell>
+                    <TableCell
+                      data-label="Cidade"
+                      className="max-w-60 whitespace-normal [overflow-wrap:anywhere]"
+                    >
+                      {patient.city || "-"}
+                    </TableCell>
+                    <TableCell
+                      data-label="Telefone"
+                      className="max-w-60 whitespace-normal [overflow-wrap:anywhere]"
+                    >
+                      {patient.phone || "-"}
+                    </TableCell>
+                    <TableCell
+                      data-label="E-mail"
+                      className="max-w-60 whitespace-normal [overflow-wrap:anywhere]"
+                    >
+                      {patient.email || "-"}
+                    </TableCell>
+                    <TableCell
+                      data-label="Ações"
+                      className="record-actions sticky right-0 z-10 w-36 min-w-36 border-l bg-white dark:bg-card text-right"
+                    >
+                      <RecordActions
+                        subject="paciente"
+                        onView={() => setViewingPatient(patient)}
+                        onEdit={() => {
+                          onEditPatient?.(patient);
+                        }}
+                        onDelete={() => setDeleteId(patient.id)}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-
-            {/* Paginação */}
-            <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-t">
-              <div className="text-sm text-gray-600 dark:text-slate-300">
-                Página {page + 1} - {patients.length} resultados
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const nextPage = Math.max(0, page - 1);
-                    setPage(nextPage);
-                    void runSearch(nextPage);
-                  }}
-                  aria-label="Página anterior"
-                  disabled={page === 0}
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const nextPage = page + 1;
-                    setPage(nextPage);
-                    void runSearch(nextPage);
-                  }}
-                  aria-label="Próxima página"
-                  disabled={patients.length < limit}
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
           </>
+        )}
+        {result && (
+          <SearchPagination
+            result={result}
+            disabled={isLoading}
+            onPageChange={search.goToPage}
+          />
         )}
       </div>
 
       {/* Dialog de Visualização */}
-      <Dialog open={viewingPatient !== null} onOpenChange={(open) => {
-        if (!open) setViewingPatient(null);
-      }}>
+      <Dialog
+        open={viewingPatient !== null}
+        onOpenChange={open => {
+          if (!open) setViewingPatient(null);
+        }}
+      >
         <DialogContent className="max-w-4xl max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Visualizar Paciente</DialogTitle>
@@ -275,7 +286,6 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
             <PatientView
               patient={viewingPatient}
               onEdit={() => {
-                setEditingPatient(viewingPatient);
                 if (onEditPatient) onEditPatient(viewingPatient);
                 setViewingPatient(null);
               }}
@@ -288,14 +298,18 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
       </Dialog>
 
       {/* Dialog de Confirmação de Deleção */}
-      <AlertDialog open={deleteId !== null} onOpenChange={(open) => {
-        if (!open) setDeleteId(null);
-      }}>
+      <AlertDialog
+        open={deleteId !== null}
+        onOpenChange={open => {
+          if (!open) setDeleteId(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar Deleção</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja deletar este paciente? Esta ação não pode ser desfeita.
+              Tem certeza que deseja deletar este paciente? Esta ação não pode
+              ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
@@ -313,4 +327,3 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
     </div>
   );
 }
-
