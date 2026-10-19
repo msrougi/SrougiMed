@@ -42,30 +42,31 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="medical-app app-shell min-h-dvh bg-gray-50">
       {/* Header */}
       <header className="bg-gradient-to-r from-[#1e3a5f] to-[#0d9488] text-white shadow-lg">
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
+            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
               <img
                 src="/logo-srougimed.png"
                 alt="SrougiMed"
-                className="h-12 w-auto bg-white rounded px-2"
+                className="h-10 w-20 shrink-0 object-contain bg-white rounded px-1 sm:h-12 sm:w-24"
               />
               <div>
-                <h1 className="text-2xl font-bold">SrougiMed</h1>
-                <p className="text-sm text-gray-200">Sistema de Gestão Médica</p>
+                <h1 className="text-xl font-bold sm:text-2xl">SrougiMed</h1>
+                <p className="text-xs text-gray-200 sm:text-sm">Sistema de Gestão Médica</p>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <InstallApp userId={user.id} />
-              <div className="text-right">
+            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+              <div className="min-w-0 break-words text-left sm:max-w-60 sm:text-right">
                 <p className="font-semibold">{user.name || user.username}</p>
                 <p className="text-sm text-gray-200">
                   {isAdmin ? "Administrador" : "Usuário"}
                 </p>
               </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <InstallApp userId={user.id} />
               <Button
                 onClick={handleLogout}
                 variant="outline"
@@ -74,25 +75,26 @@ export default function Dashboard() {
                 <LogOut className="w-4 h-4 mr-2" />
                 Sair
               </Button>
+              </div>
             </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto min-w-0 px-4 py-4 sm:py-8">
         <Tabs defaultValue="patients" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8">
-            <TabsTrigger value="patients" className="flex items-center gap-2">
+          <TabsList className={`grid h-auto w-full gap-1 mb-4 sm:mb-8 ${isAdmin ? "grid-cols-3" : "grid-cols-2"}`}>
+            <TabsTrigger value="patients" className="flex min-h-14 min-w-0 flex-col gap-1 whitespace-normal px-1 text-xs sm:min-h-11 sm:flex-row sm:gap-2 sm:px-3 sm:text-sm">
               <UserPlus className="w-4 h-4" />
-              Cadastro de Pacientes
+              <span className="sm:hidden">Pacientes</span><span className="hidden sm:inline">Cadastro de Pacientes</span>
             </TabsTrigger>
-            <TabsTrigger value="phonebook" className="flex items-center gap-2">
+            <TabsTrigger value="phonebook" className="flex min-h-14 min-w-0 flex-col gap-1 whitespace-normal px-1 text-xs sm:min-h-11 sm:flex-row sm:gap-2 sm:px-3 sm:text-sm">
               <Phone className="w-4 h-4" />
-              Agenda Telefônica
+              <span className="sm:hidden">Contatos</span><span className="hidden sm:inline">Agenda Telefônica</span>
             </TabsTrigger>
             {isAdmin && (
-              <TabsTrigger value="admin" className="flex items-center gap-2">
+              <TabsTrigger value="admin" className="flex min-h-14 min-w-0 flex-col gap-1 whitespace-normal px-1 text-xs sm:min-h-11 sm:flex-row sm:gap-2 sm:px-3 sm:text-sm">
                 <Users className="w-4 h-4" />
                 Admin
               </TabsTrigger>

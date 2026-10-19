@@ -138,8 +138,8 @@ export default function AdminPanel() {
   return (
     <div className="space-y-6">
       {/* Botão para criar usuário */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex items-center justify-between">
+      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="text-lg font-semibold text-gray-800">
             Gerenciamento de Usuários
           </h3>
@@ -159,7 +159,7 @@ export default function AdminPanel() {
             Nenhum usuário encontrado
           </div>
         ) : (
-          <Table>
+          <Table responsive>
             <TableHeader>
               <TableRow>
                 <TableHead>Usuário</TableHead>
@@ -172,9 +172,9 @@ export default function AdminPanel() {
             <TableBody>
               {users.map((user) => (
                 <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.name || "-"}</TableCell>
-                  <TableCell>{user.email || "-"}</TableCell>
-                  <TableCell>
+                  <TableCell data-label="Usuário" className="font-medium">{user.name || "-"}</TableCell>
+                  <TableCell data-label="Nome">{user.email || "-"}</TableCell>
+                  <TableCell data-label="Nível de Acesso">
                     <div className="flex items-center gap-2">
                       {user.role === "admin" ? (
                         <>
@@ -191,12 +191,12 @@ export default function AdminPanel() {
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell data-label="Criado em">
                     {user.createdAt
                       ? new Date(user.createdAt).toLocaleDateString("pt-BR")
                       : "-"}
                   </TableCell>
-                  <TableCell className="text-right space-x-2">
+                  <TableCell data-label="Ações" className="record-actions text-right space-x-2">
                     <Button
                       variant="outline"
                       size="sm"
@@ -294,7 +294,7 @@ export default function AdminPanel() {
               </Select>
             </div>
 
-            <div className="flex gap-2 justify-end pt-4">
+            <div className="flex flex-wrap gap-2 justify-end pt-4">
               <Button
                 type="button"
                 variant="outline"
@@ -325,7 +325,7 @@ export default function AdminPanel() {
               Tem certeza que deseja deletar este usuário? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="flex gap-4 justify-end">
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
@@ -350,7 +350,7 @@ export default function AdminPanel() {
               <strong>{newRole === "admin" ? "Administrador" : "Usuário"}</strong>?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="flex gap-4 justify-end">
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleChangeRole}

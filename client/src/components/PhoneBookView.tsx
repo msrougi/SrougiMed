@@ -30,7 +30,7 @@ export default function PhoneBookView({ entry, onEdit }: PhoneBookViewProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6 [overflow-wrap:anywhere]">
       {/* Informações Principais */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-900">Informações do Contato</h3>

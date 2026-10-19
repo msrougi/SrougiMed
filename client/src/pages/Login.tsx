@@ -34,15 +34,15 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#1a2332] via-[#1e3a5f] to-[#0d9488] p-4">
+    <div className="medical-app login-screen min-h-dvh flex items-center justify-center bg-gradient-to-br from-[#1a2332] via-[#1e3a5f] to-[#0d9488] p-4">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
+        <div className="bg-white rounded-2xl shadow-2xl p-5 sm:p-8">
           {/* Logo */}
           <div className="flex justify-center mb-8">
             <img
               src="/logo-srougimed.png"
               alt="SrougiMed"
-              className="w-[300px] h-[200px] object-contain"
+              className="h-auto w-full max-w-[300px] object-contain"
             />
           </div>
 
@@ -94,3 +94,4 @@ export default function Login() {
     </div>
   );
 }
+

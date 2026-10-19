@@ -1,3 +1,4 @@
+import RecordActions from "./RecordActions";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Trash2, ChevronLeft, ChevronRight, Edit, Eye } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import PatientView from "@/components/PatientView";
 
@@ -124,7 +125,7 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
   return (
     <div className="space-y-6">
       {/* Filtros */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
           Filtros de Busca
         </h3>
@@ -172,7 +173,7 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
               placeholder="Digite a cidade"
             />
           </div>
-          <div className="flex items-end">
+          <div className="flex items-end [&>button]:w-full">
             <Button onClick={handleSearch} className="w-full">
               Buscar
             </Button>
@@ -196,7 +197,7 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
           </div>
         ) : (
           <>
-            <Table>
+            <Table responsive>
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
@@ -204,45 +205,20 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
                   <TableHead>Cidade</TableHead>
                   <TableHead>Telefone</TableHead>
                   <TableHead>E-mail</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  <TableHead className="sticky right-0 z-20 w-36 min-w-36 border-l bg-white text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {patients.map((patient) => (
                   <TableRow key={patient.id}>
-                    <TableCell className="font-medium">{patient.name}</TableCell>
-                    <TableCell>{patient.code || "-"}</TableCell>
-                    <TableCell>{patient.city || "-"}</TableCell>
-                    <TableCell>{patient.phone || "-"}</TableCell>
-                    <TableCell>{patient.email || "-"}</TableCell>
-                    <TableCell className="text-right space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setViewingPatient(patient)}
-                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setEditingPatient(patient);
-                          if (onEditPatient) onEditPatient(patient);
-                        }}
-                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setDeleteId(patient.id)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                    <TableCell data-label="Nome" className="min-w-48 max-w-72 whitespace-normal [overflow-wrap:anywhere] font-medium">{patient.name}</TableCell>
+                    <TableCell data-label="Código">{patient.code || "-"}</TableCell>
+                    <TableCell data-label="Cidade" className="max-w-60 whitespace-normal [overflow-wrap:anywhere]">{patient.city || "-"}</TableCell>
+                    <TableCell data-label="Telefone" className="max-w-60 whitespace-normal [overflow-wrap:anywhere]">{patient.phone || "-"}</TableCell>
+                    <TableCell data-label="E-mail" className="max-w-60 whitespace-normal [overflow-wrap:anywhere]">{patient.email || "-"}</TableCell>
+                    <TableCell data-label="Ações" className="record-actions sticky right-0 z-10 w-36 min-w-36 border-l bg-white text-right">
+                      <RecordActions subject="paciente" onView={() => setViewingPatient(patient)}
+                        onEdit={() => { setEditingPatient(patient); onEditPatient?.(patient); }} onDelete={() => setDeleteId(patient.id)} />
                     </TableCell>
                   </TableRow>
                 ))}
@@ -250,7 +226,7 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
             </Table>
 
             {/* Paginação */}
-            <div className="flex items-center justify-between p-4 border-t">
+            <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-t">
               <div className="text-sm text-gray-600">
                 Página {page + 1} - {patients.length} resultados
               </div>
@@ -263,6 +239,7 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
                     setPage(nextPage);
                     void runSearch(nextPage);
                   }}
+                  aria-label="Página anterior"
                   disabled={page === 0}
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -275,6 +252,7 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
                     setPage(nextPage);
                     void runSearch(nextPage);
                   }}
+                  aria-label="Próxima página"
                   disabled={patients.length < limit}
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -289,7 +267,7 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
       <Dialog open={viewingPatient !== null} onOpenChange={(open) => {
         if (!open) setViewingPatient(null);
       }}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Visualizar Paciente</DialogTitle>
           </DialogHeader>
@@ -320,7 +298,7 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
               Tem certeza que deseja deletar este paciente? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="flex gap-4 justify-end">
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
@@ -335,3 +313,4 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
     </div>
   );
 }
+

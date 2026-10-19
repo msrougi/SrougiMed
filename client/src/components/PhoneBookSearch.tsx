@@ -1,3 +1,4 @@
+import RecordActions from "./RecordActions";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Trash2, ChevronLeft, ChevronRight, Edit, Eye } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import PhoneBookView from "@/components/PhoneBookView";
 
@@ -111,12 +112,12 @@ export default function PhoneBookSearch({ onEditEntry }: PhoneBookSearchProps) {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
           Buscar Contato
         </h3>
-          <div className="flex gap-4">
-            <div className="flex-1">
+          <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
+            <div className="min-w-0 flex-1">
               <Label htmlFor="search">Nome do Contato</Label>
               <Input
                 id="search"
@@ -125,7 +126,7 @@ export default function PhoneBookSearch({ onEditEntry }: PhoneBookSearchProps) {
                 placeholder="Digite o nome para buscar"
               />
             </div>
-            <div className="flex items-end">
+            <div className="flex items-end [&>button]:w-full">
               <Button onClick={handleSearch} className="bg-blue-600 hover:bg-blue-700">
                 Buscar
               </Button>
@@ -148,7 +149,7 @@ export default function PhoneBookSearch({ onEditEntry }: PhoneBookSearchProps) {
           </div>
         ) : (
           <>
-            <Table>
+            <Table responsive>
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
@@ -162,53 +163,21 @@ export default function PhoneBookSearch({ onEditEntry }: PhoneBookSearchProps) {
               <TableBody>
                 {entries.map((entry) => (
                   <TableRow key={entry.id}>
-                    <TableCell className="min-w-48 max-w-72 whitespace-normal break-words font-medium">{entry.name}</TableCell>
-                    <TableCell className="max-w-60 whitespace-normal break-words">{entry.phone || "-"}</TableCell>
-                    <TableCell className="max-w-60 whitespace-normal [overflow-wrap:anywhere]">{entry.email || "-"}</TableCell>
-                    <TableCell className="max-w-48 whitespace-normal break-words">{entry.occupation || "-"}</TableCell>
-                    <TableCell className="max-w-48 whitespace-normal break-words">{entry.category || "-"}</TableCell>
-                    <TableCell className="sticky right-0 z-10 w-36 min-w-36 border-l bg-white text-right">
-                      <div className="flex items-center justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Visualizar contato"
-                        title="Visualizar contato"
-                        onClick={() => setViewingEntry(entry)}
-                        className="h-8 w-8 shrink-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Editar contato"
-                        title="Editar contato"
-                        onClick={() => {
-                          if (onEditEntry) onEditEntry(entry);
-                        }}
-                        className="h-8 w-8 shrink-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Deletar contato"
-                        title="Deletar contato"
-                        onClick={() => setDeleteId(entry.id)}
-                        className="h-8 w-8 shrink-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                      </div>
+                    <TableCell data-label="Nome" className="min-w-48 max-w-72 whitespace-normal break-words font-medium">{entry.name}</TableCell>
+                    <TableCell data-label="Telefone" className="max-w-60 whitespace-normal break-words">{entry.phone || "-"}</TableCell>
+                    <TableCell data-label="E-mail" className="max-w-60 whitespace-normal [overflow-wrap:anywhere]">{entry.email || "-"}</TableCell>
+                    <TableCell data-label="Ocupação" className="max-w-48 whitespace-normal break-words">{entry.occupation || "-"}</TableCell>
+                    <TableCell data-label="Categoria" className="max-w-48 whitespace-normal break-words">{entry.category || "-"}</TableCell>
+                    <TableCell data-label="Ações" className="record-actions sticky right-0 z-10 w-36 min-w-36 border-l bg-white text-right">
+                      <RecordActions subject="contato" onView={() => setViewingEntry(entry)}
+                        onEdit={() => { onEditEntry?.(entry); }} onDelete={() => setDeleteId(entry.id)} />
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
 
-            <div className="flex items-center justify-between p-4 border-t">
+            <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-t">
               <div className="text-sm text-gray-600">
                 Página {page + 1} - {entries.length} resultados
               </div>
@@ -217,6 +186,7 @@ export default function PhoneBookSearch({ onEditEntry }: PhoneBookSearchProps) {
                   variant="outline"
                   size="sm"
                   onClick={() => setPage(Math.max(0, page - 1))}
+                  aria-label="Página anterior"
                   disabled={page === 0}
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -225,6 +195,7 @@ export default function PhoneBookSearch({ onEditEntry }: PhoneBookSearchProps) {
                   variant="outline"
                   size="sm"
                   onClick={() => setPage(page + 1)}
+                  aria-label="Próxima página"
                   disabled={entries.length < limit}
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -239,7 +210,7 @@ export default function PhoneBookSearch({ onEditEntry }: PhoneBookSearchProps) {
       <Dialog open={viewingEntry !== null} onOpenChange={(open) => {
         if (!open) setViewingEntry(null);
       }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Visualizar Contato</DialogTitle>
           </DialogHeader>
@@ -265,7 +236,7 @@ export default function PhoneBookSearch({ onEditEntry }: PhoneBookSearchProps) {
               Tem certeza que deseja deletar este contato? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="flex gap-4 justify-end">
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}

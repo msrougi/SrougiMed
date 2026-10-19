@@ -55,8 +55,8 @@ export default function ExportPatients() {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
           <h3 className="text-lg font-semibold text-gray-800">
             Exportar Dados de Pacientes
@@ -67,7 +67,7 @@ export default function ExportPatients() {
         </div>
       </div>
 
-      <div className="flex gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
         <Button
           onClick={handleExportCSV}
           disabled={isExporting || patients.length === 0}

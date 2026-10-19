@@ -91,7 +91,7 @@ export default function PatientView({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6 [overflow-wrap:anywhere]">
       {/* Informações Pessoais */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-900">Informações Pessoais</h3>
@@ -255,7 +255,7 @@ export default function PatientView({
               Informações adicionais sobre {patient.name}
             </DialogDescription>
           </DialogHeader>
-          <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 max-h-96 overflow-y-auto">
+          <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 max-h-[50dvh] overflow-y-auto">
             <p className="text-sm text-gray-700 whitespace-pre-wrap">
               {patient.notes}
             </p>

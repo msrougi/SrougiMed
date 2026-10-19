@@ -24,18 +24,18 @@ export default function PhoneBookTab() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
         <h2 className="text-2xl font-bold text-gray-800 mb-6">
           Agenda Telefônica
         </h2>
 
-        <div className="flex gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
           <Button
             onClick={() => {
               setShowSearch(!showSearch);
               setShowRegister(false);
             }}
-            className="flex items-center gap-2"
+            className="flex items-center justify-center gap-2"
           >
             <Search className="w-4 h-4" />
             Buscar
@@ -46,7 +46,7 @@ export default function PhoneBookTab() {
               setShowRegister(!showRegister);
               setShowSearch(false);
             }}
-            className="flex items-center gap-2"
+            className="flex items-center justify-center gap-2"
           >
             <UserPlus className="w-4 h-4" />
             Cadastrar
