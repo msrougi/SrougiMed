@@ -65,6 +65,10 @@ try {
  if(launchError||server.exitCode!==null){outcome='PROCESS_EXITED';break;}
  }
  emit('result',{outcome,exitCode:server.exitCode});
+ if(outcome==='READY'&&process.argv.includes('--recover')){
+ const {recoverPersonalMed}=await import('./recover-personalmed-source.mjs');
+ await recoverPersonalMed(root,env.MSSQL_SA_PASSWORD);
+ }
  if(outcome!=='READY'){
  const log=await readFile(join(root,'startup.log'),'utf8');
  emit('startup-diagnostic',log.replaceAll(env.MSSQL_SA_PASSWORD,'[redacted]').slice(0,1800));
