@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Heart } from "lucide-react";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
+import { DESKTOP_ONLY_ERROR } from "@shared/deviceAccess";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -60,6 +61,7 @@ export default function Login() {
           </div>
 
           {/* Formulário de Login */}
+          {new URLSearchParams(window.location.search).get("acesso") === "computador" && <p role="alert" className="mb-5 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">{DESKTOP_ONLY_ERROR}</p>}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="username" className="text-gray-700 dark:text-slate-200 font-medium">
