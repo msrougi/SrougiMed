@@ -1,3 +1,4 @@
+import { updateUserSchema } from "@shared/userManagement";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,9 +36,13 @@ import {
 } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Trash2, Shield, User } from "lucide-react";
+import { Trash2, Shield, User, Pencil } from "lucide-react";
 
 export default function AdminPanel() {
+  const utils = trpc.useUtils();
+  const [editingUserId, setEditingUserId] = useState<number | null>(null);
+  const emptyEditForm = { username: "", name: "", email: "", role: "user" as "admin" | "user", newPassword: "" };
+  const [editForm, setEditForm] = useState(emptyEditForm);
   const [newUser, setNewUser] = useState({
     username: "",
     password: "",
@@ -68,6 +73,29 @@ export default function AdminPanel() {
         setUsers(data);
       }
     });
+  };
+
+  const updateMutation = trpc.admin.updateUser.useMutation({
+    onSuccess: () => {
+      toast.success("Dados do usuário atualizados!");
+      setEditingUserId(null);
+      setEditForm(emptyEditForm);
+      refetch();
+      void utils.customAuth.getCurrentUser.invalidate();
+      void utils.auth.me.invalidate();
+    },
+    onError: error => toast.error(error.message || "Erro ao atualizar usuário"),
+  });
+
+  const handleUpdateUser = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (editingUserId === null || updateMutation.isPending) return;
+    const parsed = updateUserSchema.safeParse({
+      ...editForm, id: editingUserId,
+      newPassword: editForm.newPassword === "" ? undefined : editForm.newPassword,
+    });
+    if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
+    updateMutation.mutate(parsed.data);
   };
 
   // Criar usuário
@@ -164,6 +192,7 @@ export default function AdminPanel() {
               <TableRow>
                 <TableHead>Usuário</TableHead>
                 <TableHead>Nome</TableHead>
+                <TableHead>E-mail</TableHead>
                 <TableHead>Nível de Acesso</TableHead>
                 <TableHead>Criado em</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
@@ -172,8 +201,9 @@ export default function AdminPanel() {
             <TableBody>
               {users.map((user) => (
                 <TableRow key={user.id}>
-                  <TableCell data-label="Usuário" className="font-medium">{user.name || "-"}</TableCell>
-                  <TableCell data-label="Nome">{user.email || "-"}</TableCell>
+                  <TableCell data-label="Usuário" className="font-medium">{user.username || "-"}</TableCell>
+                  <TableCell data-label="Nome">{user.name || "-"}</TableCell>
+                  <TableCell data-label="E-mail">{user.email || "-"}</TableCell>
                   <TableCell data-label="Nível de Acesso">
                     <div className="flex items-center gap-2">
                       {user.role === "admin" ? (
@@ -197,6 +227,13 @@ export default function AdminPanel() {
                       : "-"}
                   </TableCell>
                   <TableCell data-label="Ações" className="record-actions text-right space-x-2">
+                    <Button variant="ghost" size="sm" className="text-brand" aria-label="Editar usuário" title="Editar usuário"
+                      onClick={() => {
+                        setEditForm({ username: user.username || "", name: user.name || "", email: user.email || "", role: user.role, newPassword: "" });
+                        setEditingUserId(user.id);
+                      }}>
+                      <Pencil className="h-4 w-4" /><span className="ml-1">Editar</span>
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
@@ -222,6 +259,52 @@ export default function AdminPanel() {
           </Table>
         )}
       </div>
+
+      <Dialog open={editingUserId !== null} onOpenChange={open => {
+        if (!open && !updateMutation.isPending) { setEditingUserId(null); setEditForm(emptyEditForm); }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar usuário</DialogTitle>
+            <DialogDescription>Atualize os dados. Deixe a nova senha vazia para manter a atual.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUpdateUser} className="space-y-4">
+            <div>
+              <Label htmlFor="edit-user-name">Nome</Label>
+              <Input id="edit-user-name" value={editForm.name} maxLength={200} autoComplete="off" disabled={updateMutation.isPending}
+                onChange={event => setEditForm({ ...editForm, name: event.target.value })} />
+            </div>
+            <div>
+              <Label htmlFor="edit-user-username">Usuário / login *</Label>
+              <Input id="edit-user-username" value={editForm.username} maxLength={100} required autoComplete="off" disabled={updateMutation.isPending}
+                onChange={event => setEditForm({ ...editForm, username: event.target.value })} />
+            </div>
+            <div>
+              <Label htmlFor="edit-user-email">E-mail</Label>
+              <Input id="edit-user-email" type="email" value={editForm.email} maxLength={320} autoComplete="off" disabled={updateMutation.isPending}
+                onChange={event => setEditForm({ ...editForm, email: event.target.value })} />
+            </div>
+            <div>
+              <Label htmlFor="edit-user-role">Nível de acesso</Label>
+              <Select value={editForm.role} disabled={updateMutation.isPending} onValueChange={value => setEditForm({ ...editForm, role: value as "admin" | "user" })}>
+                <SelectTrigger id="edit-user-role"><SelectValue /></SelectTrigger>
+                <SelectContent><SelectItem value="user">Usuário</SelectItem><SelectItem value="admin">Administrador</SelectItem></SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="edit-user-password">Nova senha</Label>
+              <Input id="edit-user-password" type="password" value={editForm.newPassword} maxLength={72} autoComplete="new-password"
+                placeholder="Deixe vazio para manter a senha" disabled={updateMutation.isPending}
+                aria-describedby="edit-user-password-help" onChange={event => setEditForm({ ...editForm, newPassword: event.target.value })} />
+              <p id="edit-user-password-help" className="mt-2 text-xs text-muted-foreground">Para trocar, informe pelo menos 8 caracteres.</p>
+            </div>
+            <div className="flex flex-wrap justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" disabled={updateMutation.isPending} onClick={() => { setEditingUserId(null); setEditForm(emptyEditForm); }}>Cancelar</Button>
+              <Button type="submit" disabled={updateMutation.isPending}>{updateMutation.isPending ? "Salvando…" : "Salvar alterações"}</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog para criar usuário */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>

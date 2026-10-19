@@ -1,3 +1,5 @@
+import { TRPCError } from "@trpc/server";
+import type { UpdateUserInput } from "../shared/userManagement";
 import { eq, like, or, and, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, patients, skinColors, maritalStatuses, genders, phoneBook, InsertPatient, InsertPhoneBookEntry } from "../drizzle/schema";
@@ -393,7 +395,41 @@ export async function getAllUsers() {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  return await db.select().from(users);
+  return await db.select({
+    id: users.id, username: users.username, name: users.name, email: users.email,
+    role: users.role, createdAt: users.createdAt, updatedAt: users.updatedAt,
+    lastSignedIn: users.lastSignedIn,
+  }).from(users);
+}
+
+export async function updateManagedUser(input: UpdateUserInput) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const changes: Partial<InsertUser> = {
+    username: input.username,
+    name: input.name || null,
+    email: input.email || null,
+    role: input.role,
+  };
+  if (input.newPassword !== undefined) {
+    const bcrypt = await import("bcryptjs");
+    changes.password = await bcrypt.hash(input.newPassword, 10);
+  }
+  try {
+    await db.transaction(async tx => {
+      const [existing] = await tx.select({ id: users.id }).from(users)
+        .where(eq(users.id, input.id)).limit(1).for("update");
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Usuário não encontrado" });
+      await tx.update(users).set(changes).where(eq(users.id, input.id));
+    });
+  } catch (error) {
+    const mysql = error as { code?: string; cause?: { code?: string } };
+    if (mysql.code === "ER_DUP_ENTRY" || mysql.cause?.code === "ER_DUP_ENTRY") {
+      throw new TRPCError({ code: "CONFLICT", message: "Este login já está em uso" });
+    }
+    throw error;
+  }
+  return { success: true };
 }
 
 export async function createUser(data: { username: string; password: string; name?: string; role: "admin" | "user" }) {
