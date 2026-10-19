@@ -11,11 +11,11 @@ export default function AdminTab() {
   return (
     <div className="space-y-6">
       {/* Abas */}
-      <div className="flex gap-4 border-b border-gray-200">
+      <div className="grid grid-cols-1 gap-2 border-b border-gray-200 pb-3 sm:grid-cols-3">
         <Button
           variant={activeTab === "users" ? "default" : "ghost"}
           onClick={() => setActiveTab("users")}
-          className="flex items-center gap-2"
+          className="h-auto min-h-11 min-w-0 justify-center gap-2 whitespace-normal px-2 py-2 text-sm"
         >
           <Users className="w-4 h-4" />
           Gerenciar Usuários
@@ -23,7 +23,7 @@ export default function AdminTab() {
         <Button
           variant={activeTab === "export" ? "default" : "ghost"}
           onClick={() => setActiveTab("export")}
-          className="flex items-center gap-2"
+          className="h-auto min-h-11 min-w-0 justify-center gap-2 whitespace-normal px-2 py-2 text-sm"
         >
           <Download className="w-4 h-4" />
           Exportar Dados
@@ -31,7 +31,7 @@ export default function AdminTab() {
         <Button
           variant={activeTab === "import" ? "default" : "ghost"}
           onClick={() => setActiveTab("import")}
-          className="flex items-center gap-2"
+          className="h-auto min-h-11 min-w-0 justify-center gap-2 whitespace-normal px-2 py-2 text-sm"
         >
           <Upload className="w-4 h-4" />
           Importar Dados

@@ -97,7 +97,7 @@ export default function ImportPatients() {
   return (
     <div className="space-y-6">
       {/* Upload Section */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
           Importar Pacientes
         </h3>
@@ -107,17 +107,17 @@ export default function ImportPatients() {
             <Label htmlFor="file-upload">
               Selecione um arquivo CSV ou Excel
             </Label>
-            <div className="mt-2 flex items-center gap-4">
+            <div className="mt-2 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
               <Input
                 id="file-upload"
                 type="file"
                 accept=".csv,.xlsx,.xls"
                 onChange={handleFileChange}
                 disabled={isProcessing}
-                className="flex-1"
+                className="min-w-0 flex-1"
               />
               {selectedFile && (
-                <div className="text-sm text-green-600 font-medium">
+                <div className="min-w-0 break-all text-sm text-green-600 font-medium">
                   ✓ {selectedFile.name}
                 </div>
               )}
@@ -136,15 +136,15 @@ export default function ImportPatients() {
 
       {/* Preview Section */}
       {parsedData.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h3 className="text-lg font-semibold text-gray-800">
               Pré-visualização ({parsedData.length} pacientes)
             </h3>
           </div>
 
           <div className="overflow-x-auto">
-            <Table>
+            <Table responsive>
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
@@ -157,13 +157,13 @@ export default function ImportPatients() {
               <TableBody>
                 {parsedData.slice(0, 10).map((patient, idx) => (
                   <TableRow key={idx}>
-                    <TableCell className="font-medium">
+                    <TableCell data-label="Nome" className="font-medium">
                       {patient.name}
                     </TableCell>
-                    <TableCell>{patient.phone || "-"}</TableCell>
-                    <TableCell>{patient.email || "-"}</TableCell>
-                    <TableCell>{patient.city || "-"}</TableCell>
-                    <TableCell>{patient.occupation || "-"}</TableCell>
+                    <TableCell data-label="Telefone">{patient.phone || "-"}</TableCell>
+                    <TableCell data-label="E-mail">{patient.email || "-"}</TableCell>
+                    <TableCell data-label="Cidade">{patient.city || "-"}</TableCell>
+                    <TableCell data-label="Ocupação">{patient.occupation || "-"}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -176,7 +176,7 @@ export default function ImportPatients() {
             </div>
           )}
 
-          <div className="mt-6 flex gap-4">
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:gap-4">
             <Button
               onClick={() => setShowConfirm(true)}
               className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
@@ -208,7 +208,7 @@ export default function ImportPatients() {
       <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
+            <AlertDialogTitle className="flex items-center justify-center gap-2">
               <AlertTriangle className="w-5 h-5 text-yellow-600" />
               Confirmar Importação
             </AlertDialogTitle>
@@ -217,7 +217,7 @@ export default function ImportPatients() {
               ação não pode ser desfeita. Deseja continuar?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="flex gap-4 justify-end">
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleImport}

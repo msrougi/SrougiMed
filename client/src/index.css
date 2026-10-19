@@ -175,3 +175,124 @@
     }
   }
 }
+/* Content stays within its column, including imported text without spaces. */
+.medical-app .grid > *,
+.medical-app form > *,
+[data-slot="dialog-content"] .grid > * {
+  min-width: 0;
+}
+.medical-app p,
+[data-slot="dialog-content"],
+[data-slot="alert-dialog-content"] {
+  overflow-wrap: anywhere;
+}
+.app-shell {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@media (max-width: 767px) {
+  /* Comfortable touch targets and 16px fields prevent focus zoom on iOS. */
+  .medical-app button,
+  [data-slot="dialog-content"] button,
+  [data-slot="alert-dialog-content"] button {
+    min-height: 44px;
+  }
+  .medical-app input,
+  .medical-app textarea,
+  .medical-app [data-slot="select-trigger"],
+  [data-slot="dialog-content"] input,
+  [data-slot="dialog-content"] textarea,
+  [data-slot="dialog-content"] [data-slot="select-trigger"] {
+    font-size: 16px;
+    min-height: 44px;
+    max-width: 100%;
+  }
+  /* One record per card on mobile; keep the same data and action handlers. */
+  [data-responsive="true"] {
+    overflow: visible;
+  }
+  [data-responsive="true"] table,
+  [data-responsive="true"] tbody {
+    display: block;
+    width: 100%;
+  }
+  [data-responsive="true"] thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  [data-responsive="true"] tbody tr {
+    display: block;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  [data-responsive="true"] tbody td {
+    display: grid;
+    grid-template-columns: minmax(0, 6.5rem) minmax(0, 1fr);
+    gap: .75rem;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    padding: .375rem 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: left;
+  }
+  [data-responsive="true"] tbody td::before {
+    content: attr(data-label);
+    font-weight: 500;
+    color: var(--muted-foreground);
+  }
+  [data-responsive="true"] tbody td:first-child {
+    display: block;
+    padding-bottom: .75rem;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  [data-responsive="true"] tbody td:first-child::before,
+  [data-responsive="true"] tbody td.record-actions::before {
+    display: none;
+  }
+  [data-responsive="true"] tbody td.record-actions {
+    position: static;
+    display: block;
+    margin-top: .75rem;
+    padding-top: .75rem;
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
+  [data-responsive="true"] tbody td.record-actions > button {
+    margin: .25rem;
+  }
+}
+
+@media (pointer: coarse) {
+  .medical-app button,
+  [data-slot="dialog-content"] button,
+  [data-slot="alert-dialog-content"] button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .medical-app input,
+  .medical-app textarea,
+  .medical-app [data-slot="select-trigger"],
+  [data-slot="dialog-content"] input,
+  [data-slot="dialog-content"] textarea,
+  [data-slot="dialog-content"] [data-slot="select-trigger"] {
+    font-size: 16px;
+    min-height: 44px;
+  }
+}
+
+.login-screen {
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+  padding-top: max(1rem, env(safe-area-inset-top));
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}

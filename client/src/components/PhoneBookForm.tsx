@@ -104,7 +104,7 @@ export default function PhoneBookForm({ onSuccess, initialData }: PhoneBookFormP
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
           {initialData?.id ? "Editar Contato" : "Novo Contato"}
         </h3>
@@ -190,7 +190,7 @@ export default function PhoneBookForm({ onSuccess, initialData }: PhoneBookFormP
         </div>
       </div>
 
-      <div className="flex gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
         <Button
           type="submit"
           className="flex-1 bg-[#0d9488] hover:bg-[#0d7a6d]"
