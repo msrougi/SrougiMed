@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { sourceFiles, chunkSize } from "../../../shared/personalmedUpload";
+const labels = {backup: "Backup anterior (.zip)", patients: "Pacientes extraídos do backup anterior (.jsonl.gz)", backup_updated: "Backup atualizado (.zip)"} as const;
 export default function MigrationUpload(){
  const [status,setStatus]=useState("");const [busy,setBusy]=useState(false);
  const put=trpc.migrationUpload.put.useMutation();const finish=trpc.migrationUpload.finish.useMutation();
@@ -15,5 +16,5 @@ export default function MigrationUpload(){
  }catch(e){setStatus(e instanceof Error?e.message:"Falha no envio. Tente novamente para retomar.");}finally{setBusy(false);}}
  return <details className="mt-8 rounded border p-4"><summary>Preparar migração PersonalMed</summary>
  <p className="my-3">Envie os arquivos de origem autorizados para conferência. A importação e a limpeza dos testes serão executadas em etapa separada.</p>
- {(["backup","patients"] as const).map(key=><label className="block my-3" key={key}>{key==="backup"?"Backup original (.zip)":"Pacientes extraídos (.jsonl.gz)"}<input aria-label={key==="backup"?"Backup original":"Pacientes extraídos"} className="block" type="file" disabled={busy} onChange={e=>{if(e.target.files?.[0])void upload(key,e.target.files[0]);}}/></label>)}<p role="status">{status}</p></details>;
+ {(["backup_updated","backup","patients"] as const).map(key=><label className="block my-3" key={key}>{labels[key]}<input aria-label={labels[key]} className="block" type="file" disabled={busy} onChange={e=>{if(e.target.files?.[0])void upload(key,e.target.files[0]);}}/></label>)}<p role="status">{status}</p></details>;
 }

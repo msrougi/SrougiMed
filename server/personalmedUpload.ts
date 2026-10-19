@@ -6,7 +6,7 @@ import { z } from "zod";
 import { protectedProcedure, router } from "./_core/trpc";
 import { connectionConfig } from "../scripts/inspect-aiven.mjs";
 import { sourceFiles, chunkSize } from "../shared/personalmedUpload";
-const key = z.enum(["backup", "patients"]);
+const key = z.enum(["backup", "patients", "backup_updated"]);
 async function connect() {
  const db = await mysql.createConnection(connectionConfig(process.env.DATABASE_URL));
  await db.query(`CREATE TABLE IF NOT EXISTS srougi_personalmed_upload_chunks (
@@ -18,7 +18,7 @@ async function connect() {
  return db;
 }
 export const migrationUpload = router({
- put: protectedProcedure.input(z.object({key,part:z.number().int().min(0).max(126),
+ put: protectedProcedure.input(z.object({key,part:z.number().int().min(0).max(1023),
  data:z.string().max(Math.ceil(chunkSize/3)*4).regex(/^[A-Za-z0-9+/]+={0,2}$/)}))
  .mutation(async ({input}) => {
  const spec = sourceFiles[input.key];
