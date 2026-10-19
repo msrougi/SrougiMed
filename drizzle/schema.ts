@@ -59,7 +59,7 @@ export type InsertGender = typeof genders.$inferInsert;
 export const patients = mysqlTable("patients", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 200 }).notNull(),
-  code: varchar("code", { length: 10 }).notNull().unique().$defaultFn(() => ''),
+  code: varchar("code", { length: 10 }).notNull().unique(),
   address: varchar("address", { length: 200 }),
   district: varchar("district", { length: 100 }),
   cep: varchar("cep", { length: 9 }),

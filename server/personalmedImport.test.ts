@@ -22,15 +22,14 @@ beforeEach(() => {
 });
 
 describe("Persistência dos pacientes migrados", () => {
-  it("preserva dois pacientes com CPF igual e gera códigos distintos quando não fornecidos", async () => {
-    fake.select.mockReturnValueOnce(rows([{ maxCode: 2 }])).mockReturnValueOnce(rows([{ maxCode: 3 }]));
+  it("preserva CPFs legados repetidos com prontuários informados manualmente", async () => {
     const result = await importPatients([
-      { name: "Paciente de teste A", cpf: "12345678900", phone: "11 1111-1111 / 11 2222-2222", district: "Bairro sintético", motherName: "Mãe sintética", fatherName: "Pai sintético", responsibleName: "Responsável sintético", responsiblePhone: "11 3333-3333 / 11 4444-4444" },
-      { name: "Paciente de teste B", cpf: "12345678900" },
+      { code: "48612", name: "Paciente de teste A", cpf: "12345678900", phone: "11 1111-1111 / 11 2222-2222", district: "Bairro sintético", motherName: "Mãe sintética", fatherName: "Pai sintético", responsibleName: "Responsável sintético", responsiblePhone: "11 3333-3333 / 11 4444-4444" },
+      { code: "48613", name: "Paciente de teste B", cpf: "12345678900" },
     ]);
     expect(result).toMatchObject({ successCount: 2, errorCount: 0 });
     expect(fake.values.mock.calls.map(([value]) => [value.code, value.cpf, value.legacyImported])).toEqual([
-      ["000000003", "12345678900", true], ["000000004", "12345678900", true],
+      ["48612", "12345678900", true], ["48613", "12345678900", true],
     ]);
     expect(fake.values.mock.calls[0][0]).toMatchObject({ district: "Bairro sintético", motherName: "Mãe sintética", fatherName: "Pai sintético", responsibleName: "Responsável sintético", responsiblePhone: "11 3333-3333 / 11 4444-4444" });
     expect(fake.values.mock.calls[1][0].birthDate).toBeUndefined();

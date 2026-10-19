@@ -1,3 +1,4 @@
+import { recordNumberSchema, RECORD_NUMBER_MAX_LENGTH } from "@shared/recordNumber";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ interface PatientFormProps {
 }
 
 const defaultFormData = {
+  code: "",
   name: "",
   address: "",
   district: "",
@@ -351,6 +353,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
     e.preventDefault();
 
     const requiredFields: Array<[string, string]> = [
+      ["code", "Prontuário"],
       ["name", "Nome"],
       ["cpf", "CPF"],
       ["cep", "CEP"],
@@ -363,7 +366,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
     ];
 
     const missingFields = requiredFields
-      .filter(([field]) => (!isLegacy || field === "name") && !String(formData[field] ?? "").trim())
+      .filter(([field]) => (!isLegacy || field === "name" || field === "code") && !String(formData[field] ?? "").trim())
       .map(([, label]) => label);
 
     if (missingFields.length > 0) {
@@ -371,8 +374,12 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
       return;
     }
 
+    const parsedCode = recordNumberSchema.safeParse(formData.code);
+    if (!parsedCode.success) { toast.error(parsedCode.error.issues[0].message); return; }
+
     // Preparar dados para envio
     const submitData = {
+      code: parsedCode.data,
       name: formData.name,
       address: formData.address || undefined,
       district: formData.district || undefined,
@@ -424,6 +431,13 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
           {initialData?.id ? "Editar Paciente" : "Informações Básicas"}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="patient-record-number">Prontuário *</Label>
+            <Input id="patient-record-number" name="code" inputMode="numeric" pattern="[0-9]{1,8}" maxLength={RECORD_NUMBER_MAX_LENGTH}
+              value={formData.code} required onChange={event => setFormData({ ...formData, code: event.target.value.replace(/\D/g, "").slice(0, RECORD_NUMBER_MAX_LENGTH) })}
+              placeholder="Digite o número do prontuário" aria-describedby="patient-record-number-help" />
+            <p id="patient-record-number-help" className="mt-2 text-xs text-muted-foreground">Preenchimento manual. Até 8 dígitos, sem repetir outro paciente.</p>
+          </div>
           <div>
             <Label htmlFor="name">Nome *</Label>
             <Input
