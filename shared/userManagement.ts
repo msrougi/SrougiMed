@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { chatGroupSchema } from "./chatMed";
 
 export const updateUserSchema = z.object({
   id: z.number().int().positive(),
@@ -6,6 +7,7 @@ export const updateUserSchema = z.object({
   name: z.string().trim().max(200, "O nome deve ter no máximo 200 caracteres"),
   email: z.string().trim().max(320).refine(value => !value || z.string().email().safeParse(value).success, "Informe um e-mail válido"),
   role: z.enum(["admin", "user"]),
+  chatGroup: chatGroupSchema.optional(),
   newPassword: z.string().min(8, "A nova senha deve ter pelo menos 8 caracteres")
     .refine(value => value.trim().length > 0, "A senha não pode conter apenas espaços")
     .refine(value => new TextEncoder().encode(value).length <= 72, "A nova senha deve ter no máximo 72 bytes")

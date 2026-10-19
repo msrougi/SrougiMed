@@ -1,4 +1,5 @@
 import { restoreRecordNumbers } from "../restoreRecordNumbers";
+import { prepareChatMed } from "../prepareChatMed";
 import { getDb } from "../db";
 import "dotenv/config";
 import express from "express";
@@ -35,6 +36,7 @@ async function startServer() {
     if (!database) throw new Error("Database not available for record-number migration");
     const connection = await database.$client.promise().getConnection();
     try {
+      await prepareChatMed(connection);
       const result = await restoreRecordNumbers(connection);
       console.log("[record-numbers]", JSON.stringify(result));
     } finally { connection.release(); }
