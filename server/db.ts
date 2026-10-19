@@ -1,4 +1,5 @@
 import { recordNumberSchema } from "../shared/recordNumber";
+import { chatGroupSchema } from "../shared/chatMed";
 import { changePasswordSchema, type ChangePasswordInput } from "../shared/changePassword";
 import type { PatientSearchInput, PhoneBookSearchInput } from "../shared/pagination";
 import { pagination, patientSearchSchema, phoneBookSearchSchema, searchPattern, cpfSearchSchema } from "../shared/pagination";
@@ -481,7 +482,7 @@ export async function getAllUsers() {
   
   return await db.select({
     id: users.id, username: users.username, name: users.name, email: users.email,
-    role: users.role, createdAt: users.createdAt, updatedAt: users.updatedAt,
+    role: users.role, chatGroup: users.chatGroup, createdAt: users.createdAt, updatedAt: users.updatedAt,
     lastSignedIn: users.lastSignedIn,
   }).from(users);
 }
@@ -499,6 +500,7 @@ export async function updateManagedUser(input: UpdateUserInput) {
     const bcrypt = await import("bcryptjs");
     changes.password = await bcrypt.hash(input.newPassword, 10);
   }
+  if (input.chatGroup !== undefined) changes.chatGroup = chatGroupSchema.parse(input.chatGroup) || null;
   try {
     await db.transaction(async tx => {
       const [existing] = await tx.select({ id: users.id }).from(users)
@@ -516,7 +518,7 @@ export async function updateManagedUser(input: UpdateUserInput) {
   return { success: true };
 }
 
-export async function createUser(data: { username: string; password: string; name?: string; role: "admin" | "user" }) {
+export async function createUser(data: { username: string; password: string; name?: string; role: "admin" | "user"; chatGroup?: string }) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
@@ -529,6 +531,7 @@ export async function createUser(data: { username: string; password: string; nam
     password: hashedPassword,
     name: data.name || data.username,
     role: data.role,
+    chatGroup: chatGroupSchema.parse(data.chatGroup ?? "") || null,
   });
   
   return result;

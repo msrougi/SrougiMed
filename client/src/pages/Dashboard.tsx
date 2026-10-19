@@ -1,5 +1,6 @@
 import { useState } from "react";
 import ChangePasswordDialog from "@/components/ChangePasswordDialog";
+import ChatMed from "@/components/ChatMed";
 import { useQueryClient } from "@tanstack/react-query";
 import { ThemeOptions } from "@/components/ThemeSwitcher";
 import InstallApp from "@/components/InstallApp";
@@ -106,6 +107,7 @@ export default function Dashboard() {
       </header>
 
       <ChangePasswordDialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen} />
+      <ChatMed key={user.id} userId={user.id} />
 
       {/* Main Content */}
       <main className="container relative mx-auto -mt-7 min-w-0 px-4 pb-6 lg:mt-0 lg:py-8">

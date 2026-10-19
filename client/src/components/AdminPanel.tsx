@@ -41,11 +41,12 @@ import { Trash2, Shield, User, Pencil } from "lucide-react";
 export default function AdminPanel() {
   const utils = trpc.useUtils();
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
-  const emptyEditForm = { username: "", name: "", email: "", role: "user" as "admin" | "user", newPassword: "" };
+  const emptyEditForm = { username: "", name: "", email: "", role: "user" as "admin" | "user", newPassword: "", chatGroup: "" };
   const [editForm, setEditForm] = useState(emptyEditForm);
   const [newUser, setNewUser] = useState({
     username: "",
     password: "",
+    chatGroup: "",
     name: "",
     role: "user" as "admin" | "user",
   });
@@ -83,6 +84,7 @@ export default function AdminPanel() {
       refetch();
       void utils.customAuth.getCurrentUser.invalidate();
       void utils.auth.me.invalidate();
+      void utils.chatMed.threads.invalidate();
     },
     onError: error => toast.error(error.message || "Erro ao atualizar usuário"),
   });
@@ -102,7 +104,7 @@ export default function AdminPanel() {
   const createMutation = trpc.admin.createUser.useMutation({
     onSuccess: () => {
       toast.success("Usuário criado com sucesso!");
-      setNewUser({ username: "", password: "", name: "", role: "user" });
+      setNewUser({ username: "", password: "", name: "", chatGroup: "", role: "user" });
       setShowCreateDialog(false);
       refetch();
     },
@@ -165,6 +167,7 @@ export default function AdminPanel() {
 
   return (
     <div className="space-y-6">
+      <datalist id="chatmed-groups">{Array.from(new Set(users.map(user => user.chatGroup).filter(Boolean))).map(group => <option key={group} value={group} />)}</datalist>
       {/* Botão para criar usuário */}
       <div className="bg-white dark:bg-card rounded-lg shadow p-4 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -193,6 +196,7 @@ export default function AdminPanel() {
                 <TableHead>Usuário</TableHead>
                 <TableHead>Nome</TableHead>
                 <TableHead>E-mail</TableHead>
+                <TableHead>Grupo de chat</TableHead>
                 <TableHead>Nível de Acesso</TableHead>
                 <TableHead>Criado em</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
@@ -204,6 +208,7 @@ export default function AdminPanel() {
                   <TableCell data-label="Usuário" className="font-medium">{user.username || "-"}</TableCell>
                   <TableCell data-label="Nome">{user.name || "-"}</TableCell>
                   <TableCell data-label="E-mail">{user.email || "-"}</TableCell>
+                  <TableCell data-label="Grupo de chat">{user.chatGroup || "Sem grupo"}</TableCell>
                   <TableCell data-label="Nível de Acesso">
                     <div className="flex items-center gap-2">
                       {user.role === "admin" ? (
@@ -229,7 +234,7 @@ export default function AdminPanel() {
                   <TableCell data-label="Ações" className="record-actions text-right space-x-2">
                     <Button variant="ghost" size="sm" className="text-brand" aria-label="Editar usuário" title="Editar usuário"
                       onClick={() => {
-                        setEditForm({ username: user.username || "", name: user.name || "", email: user.email || "", role: user.role, newPassword: "" });
+                        setEditForm({ username: user.username || "", name: user.name || "", email: user.email || "", role: user.role, newPassword: "", chatGroup: user.chatGroup || "" });
                         setEditingUserId(user.id);
                       }}>
                       <Pencil className="h-4 w-4" /><span className="ml-1">Editar</span>
@@ -284,6 +289,13 @@ export default function AdminPanel() {
               <Input id="edit-user-email" type="email" value={editForm.email} maxLength={320} autoComplete="off" disabled={updateMutation.isPending}
                 onChange={event => setEditForm({ ...editForm, email: event.target.value })} />
             </div>
+            <div>
+              <Label htmlFor="edit-user-chat-group">Grupo de chat</Label>
+              <Input id="edit-user-chat-group" list="chatmed-groups" maxLength={60} value={editForm.chatGroup}
+                placeholder="Ex.: equipe da clínica" onChange={event => setEditForm({ ...editForm, chatGroup: event.target.value })} />
+              <p className="mt-2 text-xs text-muted-foreground">Use o mesmo grupo para reunir a equipe. Em branco, o usuário fica sem chat. Mudar o grupo muda seu acesso às conversas.</p>
+            </div>
+
             <div>
               <Label htmlFor="edit-user-role">Nível de acesso</Label>
               <Select value={editForm.role} disabled={updateMutation.isPending} onValueChange={value => setEditForm({ ...editForm, role: value as "admin" | "user" })}>
@@ -354,6 +366,13 @@ export default function AdminPanel() {
                 }
                 placeholder="Nome completo"
               />
+            </div>
+
+            <div>
+              <Label htmlFor="new-user-chat-group">Grupo de chat</Label>
+              <Input id="new-user-chat-group" list="chatmed-groups" maxLength={60} value={newUser.chatGroup}
+                placeholder="Ex.: equipe da clínica" onChange={event => setNewUser({ ...newUser, chatGroup: event.target.value })} />
+              <p className="mt-2 text-xs text-muted-foreground">Use o mesmo grupo para reunir a equipe. Em branco, o usuário fica sem chat. Mudar o grupo muda seu acesso às conversas.</p>
             </div>
 
             <div>

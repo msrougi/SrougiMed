@@ -16,6 +16,14 @@ beforeEach(() => {
 });
 
 describe("persistência da edição de usuários", () => {
+  it("normaliza o grupo de chat e permite retirar o usuário da equipe", async () => {
+    await updateManagedUser({ ...input, chatGroup: "  EQUIPE   Clínica " });
+    expect(db.set.mock.calls[0][0]).toHaveProperty("chatGroup", "equipe clínica");
+    await updateManagedUser({ ...input, chatGroup: "" });
+    expect(db.set.mock.calls[1][0]).toHaveProperty("chatGroup", null);
+    await updateManagedUser(input);
+    expect(db.set.mock.calls[2][0]).not.toHaveProperty("chatGroup");
+  });
   it("mantém a senha existente quando não foi informada nova senha", async () => {
     await expect(updateManagedUser(input)).resolves.toEqual({ success: true });
     expect(db.set).toHaveBeenCalledWith({ username: input.username, name: input.name, email: input.email, role: input.role });
