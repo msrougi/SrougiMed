@@ -156,44 +156,52 @@ export default function PhoneBookSearch({ onEditEntry }: PhoneBookSearchProps) {
                   <TableHead>E-mail</TableHead>
                   <TableHead>Ocupação</TableHead>
                   <TableHead>Categoria</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  <TableHead className="sticky right-0 z-20 w-36 min-w-36 border-l bg-white text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {entries.map((entry) => (
                   <TableRow key={entry.id}>
-                    <TableCell className="font-medium">{entry.name}</TableCell>
-                    <TableCell>{entry.phone || "-"}</TableCell>
-                    <TableCell>{entry.email || "-"}</TableCell>
-                    <TableCell>{entry.occupation || "-"}</TableCell>
-                    <TableCell>{entry.category || "-"}</TableCell>
-                    <TableCell className="text-right space-x-2">
+                    <TableCell className="min-w-48 max-w-72 whitespace-normal break-words font-medium">{entry.name}</TableCell>
+                    <TableCell className="max-w-60 whitespace-normal break-words">{entry.phone || "-"}</TableCell>
+                    <TableCell className="max-w-60 whitespace-normal [overflow-wrap:anywhere]">{entry.email || "-"}</TableCell>
+                    <TableCell className="max-w-48 whitespace-normal break-words">{entry.occupation || "-"}</TableCell>
+                    <TableCell className="max-w-48 whitespace-normal break-words">{entry.category || "-"}</TableCell>
+                    <TableCell className="sticky right-0 z-10 w-36 min-w-36 border-l bg-white text-right">
+                      <div className="flex items-center justify-end gap-1">
                       <Button
                         variant="ghost"
-                        size="sm"
+                        size="icon"
+                        aria-label="Visualizar contato"
+                        title="Visualizar contato"
                         onClick={() => setViewingEntry(entry)}
-                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                        className="h-8 w-8 shrink-0 text-green-600 hover:text-green-700 hover:bg-green-50"
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
                       <Button
                         variant="ghost"
-                        size="sm"
+                        size="icon"
+                        aria-label="Editar contato"
+                        title="Editar contato"
                         onClick={() => {
                           if (onEditEntry) onEditEntry(entry);
                         }}
-                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        className="h-8 w-8 shrink-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
                       <Button
                         variant="ghost"
-                        size="sm"
+                        size="icon"
+                        aria-label="Deletar contato"
+                        title="Deletar contato"
                         onClick={() => setDeleteId(entry.id)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        className="h-8 w-8 shrink-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -272,3 +280,4 @@ export default function PhoneBookSearch({ onEditEntry }: PhoneBookSearchProps) {
     </div>
   );
 }
+
