@@ -84,7 +84,7 @@ describe.skipIf(!url)("MySQL real isolado — dados sintéticos", () => {
           return [
             id,
             `Fixture ${id <= 237 ? "Maria" : "Outro"} ${String(id).padStart(6, "0")}`,
-            String(id).padStart(9, "0"),
+            String(id),
             id % 2 ? "São Paulo" : "Santos",
             "01/01/1980",
             true,
@@ -189,14 +189,14 @@ describe.skipIf(!url)("MySQL real isolado — dados sintéticos", () => {
         birthDate: "01/01/1980",
       })
     ).toMatchObject({ total: 119 });
-    expect(await db.searchPatients({ code: "000000001" })).toMatchObject({
+    expect(await db.searchPatients({ code: "1" })).toMatchObject({
       total: 1,
     });
     expect(
       await db.searchPatients({
         name: "Maria",
         city: "São Paulo",
-        code: "000000002",
+        code: "2",
       })
     ).toMatchObject({ total: 0, items: [] });
     for (const name of ["%_", "' OR 1=1 --"]) {
@@ -266,6 +266,7 @@ describe.skipIf(!url)("MySQL real isolado — dados sintéticos", () => {
     const c = client();
     await c.customAuth.login.mutate({ username: "fixture_user_a", password });
     await c.patients.create.mutate({
+      code: "76543210",
       name: "Fixture CRUD",
       address: "Endereço sintético",
       cep: "00000-000",
@@ -284,6 +285,7 @@ describe.skipIf(!url)("MySQL real isolado — dados sintéticos", () => {
     });
     await expect(
       c.patients.create.mutate({
+        code: "76543211",
         name: "Duplicado",
         address: "Fixture",
         cep: "00000-000",

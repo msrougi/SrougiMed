@@ -8,11 +8,11 @@ function caller(role: "user" | "admin" | null) {
 
 describe("Acesso à importação", () => {
   it("administrador pode importar somente nome, sem inventar dados obrigatórios", async () => {
-    await expect(caller("admin").importData.importPatients([{ name: "Teste" }])).resolves.toEqual({ successCount: 1 });
+    await expect(caller("admin").importData.importPatients([{ code: "123", name: "Teste" }])).resolves.toEqual({ successCount: 1 });
   });
   it("usuário comum e sessão anônima não podem importar", async () => {
-    await expect(caller("user").importData.importPatients([{ name: "Teste" }])).rejects.toMatchObject({ code: "FORBIDDEN" });
-    await expect(caller(null).importData.importPatients([{ name: "Teste" }])).rejects.toThrow();
+    await expect(caller("user").importData.importPatients([{ code: "123", name: "Teste" }])).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller(null).importData.importPatients([{ code: "123", name: "Teste" }])).rejects.toThrow();
   });
   it("cadastro novo continua exigindo os campos atuais", async () => {
     await expect(caller("admin").patients.create({ name: "Teste" } as any)).rejects.toThrow();

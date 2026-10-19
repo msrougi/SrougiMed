@@ -1,3 +1,4 @@
+import { recordNumberSchema } from "../shared/recordNumber";
 import { changePasswordSchema } from "../shared/changePassword";
 import { patientSearchSchema, phoneBookSearchSchema, legacyPatientSearchSchema, legacyPhoneBookSearchSchema } from "../shared/pagination";
 import { TRPCError } from "@trpc/server";
@@ -81,6 +82,7 @@ export const appRouter = router({
   patients: router({
     create: protectedProcedure
       .input(z.object({
+        code: recordNumberSchema,
         name: z.string().trim().min(1, "Nome é obrigatório"),
         address: z.string().trim().min(1, "Endereço é obrigatório"),
         district: z.string().max(100).optional(),
@@ -249,7 +251,7 @@ export const appRouter = router({
   // Importação de dados
   importData: router({
     importPatients: adminProcedure
-      .input(z.array(patientImportSchema).max(1000))
+      .input(z.array(patientImportSchema.extend({ code: recordNumberSchema })).max(1000))
       .mutation(async ({ ctx, input }) => {
         const { importPatients } = await import("./db");
         return await importPatients(input);

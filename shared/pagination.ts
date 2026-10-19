@@ -1,3 +1,4 @@
+import { recordNumberSchema } from "./recordNumber";
 import { z } from "zod";
 
 const paging = {
@@ -8,7 +9,7 @@ const paging = {
 export const patientSearchSchema = z
   .object({
     name: z.string().trim().max(200).optional(),
-    code: z.string().trim().max(10).optional(),
+    code: z.union([z.literal(""), recordNumberSchema]).optional(),
     birthDate: z.string().trim().max(10).optional(),
     city: z.string().trim().max(100).optional(),
     ...paging,

@@ -1,3 +1,4 @@
+import { recordNumberSchema } from "../shared/recordNumber";
 import { changePasswordSchema, type ChangePasswordInput } from "../shared/changePassword";
 import type { PatientSearchInput, PhoneBookSearchInput } from "../shared/pagination";
 import { pagination, patientSearchSchema, phoneBookSearchSchema, searchPattern } from "../shared/pagination";
@@ -136,34 +137,12 @@ export async function getUserById(id: number) {
 
 // Funções de gerenciamento de pacientes
 
-export async function generatePatientCode(): Promise<string> {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  try {
-    // Usa o maior código numérico existente, não o primeiro registro por ID.
-    // Isso evita reutilizar códigos quando os pacientes foram importados,
-    // cadastrados fora de ordem ou quando o primeiro registro não é o maior.
-    const result = await db
-      .select({ maxCode: sql<number>`MAX(CAST(${patients.code} AS UNSIGNED))` })
-      .from(patients);
-
-    const maxCode = result[0]?.maxCode;
-    const nextNumber = maxCode ? Number(maxCode) + 1 : 1;
-
-    return String(nextNumber).padStart(9, "0");
-  } catch (error) {
-    console.error("Erro ao gerar codigo de paciente:", error);
-    throw new Error("Erro ao gerar codigo sequencial");
-  }
-}
-
 export async function createPatient(data: InsertPatient) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
   try {
-    const code = await generatePatientCode();
+    const code = recordNumberSchema.parse(data.code);
     
     const sanitizeString = (str: string | null | undefined): string | null =>
       str == null || !str.trim() ? null : str;
@@ -209,7 +188,14 @@ export async function createPatient(data: InsertPatient) {
       }
     }
     
-    const result = await db.insert(patients).values(sanitizedData);
+    const existingCode = await db.select({ id: patients.id }).from(patients).where(eq(patients.code, code)).limit(1);
+    if (existingCode.length) throw new TRPCError({ code: "CONFLICT", message: "Este prontuário já está em uso por outro paciente" });
+    const result = await db.insert(patients).values(sanitizedData).catch(error => {
+      if (error.code === "ER_DUP_ENTRY" || error.cause?.code === "ER_DUP_ENTRY") {
+        throw new TRPCError({ code: "CONFLICT", message: "Prontuário ou CPF já cadastrado. Confira os dados." });
+      }
+      throw error;
+    });
     console.log("[createPatient] Inserção bem-sucedida");
     return result;
   } catch (error) {
@@ -224,7 +210,7 @@ function patientSearchWhere(filters: PatientSearchInput) {
     conditions.push(
       sql`LOWER(${patients.name}) LIKE LOWER(${searchPattern(filters.name)})`
     );
-  if (filters.code) conditions.push(eq(patients.code, filters.code));
+  if (filters.code) conditions.push(eq(patients.code, recordNumberSchema.parse(filters.code)));
   if (filters.birthDate)
     conditions.push(eq(patients.birthDate, filters.birthDate));
   if (filters.city)
@@ -300,6 +286,13 @@ export async function updatePatient(id: number, data: Partial<InsertPatient>) {
     str == null || !str.trim() ? null : str;
 
   const sanitizedData: Partial<InsertPatient> = {};
+  if (data.code !== undefined) {
+    const code = recordNumberSchema.parse(data.code);
+    const existing = await db.select({ id: patients.id }).from(patients)
+      .where(and(eq(patients.code, code), sql`${patients.id} <> ${id}`)).limit(1);
+    if (existing.length) throw new TRPCError({ code: "CONFLICT", message: "Este prontuário já está em uso por outro paciente" });
+    sanitizedData.code = code;
+  }
   
   if (data.name !== undefined) sanitizedData.name = sanitizeString(data.name as string) as string;
   if (data.address !== undefined) sanitizedData.address = sanitizeString(data.address as string | undefined);
@@ -342,7 +335,12 @@ export async function updatePatient(id: number, data: Partial<InsertPatient>) {
   if (data.maritalStatusId !== undefined) sanitizedData.maritalStatusId = data.maritalStatusId;
   if (data.genderId !== undefined) sanitizedData.genderId = data.genderId;
   
-  await db.update(patients).set(sanitizedData).where(eq(patients.id, id));
+  await db.update(patients).set(sanitizedData).where(eq(patients.id, id)).catch(error => {
+    if (error.code === "ER_DUP_ENTRY" || error.cause?.code === "ER_DUP_ENTRY") {
+      throw new TRPCError({ code: "CONFLICT", message: "Prontuário ou CPF já cadastrado. Confira os dados." });
+    }
+    throw error;
+  });
 }
 
 export async function deletePatient(id: number) {
@@ -606,7 +604,7 @@ export async function importPatients(patientsData: Array<{
       // Inserir paciente
       await db.insert(patients).values({
         name: patientData.name,
-        code: patientData.code || await generatePatientCode(),
+        code: recordNumberSchema.parse(patientData.code),
         legacyImported: true,
         address: patientData.address || undefined,
         district: patientData.district || undefined,

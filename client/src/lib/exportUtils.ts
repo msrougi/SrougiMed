@@ -42,7 +42,7 @@ export function patientsToCSV(patients: PatientData[]): string {
   const headers = [
     "ID",
     "Nome",
-    "Código",
+    "Prontuário",
     "Endereço",
     "CEP",
     "Telefone",
@@ -161,7 +161,7 @@ export async function patientsToExcel(
     const data = patients.map((patient) => ({
       ID: patient.id,
       Nome: patient.name,
-      Código: patient.code || "",
+      Prontuário: patient.code || "",
       Endereço: patient.address || "",
       CEP: patient.cep || "",
       Telefone: patient.phone || "",
@@ -209,3 +209,4 @@ export async function patientsToExcel(
     throw new Error("Não foi possível exportar para Excel. Certifique-se de que o pacote 'xlsx' está instalado.");
   }
 }
+

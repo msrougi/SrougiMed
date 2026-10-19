@@ -84,12 +84,12 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
     // Validar se há pelo menos um campo com 2 ou mais caracteres
     const hasValidInput =
       (filters.name && filters.name.trim().length >= 2) ||
-      (filters.code && filters.code.trim().length >= 2) ||
+      (filters.code && /^[0-9]{1,8}$/.test(filters.code.trim())) ||
       (filters.birthDate && filters.birthDate.trim().length >= 2) ||
       (filters.city && filters.city.trim().length >= 2);
 
     if (!hasValidInput) {
-      toast.error("Digite pelo menos 2 caracteres em algum campo para buscar");
+      toast.error("Digite um prontuário ou pelo menos 2 caracteres nos demais campos para buscar");
       return;
     }
 
@@ -122,13 +122,15 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
           </div>
 
           <div>
-            <Label htmlFor="code">Código</Label>
+            <Label htmlFor="code">Prontuário</Label>
             <Input
+              inputMode="numeric"
+              maxLength={8}
               id="code"
               name="code"
               value={filters.code}
               onChange={handleFilterChange}
-              placeholder="Digite o código"
+              placeholder="Digite o prontuário"
             />
           </div>
 
@@ -204,7 +206,7 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
-                  <TableHead>Código</TableHead>
+                  <TableHead>Prontuário</TableHead>
                   <TableHead>Cidade</TableHead>
                   <TableHead>Telefone</TableHead>
                   <TableHead>E-mail</TableHead>
@@ -222,7 +224,7 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
                     >
                       {patient.name}
                     </TableCell>
-                    <TableCell data-label="Código">
+                    <TableCell data-label="Prontuário">
                       {patient.code || "-"}
                     </TableCell>
                     <TableCell

@@ -1,3 +1,5 @@
+import { restoreRecordNumbers } from "../restoreRecordNumbers";
+import { getDb } from "../db";
 import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
@@ -28,6 +30,15 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 }
 
 async function startServer() {
+  if (process.env.NODE_ENV === "production") {
+    const database = await getDb();
+    if (!database) throw new Error("Database not available for record-number migration");
+    const connection = await database.$client.promise().getConnection();
+    try {
+      const result = await restoreRecordNumbers(connection);
+      console.log("[record-numbers]", JSON.stringify(result));
+    } finally { connection.release(); }
+  }
   const app = express();
   const server = createServer(app);
   // Configure body parser with larger size limit for file uploads
