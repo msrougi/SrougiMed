@@ -1,5 +1,6 @@
 import { recordNumberSchema } from "../shared/recordNumber";
 import { chatMedRouter } from "./chatMedRouter";
+import { assertDeviceAccess } from "./deviceAccess";
 import { chatGroupSchema } from "../shared/chatMed";
 import { changePasswordSchema } from "../shared/changePassword";
 import { patientSearchSchema, phoneBookSearchSchema, legacyPatientSearchSchema, legacyPhoneBookSearchSchema } from "../shared/pagination";
@@ -51,6 +52,7 @@ export const appRouter = router({
         if (!user) {
           throw new Error("Usuário ou senha inválidos");
         }
+        assertDeviceAccess(user, ctx.req.headers ?? {});
 
         // Criar sessão usando JWT
         const token = jwt.sign(

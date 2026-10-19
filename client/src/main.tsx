@@ -1,4 +1,6 @@
 import "./lib/appInstall";
+import { DESKTOP_ONLY_ERROR } from "@shared/deviceAccess";
+import { deviceAccessHint } from "./lib/deviceAccess";
 import { trpc } from "@/lib/trpc";
 import { UNAUTHED_ERR_MSG } from '@shared/const';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -14,6 +16,14 @@ const queryClient = new QueryClient();
 const redirectToLoginIfUnauthorized = (error: unknown) => {
   if (!(error instanceof TRPCClientError)) return;
   if (typeof window === "undefined") return;
+
+  if (error.message === DESKTOP_ONLY_ERROR) {
+    queryClient.clear();
+    if (window.location.pathname !== "/" || new URLSearchParams(window.location.search).get("acesso") !== "computador") {
+      window.location.replace("/?acesso=computador");
+    }
+    return;
+  }
 
   const isUnauthorized = error.message === UNAUTHED_ERR_MSG;
 
@@ -44,8 +54,11 @@ const trpcClient = trpc.createClient({
       url: "/api/trpc",
       transformer: superjson,
       fetch(input, init) {
+        const headers = new Headers(init?.headers);
+        headers.set("x-srougi-device", deviceAccessHint());
         return globalThis.fetch(input, {
           ...(init ?? {}),
+          headers,
           credentials: "include",
         });
       },
