@@ -1,3 +1,4 @@
+import { patientSearchSchema, phoneBookSearchSchema, legacyPatientSearchSchema, legacyPhoneBookSearchSchema } from "../shared/pagination";
 import { TRPCError } from "@trpc/server";
 import { updateUserSchema } from "../shared/userManagement";
 import { COOKIE_NAME } from "@shared/const";
@@ -109,14 +110,13 @@ export const appRouter = router({
       }),
 
     search: protectedProcedure
-      .input(z.object({
-        name: z.string().optional(),
-        code: z.string().optional(),
-        birthDate: z.string().optional(),
-        city: z.string().optional(),
-        limit: z.number().optional(),
-        offset: z.number().optional(),
-      }))
+      .input(legacyPatientSearchSchema)
+      .mutation(async ({ input }) => {
+        const { searchPatientsLegacy } = await import("./db");
+        return searchPatientsLegacy(input);
+      }),
+    searchPage: protectedProcedure
+      .input(patientSearchSchema)
       .mutation(async ({ input }) => {
         const { searchPatients } = await import("./db");
         return await searchPatients(input);
@@ -182,14 +182,16 @@ export const appRouter = router({
       }),
 
     search: protectedProcedure
-      .input(z.object({
-        name: z.string().optional(),
-        limit: z.number().optional(),
-        offset: z.number().optional(),
-      }))
+      .input(legacyPhoneBookSearchSchema)
+      .mutation(async ({ input }) => {
+        const { searchPhoneBookLegacy } = await import("./db");
+        return searchPhoneBookLegacy(input);
+      }),
+    searchPage: protectedProcedure
+      .input(phoneBookSearchSchema)
       .mutation(async ({ input }) => {
         const { searchPhoneBook } = await import("./db");
-        return await searchPhoneBook(input.name, input.limit, input.offset);
+        return await searchPhoneBook(input);
       }),
 
     getById: protectedProcedure
@@ -228,17 +230,11 @@ export const appRouter = router({
 
   // Exportação de dados
   export: router({
-    patients: protectedProcedure.mutation(async ({ ctx }) => {
-      if (ctx.user?.role !== "admin") {
-        throw new Error("Acesso negado");
-      }
+    patients: adminProcedure.mutation(async ({ ctx }) => {
       const { getAllPatients } = await import("./db");
       return await getAllPatients();
     }),
-    getAllPatients: protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user?.role !== "admin") {
-        throw new Error("Acesso negado");
-      }
+    getAllPatients: adminProcedure.query(async ({ ctx }) => {
       const { getAllPatients } = await import("./db");
       return await getAllPatients();
     }),
@@ -247,12 +243,9 @@ export const appRouter = router({
 
   // Importação de dados
   importData: router({
-    importPatients: protectedProcedure
+    importPatients: adminProcedure
       .input(z.array(patientImportSchema).max(1000))
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user?.role !== "admin") {
-          throw new Error("Acesso negado");
-        }
         const { importPatients } = await import("./db");
         return await importPatients(input);
       }),
@@ -267,15 +260,12 @@ export const appRouter = router({
       const { updateManagedUser } = await import("./db");
       return updateManagedUser(input);
     }),
-    listUsers: protectedProcedure.mutation(async ({ ctx }) => {
-      if (ctx.user?.role !== "admin") {
-        throw new Error("Acesso negado");
-      }
+    listUsers: adminProcedure.mutation(async ({ ctx }) => {
       const { getAllUsers } = await import("./db");
       return await getAllUsers();
     }),
 
-    createUser: protectedProcedure
+    createUser: adminProcedure
       .input(z.object({
         username: z.string(),
         password: z.string(),
@@ -283,33 +273,30 @@ export const appRouter = router({
         role: z.enum(["admin", "user"]),
       }))
       .mutation(async ({ input, ctx }) => {
-        if (ctx.user?.role !== "admin") {
-          throw new Error("Acesso negado");
-        }
         const { createUser } = await import("./db");
         await createUser(input);
         return { success: true };
       }),
 
-    deleteUser: protectedProcedure
+    deleteUser: adminProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input, ctx }) => {
-        if (ctx.user?.role !== "admin") {
-          throw new Error("Acesso negado");
+        if (input.id === ctx.user.id) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Você não pode excluir seu próprio usuário" });
         }
         const { deleteUser } = await import("./db");
         await deleteUser(input.id);
         return { success: true };
       }),
 
-    updateUserRole: protectedProcedure
+    updateUserRole: adminProcedure
       .input(z.object({
         id: z.number(),
         role: z.enum(["admin", "user"]),
       }))
       .mutation(async ({ input, ctx }) => {
-        if (ctx.user?.role !== "admin") {
-          throw new Error("Acesso negado");
+        if (input.id === ctx.user.id && input.role !== "admin") {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Você não pode remover seu próprio acesso de administrador" });
         }
         const { updateUserRole } = await import("./db");
         await updateUserRole(input.id, input.role);

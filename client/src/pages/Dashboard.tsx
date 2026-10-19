@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { ThemeOptions } from "@/components/ThemeSwitcher";
 import InstallApp from "@/components/InstallApp";
 import { useLocation } from "wouter";
@@ -15,10 +16,12 @@ import PhoneBookTab from "@/components/PhoneBookTab";
 import AdminTab from "@/components/AdminTab";
 
 export default function Dashboard() {
+  const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const { data: user, isLoading } = trpc.customAuth.getCurrentUser.useQuery();
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => {
+      queryClient.clear();
       toast.success("Logout realizado com sucesso!");
       setLocation("/");
     },

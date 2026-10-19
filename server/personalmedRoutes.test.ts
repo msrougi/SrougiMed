@@ -11,7 +11,7 @@ describe("Acesso à importação", () => {
     await expect(caller("admin").importData.importPatients([{ name: "Teste" }])).resolves.toEqual({ successCount: 1 });
   });
   it("usuário comum e sessão anônima não podem importar", async () => {
-    await expect(caller("user").importData.importPatients([{ name: "Teste" }])).rejects.toThrow("Acesso negado");
+    await expect(caller("user").importData.importPatients([{ name: "Teste" }])).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(caller(null).importData.importPatients([{ name: "Teste" }])).rejects.toThrow();
   });
   it("cadastro novo continua exigindo os campos atuais", async () => {
