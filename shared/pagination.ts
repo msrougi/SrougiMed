@@ -1,6 +1,11 @@
 import { recordNumberSchema } from "./recordNumber";
 import { z } from "zod";
 
+export const cpfSearchSchema = z.string().trim().max(14)
+  .regex(/^[0-9.\s-]*$/, "Informe o CPF somente com números, pontos e traço")
+  .transform(value => value.replace(/\D/g, ""))
+  .refine(value => value === "" || value.length === 11, "Informe os 11 dígitos do CPF");
+
 const paging = {
   page: z.number().int().min(1).max(1_000_000).default(1),
   pageSize: z.number().int().min(1).max(100).default(10),
@@ -10,6 +15,7 @@ export const patientSearchSchema = z
   .object({
     name: z.string().trim().max(200).optional(),
     code: z.union([z.literal(""), recordNumberSchema]).optional(),
+    cpf: cpfSearchSchema.optional(),
     birthDate: z.string().trim().max(10).optional(),
     city: z.string().trim().max(100).optional(),
     ...paging,

@@ -34,6 +34,26 @@ import PatientSearch from "../components/PatientSearch";
 import PhoneBookSearch from "../components/PhoneBookSearch";
 
 afterEach(cleanup);
+it.each(["11122233344", "111.222.333-44"])("busca CPF completo %s e mantém o filtro na paginação", async cpf => {
+  render(<PatientSearch />);
+  fireEvent.change(screen.getByLabelText("CPF"), { target: { value: cpf } });
+  fireEvent.click(screen.getByRole("button", { name: "Buscar" }));
+  await screen.findByText("1–10 de 237 resultados");
+  expect(api.patients).toHaveBeenLastCalledWith(expect.objectContaining({ cpf: "11122233344", page: 1 }));
+  fireEvent.change(screen.getByLabelText("CPF"), { target: { value: "99988877766" } });
+  fireEvent.click(screen.getByRole("button", { name: "Próxima página" }));
+  await screen.findByText("11–20 de 237 resultados");
+  expect(api.patients).toHaveBeenLastCalledWith(expect.objectContaining({ cpf: "11122233344", page: 2 }));
+});
+
+it("não envia CPF incompleto mesmo quando outro filtro está preenchido", () => {
+  render(<PatientSearch />);
+  fireEvent.change(screen.getByLabelText("CPF"), { target: { value: "111" } });
+  fireEvent.change(screen.getByLabelText("Nome do Paciente"), { target: { value: "Fixture" } });
+  fireEvent.click(screen.getByRole("button", { name: "Buscar" }));
+  expect(api.patients).not.toHaveBeenCalled();
+  expect(api.toast).toHaveBeenCalledWith("Informe os 11 dígitos do CPF");
+});
 beforeEach(() => {
   vi.clearAllMocks();
   for (const search of [api.patients, api.contacts])
