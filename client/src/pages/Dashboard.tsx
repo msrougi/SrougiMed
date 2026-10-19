@@ -1,4 +1,4 @@
-import { useState } from "react";
+import InstallApp from "@/components/InstallApp";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -46,7 +46,7 @@ export default function Dashboard() {
       {/* Header */}
       <header className="bg-gradient-to-r from-[#1e3a5f] to-[#0d9488] text-white shadow-lg">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <img
                 src="/logo-srougimed.png"
@@ -58,7 +58,8 @@ export default function Dashboard() {
                 <p className="text-sm text-gray-200">Sistema de Gestão Médica</p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <InstallApp userId={user.id} />
               <div className="text-right">
                 <p className="font-semibold">{user.name || user.username}</p>
                 <p className="text-sm text-gray-200">
