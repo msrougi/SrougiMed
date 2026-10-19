@@ -47,7 +47,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="medical-app app-shell min-h-dvh bg-gray-50 dark:bg-background">
+    <div className="medical-app app-shell min-h-dvh bg-gray-50 bg-gradient-to-br from-[#087e78]/15 via-gray-50 to-[#087e78]/5 dark:bg-background dark:from-[#087e78]/20 dark:via-background dark:to-[#087e78]/5">
       <header className="rounded-b-[2rem] bg-gradient-to-br from-[#064b49] dark:from-[#082b29] via-[#087e78] dark:via-[#064b49] to-[#087e78] dark:to-[#075e59] text-white lg:rounded-none">
         <div className="container relative mx-auto flex flex-col items-center px-4 pb-12 pt-6 text-center lg:flex-row lg:justify-between lg:gap-6 lg:py-5 lg:text-left">
           <div className="flex min-w-0 flex-col items-center gap-2 lg:flex-row lg:gap-3">

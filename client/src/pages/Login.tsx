@@ -1,3 +1,4 @@
+import { Heart } from "lucide-react";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
 import { useState } from "react";
 import { useLocation } from "wouter";
@@ -99,6 +100,10 @@ export default function Login() {
           </form>
 
         </div>
+        <p className="mt-6 flex items-center justify-center gap-1.5 text-xs text-white/80">
+          Feito com <Heart className="h-3.5 w-3.5 fill-current text-red-300" aria-hidden="true" />
+          <span className="sr-only">amor</span> por <span className="font-semibold text-white">Digify</span>
+        </p>
       </div>
     </div>
   );
