@@ -63,3 +63,8 @@ test('contacts retain inactive status in the original and reject duplicate IDs a
  assert.throws(()=>makeContactPlan([{...c,NAME:'x'.repeat(201)}]),/CONTACT_EXCEEDS_CAPACITY/);
  assert.throws(()=>makeContactPlan([{...c,NAME:' '}]),/CONTACT_NAME_REQUIRED/);
 });
+test('pre-commit verification failure rolls back and prevents confirmation',async()=>{
+ const db=new FakeDB();let checked=false;
+ await assert.rejects(importPlan(db,makePlan([row()]),{validate:async(tx)=>{checked=true;assert.equal(tx.patients.length,1);throw new Error('VERIFICATION_FAILED');}}),/VERIFICATION_FAILED/);
+ assert.ok(checked);assert.equal(db.commits,0);assert.equal(db.patients.length,0);assert.equal(db.links.length,0);
+});

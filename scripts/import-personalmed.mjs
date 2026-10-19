@@ -50,7 +50,7 @@ export function makeContactPlan(rows){
  return {key,contact,raw,sourceHash:fingerprint(raw),decisions:[{action:'preserve_contact_status_in_original',status:raw.ATIVO}]};
  });
 }
-export async function importPlan(db,plans,{cleanupHash,contacts=[]}={}){
+export async function importPlan(db,plans,{cleanupHash,contacts=[],validate,onProgress}={}){
  const [locked]=await db.query("SELECT GET_LOCK('srougi_personalmed_import',0) AS ok");
  if(locked[0].ok!==1)throw new Error('IMPORT_ALREADY_RUNNING');
  try{
@@ -99,6 +99,7 @@ export async function importPlan(db,plans,{cleanupHash,contacts=[]}={}){
  for(const {p,code}of fresh){if(!ids.has(code))throw new Error('INSERTED_TARGET_MISSING');ledger.push({p,id:ids.get(code)});summary.inserted++;}
  }
  if(ledger.length)await db.query('INSERT INTO srougi_personalmed_links (sourceKey,entity,targetId,sourceHash,mappedHash,mappingVersion,disposition,original,decisions) VALUES '+ledger.map(()=>'(?,?,?,?,?,?,?,?,?)').join(','),ledger.flatMap(({p,id})=>[p.key,'patient',id,p.sourceHash,fingerprint(p.patient),mappingVersion,p.importDisposition,JSON.stringify(p.raw),JSON.stringify({issues:p.issues,decisions:p.decisions})]));
+ if(onProgress&&(start%1000===0||start+100>=plans.length))onProgress({entity:'patients',processed:Math.min(start+100,plans.length),total:plans.length});
  }
  if(contacts.length){
  const [priorContacts]=await db.query("SELECT sourceKey,targetId,sourceHash,mappedHash,disposition FROM srougi_personalmed_links WHERE entity='contact'");
@@ -121,9 +122,11 @@ export async function importPlan(db,plans,{cleanupHash,contacts=[]}={}){
  await db.query('INSERT INTO srougi_personalmed_links (sourceKey,entity,targetId,sourceHash,mappedHash,mappingVersion,disposition,original,decisions) VALUES '+fresh.map(()=>'(?,?,?,?,?,?,?,?,?)').join(','),fresh.flatMap(({p,id})=>[p.key,'contact',id,p.sourceHash,fingerprint(p.contact),mappingVersion,'include',JSON.stringify(p.raw),JSON.stringify(p.decisions)]));
  summary.insertedContacts+=fresh.length;
  }
+ if(onProgress&&(start%1000===0||start+100>=contacts.length))onProgress({entity:'contacts',processed:Math.min(start+100,contacts.length),total:contacts.length});
  }
  }
- await db.query('INSERT INTO srougi_personalmed_runs (sourceHash,summary) VALUES (?,?)',[fingerprint(plans.map(p=>[p.key,p.sourceHash])),JSON.stringify(summary)]);
+ await db.query('INSERT INTO srougi_personalmed_runs (sourceHash,summary) VALUES (?,?)',[fingerprint([...plans,...contacts].map(p=>[p.key,p.sourceHash])),JSON.stringify(summary)]);
+ if(validate)await validate(db,summary);
  await db.commit();return summary;
  }catch(e){await db.rollback();throw e;}
  }finally{await db.query("SELECT RELEASE_LOCK('srougi_personalmed_import')");}
