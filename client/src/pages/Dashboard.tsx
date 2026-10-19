@@ -1,3 +1,5 @@
+import { useState } from "react";
+import ChangePasswordDialog from "@/components/ChangePasswordDialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { ThemeOptions } from "@/components/ThemeSwitcher";
 import InstallApp from "@/components/InstallApp";
@@ -6,7 +8,7 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { LogOut, Users, UserPlus, Phone, UserRound, ChevronDown } from "lucide-react";
+import { LogOut, Users, UserPlus, Phone, UserRound, ChevronDown, KeyRound } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -17,6 +19,7 @@ import AdminTab from "@/components/AdminTab";
 
 export default function Dashboard() {
   const queryClient = useQueryClient();
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [, setLocation] = useLocation();
   const { data: user, isLoading } = trpc.customAuth.getCurrentUser.useQuery();
   const logoutMutation = trpc.auth.logout.useMutation({
@@ -85,6 +88,10 @@ export default function Dashboard() {
                   <p className="text-xs text-slate-500 dark:text-slate-400">{isAdmin ? "Administrador" : "Usuário"}</p>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => setChangePasswordOpen(true)} className="min-h-11 cursor-pointer gap-2 rounded-xl px-3">
+                  <KeyRound className="h-4 w-4" />Alterar minha senha
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <ThemeOptions />
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={handleLogout} disabled={logoutMutation.isPending}
@@ -97,6 +104,8 @@ export default function Dashboard() {
           </div>
         </div>
       </header>
+
+      <ChangePasswordDialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen} />
 
       {/* Main Content */}
       <main className="container relative mx-auto -mt-7 min-w-0 px-4 pb-6 lg:mt-0 lg:py-8">

@@ -1,3 +1,4 @@
+import { changePasswordSchema } from "../shared/changePassword";
 import { patientSearchSchema, phoneBookSearchSchema, legacyPatientSearchSchema, legacyPhoneBookSearchSchema } from "../shared/pagination";
 import { TRPCError } from "@trpc/server";
 import { updateUserSchema } from "../shared/userManagement";
@@ -33,6 +34,10 @@ export const appRouter = router({
 
   // Autenticação customizada
   customAuth: router({
+    changePassword: protectedProcedure.input(changePasswordSchema).mutation(async ({ input, ctx }) => {
+      const { changeOwnPassword } = await import("./db");
+      return changeOwnPassword(ctx.user.id, input);
+    }),
     login: publicProcedure
       .input(z.object({ username: z.string(), password: z.string() }))
       .mutation(async ({ input, ctx }) => {

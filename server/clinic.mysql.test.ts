@@ -322,6 +322,19 @@ describe.skipIf(!url)("MySQL real isolado — dados sintéticos", () => {
     expect(await c.phoneBook.getById.query(contact.id)).toBeNull();
   });
 
+  it("altera somente a senha da conta autenticada e aceita o novo login", async () => {
+    const user = client();
+    await user.customAuth.login.mutate({ username: "fixture_user_b", password });
+    const nextPassword = "Nova" + randomBytes(16).toString("hex") + "9";
+    await expect(user.customAuth.changePassword.mutate({ currentPassword: "incorreta", newPassword: nextPassword, confirmPassword: nextPassword })).rejects.toThrow("Senha atual incorreta");
+    await expect(user.customAuth.changePassword.mutate({ currentPassword: password, newPassword: nextPassword, confirmPassword: nextPassword })).resolves.toEqual({ success: true });
+    const newSession = client();
+    await expect(newSession.customAuth.login.mutate({ username: "fixture_user_b", password })).rejects.toThrow("Usuário ou senha inválidos");
+    await expect(newSession.customAuth.login.mutate({ username: "fixture_user_b", password: nextPassword })).resolves.toMatchObject({ success: true });
+    const otherUser = client();
+    await expect(otherUser.customAuth.login.mutate({ username: "fixture_user_a", password })).resolves.toMatchObject({ success: true });
+  });
+
   it.skipIf(process.env.SROUGI_RUN_BENCHMARKS !== "1")(
     "mede buscas na base sintética sem usar esses tempos como evidência do Aiven",
     async () => {

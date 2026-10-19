@@ -1,3 +1,4 @@
+import { changePasswordSchema, type ChangePasswordInput } from "../shared/changePassword";
 import type { PatientSearchInput, PhoneBookSearchInput } from "../shared/pagination";
 import { pagination, patientSearchSchema, phoneBookSearchSchema, searchPattern } from "../shared/pagination";
 import { TRPCError } from "@trpc/server";
@@ -453,6 +454,26 @@ export async function deletePhoneBookEntry(id: number) {
 }
 
 // Funções de gerenciamento de usuários
+export async function changeOwnPassword(userId: number, input: ChangePasswordInput) {
+  const values = changePasswordSchema.parse(input);
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const bcrypt = await import("bcryptjs");
+  await db.transaction(async tx => {
+    const [user] = await tx.select({ password: users.password }).from(users)
+      .where(eq(users.id, userId)).limit(1).for("update");
+    if (!user?.password || !await bcrypt.compare(values.currentPassword, user.password)) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "Senha atual incorreta" });
+    }
+    if (await bcrypt.compare(values.newPassword, user.password)) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "A nova senha deve ser diferente da atual" });
+    }
+    const password = await bcrypt.hash(values.newPassword, 10);
+    await tx.update(users).set({ password }).where(eq(users.id, userId));
+  });
+  return { success: true };
+}
+
 export async function getAllUsers() {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
