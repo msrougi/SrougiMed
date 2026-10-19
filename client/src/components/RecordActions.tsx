@@ -9,9 +9,9 @@ export default function RecordActions({ subject, onView, onEdit, onDelete }: {
 }) {
   return <div className="grid grid-cols-3 gap-2 md:flex md:justify-end md:gap-1">
     {[
-      { label: "Visualizar", Icon: Eye, action: onView, color: "text-green-700 hover:bg-green-50" },
-      { label: "Editar", Icon: Pencil, action: onEdit, color: "text-[#087e78] hover:bg-teal-50" },
-      { label: "Deletar", Icon: Trash2, action: onDelete, color: "text-red-700 hover:bg-red-50" },
+      { label: "Visualizar", Icon: Eye, action: onView, color: "text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-950/50" },
+      { label: "Editar", Icon: Pencil, action: onEdit, color: "text-brand hover:bg-teal-50 dark:hover:bg-teal-950/50" },
+      { label: "Deletar", Icon: Trash2, action: onDelete, color: "text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/50" },
     ].map(({ label, Icon, action, color }) => <Button
       key={label} type="button" variant="ghost" onClick={action}
       aria-label={`${label} ${subject}`} title={`${label} ${subject}`}

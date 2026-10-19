@@ -112,8 +112,8 @@ export default function PhoneBookSearch({ onEditEntry }: PhoneBookSearchProps) {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">
+      <div className="bg-white dark:bg-card rounded-lg shadow p-4 sm:p-6">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-100 mb-4">
           Buscar Contato
         </h3>
           <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
@@ -134,17 +134,17 @@ export default function PhoneBookSearch({ onEditEntry }: PhoneBookSearchProps) {
           </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white dark:bg-card rounded-lg shadow overflow-hidden">
         {!hasSearched ? (
-          <div className="p-6 text-center text-gray-600">
+          <div className="p-6 text-center text-gray-600 dark:text-slate-300">
             Digite um nome e clique em "Buscar" para encontrar contatos
           </div>
         ) : isLoading ? (
-          <div className="p-6 text-center text-gray-600">
+          <div className="p-6 text-center text-gray-600 dark:text-slate-300">
             Carregando contatos...
           </div>
         ) : entries.length === 0 ? (
-          <div className="p-6 text-center text-gray-600">
+          <div className="p-6 text-center text-gray-600 dark:text-slate-300">
             Nenhum contato encontrado
           </div>
         ) : (
@@ -157,7 +157,7 @@ export default function PhoneBookSearch({ onEditEntry }: PhoneBookSearchProps) {
                   <TableHead>E-mail</TableHead>
                   <TableHead>Ocupação</TableHead>
                   <TableHead>Categoria</TableHead>
-                  <TableHead className="sticky right-0 z-20 w-36 min-w-36 border-l bg-white text-right">Ações</TableHead>
+                  <TableHead className="sticky right-0 z-20 w-36 min-w-36 border-l bg-white dark:bg-card text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -168,7 +168,7 @@ export default function PhoneBookSearch({ onEditEntry }: PhoneBookSearchProps) {
                     <TableCell data-label="E-mail" className="max-w-60 whitespace-normal [overflow-wrap:anywhere]">{entry.email || "-"}</TableCell>
                     <TableCell data-label="Ocupação" className="max-w-48 whitespace-normal break-words">{entry.occupation || "-"}</TableCell>
                     <TableCell data-label="Categoria" className="max-w-48 whitespace-normal break-words">{entry.category || "-"}</TableCell>
-                    <TableCell data-label="Ações" className="record-actions sticky right-0 z-10 w-36 min-w-36 border-l bg-white text-right">
+                    <TableCell data-label="Ações" className="record-actions sticky right-0 z-10 w-36 min-w-36 border-l bg-white dark:bg-card text-right">
                       <RecordActions subject="contato" onView={() => setViewingEntry(entry)}
                         onEdit={() => { onEditEntry?.(entry); }} onDelete={() => setDeleteId(entry.id)} />
                     </TableCell>
@@ -178,7 +178,7 @@ export default function PhoneBookSearch({ onEditEntry }: PhoneBookSearchProps) {
             </Table>
 
             <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-t">
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-gray-600 dark:text-slate-300">
                 Página {page + 1} - {entries.length} resultados
               </div>
               <div className="flex gap-2">

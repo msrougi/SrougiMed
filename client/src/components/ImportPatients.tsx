@@ -97,8 +97,8 @@ export default function ImportPatients() {
   return (
     <div className="space-y-6">
       {/* Upload Section */}
-      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">
+      <div className="bg-white dark:bg-card rounded-lg shadow p-4 sm:p-6">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-100 mb-4">
           Importar Pacientes
         </h3>
 
@@ -117,15 +117,15 @@ export default function ImportPatients() {
                 className="min-w-0 flex-1"
               />
               {selectedFile && (
-                <div className="min-w-0 break-all text-sm text-green-600 font-medium">
+                <div className="min-w-0 break-all text-sm text-green-600 dark:text-green-300 font-medium">
                   ✓ {selectedFile.name}
                 </div>
               )}
             </div>
           </div>
 
-          <div className="p-4 bg-teal-50 border border-teal-200 rounded-lg">
-            <p className="text-sm text-teal-800">
+          <div className="p-4 bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/60 rounded-lg">
+            <p className="text-sm text-teal-800 dark:text-teal-200">
               <strong>Formato esperado:</strong> O arquivo deve conter colunas
               com nomes como "Nome", "Telefone", "E-mail", "Cidade", etc. A
               coluna "Nome" é obrigatória.
@@ -136,9 +136,9 @@ export default function ImportPatients() {
 
       {/* Preview Section */}
       {parsedData.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+        <div className="bg-white dark:bg-card rounded-lg shadow p-4 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-            <h3 className="text-lg font-semibold text-gray-800">
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-100">
               Pré-visualização ({parsedData.length} pacientes)
             </h3>
           </div>
@@ -171,7 +171,7 @@ export default function ImportPatients() {
           </div>
 
           {parsedData.length > 10 && (
-            <div className="mt-4 text-sm text-gray-600">
+            <div className="mt-4 text-sm text-gray-600 dark:text-slate-300">
               ... e mais {parsedData.length - 10} pacientes
             </div>
           )}

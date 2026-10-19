@@ -125,8 +125,8 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
   return (
     <div className="space-y-6">
       {/* Filtros */}
-      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">
+      <div className="bg-white dark:bg-card rounded-lg shadow p-4 sm:p-6">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-100 mb-4">
           Filtros de Busca
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -182,17 +182,17 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
       </div>
 
       {/* Resultados */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white dark:bg-card rounded-lg shadow overflow-hidden">
         {!hasSearched ? (
-          <div className="p-6 text-center text-gray-600">
+          <div className="p-6 text-center text-gray-600 dark:text-slate-300">
             Digite os critérios de busca e clique em "Buscar" para encontrar pacientes
           </div>
         ) : isLoading ? (
-          <div className="p-6 text-center text-gray-600">
+          <div className="p-6 text-center text-gray-600 dark:text-slate-300">
             Carregando pacientes...
           </div>
         ) : patients.length === 0 ? (
-          <div className="p-6 text-center text-gray-600">
+          <div className="p-6 text-center text-gray-600 dark:text-slate-300">
             Nenhum paciente encontrado
           </div>
         ) : (
@@ -205,7 +205,7 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
                   <TableHead>Cidade</TableHead>
                   <TableHead>Telefone</TableHead>
                   <TableHead>E-mail</TableHead>
-                  <TableHead className="sticky right-0 z-20 w-36 min-w-36 border-l bg-white text-right">Ações</TableHead>
+                  <TableHead className="sticky right-0 z-20 w-36 min-w-36 border-l bg-white dark:bg-card text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -216,7 +216,7 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
                     <TableCell data-label="Cidade" className="max-w-60 whitespace-normal [overflow-wrap:anywhere]">{patient.city || "-"}</TableCell>
                     <TableCell data-label="Telefone" className="max-w-60 whitespace-normal [overflow-wrap:anywhere]">{patient.phone || "-"}</TableCell>
                     <TableCell data-label="E-mail" className="max-w-60 whitespace-normal [overflow-wrap:anywhere]">{patient.email || "-"}</TableCell>
-                    <TableCell data-label="Ações" className="record-actions sticky right-0 z-10 w-36 min-w-36 border-l bg-white text-right">
+                    <TableCell data-label="Ações" className="record-actions sticky right-0 z-10 w-36 min-w-36 border-l bg-white dark:bg-card text-right">
                       <RecordActions subject="paciente" onView={() => setViewingPatient(patient)}
                         onEdit={() => { setEditingPatient(patient); onEditPatient?.(patient); }} onDelete={() => setDeleteId(patient.id)} />
                     </TableCell>
@@ -227,7 +227,7 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
 
             {/* Paginação */}
             <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-t">
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-gray-600 dark:text-slate-300">
                 Página {page + 1} - {patients.length} resultados
               </div>
               <div className="flex gap-2">

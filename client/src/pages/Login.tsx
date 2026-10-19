@@ -1,3 +1,4 @@
+import ThemeSwitcher from "@/components/ThemeSwitcher";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -34,22 +35,30 @@ export default function Login() {
   };
 
   return (
-    <div className="medical-app login-screen min-h-dvh flex items-center justify-center bg-gradient-to-br from-[#064b49] via-[#087e78] to-[#087e78] p-4">
+    <div className="medical-app login-screen relative min-h-dvh flex items-center justify-center bg-gradient-to-br from-[#064b49] dark:from-[#082b29] via-[#087e78] dark:via-[#064b49] to-[#087e78] dark:to-[#075e59] p-4">
+      <div className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))]"><ThemeSwitcher /></div>
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-2xl p-5 sm:p-8">
+        <div className="bg-white dark:bg-card rounded-2xl shadow-2xl p-5 sm:p-8">
           {/* Logo */}
           <div className="flex justify-center mb-8">
             <img
               src="/logo-srougimed.png"
               alt="SrougiMed"
-              className="h-auto w-full max-w-[300px] object-contain"
+              className="h-auto w-full max-w-[300px] object-contain dark:hidden"
             />
+            <div className="hidden flex-col items-center gap-3 py-4 text-center dark:flex">
+              <img src="/icons/app-192.png" alt="" className="h-16 w-16 rounded-2xl" />
+              <div>
+                <h1 className="text-2xl font-semibold tracking-tight text-foreground">SrougiMed</h1>
+                <p className="mt-1 text-xs text-muted-foreground">Sistema de Gestão Médica</p>
+              </div>
+            </div>
           </div>
 
           {/* Formulário de Login */}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="username" className="text-gray-700 font-medium">
+              <Label htmlFor="username" className="text-gray-700 dark:text-slate-200 font-medium">
                 Usuário
               </Label>
               <Input
@@ -65,7 +74,7 @@ export default function Login() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-700 font-medium">
+              <Label htmlFor="password" className="text-gray-700 dark:text-slate-200 font-medium">
                 Senha
               </Label>
               <Input
@@ -82,7 +91,7 @@ export default function Login() {
 
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-[#087e78] to-[#087e78] hover:from-[#064b49] hover:to-[#087e78] text-white font-semibold py-6 text-lg"
+              className="w-full bg-gradient-to-r from-[#087e78] to-[#087e78] dark:to-[#075e59] hover:from-[#064b49] hover:to-[#087e78] text-white font-semibold py-6 text-lg"
               disabled={isLoading}
             >
               {isLoading ? "Entrando..." : "Entrar"}
