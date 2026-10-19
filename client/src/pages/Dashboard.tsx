@@ -27,7 +27,7 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0d9488] mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#087e78] mx-auto mb-4"></div>
           <p className="text-gray-600">Carregando...</p>
         </div>
       </div>
@@ -47,7 +47,7 @@ export default function Dashboard() {
 
   return (
     <div className="medical-app app-shell min-h-dvh bg-gray-50">
-      <header className="rounded-b-[2rem] bg-gradient-to-br from-[#132d4c] via-[#1e3a5f] to-[#087e78] text-white lg:rounded-none">
+      <header className="rounded-b-[2rem] bg-gradient-to-br from-[#064b49] via-[#087e78] to-[#087e78] text-white lg:rounded-none">
         <div className="container relative mx-auto flex flex-col items-center px-4 pb-12 pt-6 text-center lg:flex-row lg:justify-between lg:gap-6 lg:py-5 lg:text-left">
           <div className="flex min-w-0 flex-col items-center gap-2 lg:flex-row lg:gap-3">
             <img src="/icons/app-192.png" alt="" className="h-14 w-14 shrink-0 rounded-2xl bg-white shadow-lg shadow-black/10 lg:h-12 lg:w-12 lg:rounded-xl" />

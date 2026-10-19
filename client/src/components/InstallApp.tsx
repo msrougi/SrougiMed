@@ -41,7 +41,7 @@ export default function InstallApp({ userId, compact = false }: { userId: number
 
   return <>
     <Button type="button" variant="outline" aria-label="Instalar aplicativo" title="Instalar aplicativo"
-      className={cn("bg-white text-[#1e3a5f] hover:bg-gray-100", compact && "h-11 w-11 rounded-2xl border-white/15 bg-white/10 p-0 text-white shadow-none hover:bg-white/20 hover:text-white lg:w-auto lg:rounded-xl lg:px-3")}
+      className={cn("bg-white text-[#087e78] hover:bg-gray-100", compact && "h-11 w-11 rounded-2xl border-white/15 bg-white/10 p-0 text-white shadow-none hover:bg-white/20 hover:text-white lg:w-auto lg:rounded-xl lg:px-3")}
       onClick={() => { setError(""); setOpen(true); }}>
       <Download className={cn("h-4 w-4", !compact && "mr-2")} /><span className={compact ? "sr-only lg:not-sr-only" : undefined}>Instalar aplicativo</span>
     </Button>

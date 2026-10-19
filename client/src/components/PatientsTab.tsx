@@ -25,7 +25,7 @@ export default function PatientsTab() {
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm sm:p-6">
-        <h2 className="mb-4 text-center text-lg font-semibold tracking-tight text-[#1e3a5f] sm:mb-6 sm:text-left sm:text-2xl">
+        <h2 className="mb-4 text-center text-lg font-semibold tracking-tight text-[#087e78] sm:mb-6 sm:text-left sm:text-2xl">
           Cadastro de Pacientes
         </h2>
 

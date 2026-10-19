@@ -193,7 +193,7 @@ export default function PhoneBookForm({ onSuccess, initialData }: PhoneBookFormP
       <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
         <Button
           type="submit"
-          className="flex-1 bg-[#0d9488] hover:bg-[#0d7a6d]"
+          className="flex-1 bg-[#087e78] hover:bg-[#06665f]"
           disabled={createMutation.isPending}
         >
           {createMutation.isPending ? "Salvando..." : "Cadastrar Contato"}

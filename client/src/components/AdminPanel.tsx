@@ -145,7 +145,7 @@ export default function AdminPanel() {
           </h3>
           <Button
             onClick={() => setShowCreateDialog(true)}
-            className="bg-[#0d9488] hover:bg-[#0d7a6d]"
+            className="bg-[#087e78] hover:bg-[#06665f]"
           >
             Criar Novo Usuário
           </Button>
@@ -185,8 +185,8 @@ export default function AdminPanel() {
                         </>
                       ) : (
                         <>
-                          <User className="w-4 h-4 text-blue-600" />
-                          <span className="text-blue-600">Usuário</span>
+                          <User className="w-4 h-4 text-[#087e78]" />
+                          <span className="text-[#087e78]">Usuário</span>
                         </>
                       )}
                     </div>
@@ -304,7 +304,7 @@ export default function AdminPanel() {
               </Button>
               <Button
                 type="submit"
-                className="bg-[#0d9488] hover:bg-[#0d7a6d]"
+                className="bg-[#087e78] hover:bg-[#06665f]"
                 disabled={createMutation.isPending}
               >
                 {createMutation.isPending ? "Criando..." : "Criar Usuário"}
@@ -354,7 +354,7 @@ export default function AdminPanel() {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleChangeRole}
-              className="bg-[#0d9488] hover:bg-[#0d7a6d]"
+              className="bg-[#087e78] hover:bg-[#06665f]"
               disabled={changeRoleMutation.isPending}
             >
               {changeRoleMutation.isPending ? "Alterando..." : "Alterar"}
