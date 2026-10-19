@@ -84,7 +84,7 @@ export default function ExportPatients() {
         <Button
           onClick={handleExportExcel}
           disabled={isExporting || patients.length === 0}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+          className="flex items-center gap-2 bg-[#087e78] hover:bg-[#06665f]"
         >
           {isExporting ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -95,8 +95,8 @@ export default function ExportPatients() {
         </Button>
       </div>
 
-      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <p className="text-sm text-blue-800">
+      <div className="mt-6 p-4 bg-teal-50 border border-teal-200 rounded-lg">
+        <p className="text-sm text-teal-800">
           <strong>Informação:</strong> Os arquivos exportados incluem todos os dados dos pacientes
           cadastrados no sistema, incluindo informações pessoais, contato e dados adicionais.
         </p>

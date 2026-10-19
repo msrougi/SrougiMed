@@ -124,8 +124,8 @@ export default function ImportPatients() {
             </div>
           </div>
 
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-800">
+          <div className="p-4 bg-teal-50 border border-teal-200 rounded-lg">
+            <p className="text-sm text-teal-800">
               <strong>Formato esperado:</strong> O arquivo deve conter colunas
               com nomes como "Nome", "Telefone", "E-mail", "Cidade", etc. A
               coluna "Nome" é obrigatória.

@@ -601,7 +601,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
                 />
               </div>
               {age !== null && (
-                <div className="text-sm font-semibold text-[#0d9488] whitespace-nowrap">
+                <div className="text-sm font-semibold text-[#087e78] whitespace-nowrap">
                   {age} anos
                 </div>
               )}
@@ -807,7 +807,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
       <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
         <Button
           type="submit"
-          className="flex-1 bg-[#0d9488] hover:bg-[#0d7a6d]"
+          className="flex-1 bg-[#087e78] hover:bg-[#06665f]"
           disabled={createPatientMutation.isPending}
         >
           {createPatientMutation.isPending ? "Salvando..." : "Cadastrar Paciente"}
@@ -851,7 +851,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
               </Button>
               <Button
                 onClick={() => setShowNotesDialog(false)}
-                className="bg-[#0d9488] hover:bg-[#0d7a6d]"
+                className="bg-[#087e78] hover:bg-[#06665f]"
               >
                 Salvar Notas
               </Button>

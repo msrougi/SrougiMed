@@ -34,7 +34,7 @@ export default function Login() {
   };
 
   return (
-    <div className="medical-app login-screen min-h-dvh flex items-center justify-center bg-gradient-to-br from-[#1a2332] via-[#1e3a5f] to-[#0d9488] p-4">
+    <div className="medical-app login-screen min-h-dvh flex items-center justify-center bg-gradient-to-br from-[#064b49] via-[#087e78] to-[#087e78] p-4">
       <div className="w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-2xl p-5 sm:p-8">
           {/* Logo */}
@@ -82,7 +82,7 @@ export default function Login() {
 
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-[#1e3a5f] to-[#0d9488] hover:from-[#1a2332] hover:to-[#0d9488] text-white font-semibold py-6 text-lg"
+              className="w-full bg-gradient-to-r from-[#087e78] to-[#087e78] hover:from-[#064b49] hover:to-[#087e78] text-white font-semibold py-6 text-lg"
               disabled={isLoading}
             >
               {isLoading ? "Entrando..." : "Entrar"}

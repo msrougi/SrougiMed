@@ -127,7 +127,7 @@ export default function PhoneBookSearch({ onEditEntry }: PhoneBookSearchProps) {
               />
             </div>
             <div className="flex items-end [&>button]:w-full">
-              <Button onClick={handleSearch} className="bg-blue-600 hover:bg-blue-700">
+              <Button onClick={handleSearch} className="bg-[#087e78] hover:bg-[#06665f]">
                 Buscar
               </Button>
             </div>
