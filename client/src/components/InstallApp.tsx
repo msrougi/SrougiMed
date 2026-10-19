@@ -2,11 +2,12 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { Download, Share, PlusSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import { appInstall, installationPlatform } from "@/lib/appInstall";
 
 const seenThisSession = new Set<string>();
 
-export default function InstallApp({ userId }: { userId: number }) {
+export default function InstallApp({ userId, compact = false }: { userId: number; compact?: boolean }) {
   const state = useSyncExternalStore(appInstall!.subscribe, appInstall!.getSnapshot);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -39,8 +40,10 @@ export default function InstallApp({ userId }: { userId: number }) {
   };
 
   return <>
-    <Button variant="outline" className="bg-white text-[#1e3a5f] hover:bg-gray-100" onClick={() => { setError(""); setOpen(true); }}>
-      <Download className="w-4 h-4 mr-2" /> Instalar aplicativo
+    <Button type="button" variant="outline" aria-label="Instalar aplicativo" title="Instalar aplicativo"
+      className={cn("bg-white text-[#1e3a5f] hover:bg-gray-100", compact && "h-11 w-11 rounded-2xl border-white/15 bg-white/10 p-0 text-white shadow-none hover:bg-white/20 hover:text-white lg:w-auto lg:rounded-xl lg:px-3")}
+      onClick={() => { setError(""); setOpen(true); }}>
+      <Download className={cn("h-4 w-4", !compact && "mr-2")} /><span className={compact ? "sr-only lg:not-sr-only" : undefined}>Instalar aplicativo</span>
     </Button>
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-h-[90dvh] overflow-y-auto">
