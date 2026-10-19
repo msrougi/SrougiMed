@@ -822,15 +822,17 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
         <Button
           type="submit"
           className="flex-1 bg-[#087e78] hover:bg-[#06665f]"
-          disabled={createPatientMutation.isPending}
+          disabled={createPatientMutation.isPending || updatePatientMutation.isPending}
         >
-          {createPatientMutation.isPending ? "Salvando..." : "Cadastrar Paciente"}
+          {createPatientMutation.isPending || updatePatientMutation.isPending
+            ? "Salvando..."
+            : initialData?.id ? "Atualizar Paciente" : "Cadastrar Paciente"}
         </Button>
         <Button
           type="button"
           variant="outline"
           onClick={resetForm}
-          disabled={createPatientMutation.isPending}
+          disabled={createPatientMutation.isPending || updatePatientMutation.isPending}
         >
           Limpar
         </Button>

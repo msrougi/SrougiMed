@@ -194,15 +194,17 @@ export default function PhoneBookForm({ onSuccess, initialData }: PhoneBookFormP
         <Button
           type="submit"
           className="flex-1 bg-[#087e78] hover:bg-[#06665f]"
-          disabled={createMutation.isPending}
+          disabled={createMutation.isPending || updateMutation.isPending}
         >
-          {createMutation.isPending ? "Salvando..." : "Cadastrar Contato"}
+          {createMutation.isPending || updateMutation.isPending
+            ? "Salvando..."
+            : initialData?.id ? "Atualizar Contato" : "Cadastrar Contato"}
         </Button>
         <Button
           type="button"
           variant="outline"
           onClick={resetForm}
-          disabled={createMutation.isPending}
+          disabled={createMutation.isPending || updateMutation.isPending}
         >
           Limpar
         </Button>
