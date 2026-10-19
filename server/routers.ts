@@ -1,18 +1,26 @@
+import { TRPCError } from "@trpc/server";
+import { updateUserSchema } from "../shared/userManagement";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
+import { publicProcedure, router, protectedProcedure, adminProcedure } from "./_core/trpc";
 import { z } from "zod";
 import { patientImportSchema } from "../shared/patientImport";
 import jwtModule from "jsonwebtoken";
 const jwt = jwtModule as any;
 import { ENV } from "./_core/env";
 
+function withoutPassword<T extends { password?: unknown }>(user: T | null) {
+  if (!user) return null;
+  const { password: _password, ...safeUser } = user;
+  return safeUser;
+}
+
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
   auth: router({
-    me: publicProcedure.query(opts => opts.ctx.user),
+    me: publicProcedure.query(opts => withoutPassword(opts.ctx.user)),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
@@ -59,7 +67,7 @@ export const appRouter = router({
       if (!ctx.user) {
         return null;
       }
-      return ctx.user;
+      return withoutPassword(ctx.user);
     }),
   }),
 
@@ -252,6 +260,13 @@ export const appRouter = router({
 
   // Administração de usuários
   admin: router({
+    updateUser: adminProcedure.input(updateUserSchema).mutation(async ({ input, ctx }) => {
+      if (input.id === ctx.user.id && input.role !== "admin") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Você não pode remover seu próprio acesso de administrador" });
+      }
+      const { updateManagedUser } = await import("./db");
+      return updateManagedUser(input);
+    }),
     listUsers: protectedProcedure.mutation(async ({ ctx }) => {
       if (ctx.user?.role !== "admin") {
         throw new Error("Acesso negado");
