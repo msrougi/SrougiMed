@@ -1,7 +1,7 @@
 import { recordNumberSchema } from "../shared/recordNumber";
 import { changePasswordSchema, type ChangePasswordInput } from "../shared/changePassword";
 import type { PatientSearchInput, PhoneBookSearchInput } from "../shared/pagination";
-import { pagination, patientSearchSchema, phoneBookSearchSchema, searchPattern } from "../shared/pagination";
+import { pagination, patientSearchSchema, phoneBookSearchSchema, searchPattern, cpfSearchSchema } from "../shared/pagination";
 import { TRPCError } from "@trpc/server";
 import type { UpdateUserInput } from "../shared/userManagement";
 import { eq, like, or, and, sql, asc } from "drizzle-orm";
@@ -211,6 +211,9 @@ function patientSearchWhere(filters: PatientSearchInput) {
       sql`LOWER(${patients.name}) LIKE LOWER(${searchPattern(filters.name)})`
     );
   if (filters.code) conditions.push(eq(patients.code, recordNumberSchema.parse(filters.code)));
+  if (filters.cpf) conditions.push(
+    sql`REPLACE(REPLACE(REPLACE(${patients.cpf}, '.', ''), '-', ''), ' ', '') = ${cpfSearchSchema.parse(filters.cpf)}`
+  );
   if (filters.birthDate)
     conditions.push(eq(patients.birthDate, filters.birthDate));
   if (filters.city)

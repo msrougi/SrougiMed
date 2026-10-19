@@ -31,6 +31,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import PatientView from "@/components/PatientView";
+import { cpfSearchSchema } from "@shared/pagination";
 
 interface PatientSearchProps {
   onEditPatient?: (patient: any) => void;
@@ -40,6 +41,7 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
   const [filters, setFilters] = useState({
     name: "",
     code: "",
+    cpf: "",
     birthDate: "",
     city: "",
   });
@@ -67,7 +69,7 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
       toast.success("Paciente deletado com sucesso!");
       setDeleteId(null);
       // Limpar tela de busca
-      setFilters({ name: "", code: "", birthDate: "", city: "" });
+      setFilters({ name: "", code: "", cpf: "", birthDate: "", city: "" });
       search.reset();
     },
     onError: error => {
@@ -81,19 +83,25 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
   };
 
   const handleSearch = () => {
+    const cpf = cpfSearchSchema.safeParse(filters.cpf);
+    if (!cpf.success) {
+      toast.error(cpf.error.issues[0].message);
+      return;
+    }
     // Validar se há pelo menos um campo com 2 ou mais caracteres
     const hasValidInput =
       (filters.name && filters.name.trim().length >= 2) ||
       (filters.code && /^[0-9]{1,8}$/.test(filters.code.trim())) ||
+      Boolean(cpf.data) ||
       (filters.birthDate && filters.birthDate.trim().length >= 2) ||
       (filters.city && filters.city.trim().length >= 2);
 
     if (!hasValidInput) {
-      toast.error("Digite um prontuário ou pelo menos 2 caracteres nos demais campos para buscar");
+      toast.error("Informe um prontuário, um CPF completo ou pelo menos 2 caracteres nos demais campos para buscar");
       return;
     }
 
-    search.search({ ...filters });
+    search.search({ ...filters, cpf: cpf.data });
   };
 
   const handleDelete = () => {
@@ -131,6 +139,19 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
               value={filters.code}
               onChange={handleFilterChange}
               placeholder="Digite o prontuário"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="search-cpf">CPF</Label>
+            <Input
+              id="search-cpf"
+              name="cpf"
+              inputMode="numeric"
+              maxLength={14}
+              value={filters.cpf}
+              onChange={handleFilterChange}
+              placeholder="CPF com ou sem pontuação"
             />
           </div>
 
