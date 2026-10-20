@@ -1,7 +1,7 @@
 export const DESKTOP_ONLY_ERROR = "Esta conta permite acesso somente por computador. O acesso por celular ou tablet está bloqueado.";
 
 // Account logins explicitly restricted by the application owner.
-const desktopOnlyLogins = new Set(["rose", "bia"]);
+const desktopOnlyLogins = new Set(["bia"]);
 export function requiresDesktop(username: string | null | undefined) {
   return desktopOnlyLogins.has((username ?? "").trim().toLocaleLowerCase("pt-BR"));
 }

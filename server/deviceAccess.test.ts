@@ -13,12 +13,12 @@ const session=(username:string|null,headers=mobile)=>{
 };
 beforeEach(()=>vi.clearAllMocks());
 describe("restrição de dispositivo por conta",()=>{
-  it.each(["rose","ROSE"," Rose ","bia","BIA"])("restringe somente o login %s",username=>{
+  it.each(["bia","BIA"," Bia "])("restringe somente o login %s",username=>{
     expect(requiresDesktop(username)).toBe(true);
     expect(()=>assertDeviceAccess({username},mobile)).toThrow(DESKTOP_ONLY_ERROR);
     expect(()=>assertDeviceAccess({username},desktop)).not.toThrow();
   });
-  it.each(["admin","teste","roseli","bianca",null])("mantém outras contas liberadas: %s",username=>{
+  it.each(["admin","teste","rose","ROSE","roseli","bianca",null])("mantém outras contas liberadas: %s",username=>{
     expect(requiresDesktop(username)).toBe(false);
     expect(()=>assertDeviceAccess({username},mobile)).not.toThrow();
   });
@@ -32,10 +32,10 @@ describe("restrição de dispositivo por conta",()=>{
     expect(isMobileRequest(headers)).toBe(true);
   });
   it("bloqueia login móvel antes de emitir sessão e permite pelo computador",async()=>{
-    database.authenticateUser.mockResolvedValue({id:1,username:"rose",name:"Fixture",role:"user"});
-    const phone=session(null);await expect(phone.caller.customAuth.login({username:"rose",password:"synthetic"})).rejects.toMatchObject({code:"FORBIDDEN",message:DESKTOP_ONLY_ERROR});
+    database.authenticateUser.mockResolvedValue({id:1,username:"bia",name:"Fixture",role:"user"});
+    const phone=session(null);await expect(phone.caller.customAuth.login({username:"bia",password:"synthetic"})).rejects.toMatchObject({code:"FORBIDDEN",message:DESKTOP_ONLY_ERROR});
     expect(phone.cookie).not.toHaveBeenCalled();
-    const computer=session(null,desktop);await expect(computer.caller.customAuth.login({username:"rose",password:"synthetic"})).resolves.toMatchObject({success:true});
+    const computer=session(null,desktop);await expect(computer.caller.customAuth.login({username:"bia",password:"synthetic"})).resolves.toMatchObject({success:true});
     expect(computer.cookie).toHaveBeenCalledOnce();
   });
   it("bloqueia sessões já abertas nos dados, sessão pública, chat e administração",async()=>{
@@ -46,13 +46,13 @@ describe("restrição de dispositivo por conta",()=>{
     expect(database.searchPatients).not.toHaveBeenCalled();
   });
   it("permite sair ou trocar para outra conta num aparelho bloqueado",async()=>{
-    const s=session("rose");await expect(s.caller.auth.logout()).resolves.toMatchObject({success:true});expect(s.clearCookie).toHaveBeenCalledOnce();
+    const s=session("bia");await expect(s.caller.auth.logout()).resolves.toMatchObject({success:true});expect(s.clearCookie).toHaveBeenCalledOnce();
     database.authenticateUser.mockResolvedValue({id:2,username:"teste",name:"Fixture",role:"user"});
     await expect(s.caller.customAuth.login({username:"teste",password:"synthetic"})).resolves.toMatchObject({success:true});
     expect(s.cookie).toHaveBeenCalledOnce();
   });
   it("preserva busca para conta restrita no computador",async()=>{
-    await expect(session("rose",desktop).caller.patients.searchPage({name:"Fixture"})).resolves.toMatchObject({total:0});
+    await expect(session("bia",desktop).caller.patients.searchPage({name:"Fixture"})).resolves.toMatchObject({total:0});
     expect(database.searchPatients).toHaveBeenCalledOnce();
   });
 });
