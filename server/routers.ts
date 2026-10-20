@@ -1,3 +1,4 @@
+import {secondFactorEnabled,trustedDeviceStore,TRUST_COOKIE,trustCookieOptions} from "./trustedDevices";
 import { recordNumberSchema } from "../shared/recordNumber";
 import { chatMedRouter } from "./chatMedRouter";
 import { assertDeviceAccess } from "./deviceAccess";
@@ -50,8 +51,15 @@ export const appRouter = router({
 
   // Autenticação customizada
   customAuth: router({
-    verifyLoginCode: publicProcedure.input(z.object({challengeId:z.string().regex(/^[a-f0-9]{64}$/),code:z.string().trim().regex(/^[0-9]{6}$/)}).strict()).mutation(async({input,ctx})=>{
+    verifyLoginCode: publicProcedure.input(z.object({challengeId:z.string().regex(/^[a-f0-9]{64}$/),code:z.string().trim().regex(/^[0-9]{6}$/),trustDevice:z.boolean().default(false)}).strict()).mutation(async({input,ctx})=>{
       const result=await (await emailCodeStore()).verify(input.challengeId,input.code,ctx.req);
+      if(secondFactorEnabled() && input.trustDevice){
+        const trusted=await (await trustedDeviceStore()).create(result.user as any,ctx.req);
+        ctx.res.cookie(TRUST_COOKIE,trusted.token,trustCookieOptions);
+        result.proof.trustedDeviceId=trusted.id;
+      } else if(secondFactorEnabled()){
+        ctx.res.clearCookie(TRUST_COOKIE,{...trustCookieOptions,maxAge:-1});
+      }
       return issueLogin(result.user as any,ctx,result.proof);
     }),
     changePassword: protectedProcedure.input(changePasswordSchema).mutation(async ({ input, ctx }) => {
@@ -70,7 +78,10 @@ export const appRouter = router({
         assertDeviceAccess(user, ctx.req.headers ?? {});
 
         const challenge=await beginNetworkLogin(user,ctx.req);
-        if(challenge)return challenge;
+        if(challenge){
+          if("trustedProof" in challenge)return issueLogin(user,ctx,challenge.trustedProof);
+          return challenge;
+        }
         return issueLogin(user,ctx);
 
       }),
@@ -265,6 +276,9 @@ export const appRouter = router({
 
   // Administração de usuários
   admin: router({
+    revokeTrustedDevices:adminProcedure.input(z.object({userId:z.number().int().positive()}).strict()).mutation(async({input})=>{
+      await (await trustedDeviceStore()).revoke(input.userId);return {success:true};
+    }),
     updateUser: adminProcedure.input(updateUserSchema).mutation(async ({ input, ctx }) => {
       if (input.id === ctx.user.id && input.role !== "admin") {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Você não pode remover seu próprio acesso de administrador" });

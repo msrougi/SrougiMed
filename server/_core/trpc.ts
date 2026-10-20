@@ -3,6 +3,7 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import type { TrpcContext } from "./context";
 import { assertDeviceAccess } from "../deviceAccess";
+import {assertSecondFactorAccess} from "../trustedDevices";
 import { assertNetworkAccess } from "../networkAccess";
 
 const t = initTRPC.context<TrpcContext>().create({
@@ -15,6 +16,7 @@ const deviceProcedure = t.procedure.use(async ({ ctx, path, next }) => {
   if (ctx.user && !["auth.logout","customAuth.login","customAuth.verifyLoginCode"].includes(path)) {
     assertDeviceAccess(ctx.user, ctx.req.headers ?? {});
     assertNetworkAccess(ctx.user,ctx.req);
+    await assertSecondFactorAccess(ctx.user,ctx.req);
   }
   return next();
 });
