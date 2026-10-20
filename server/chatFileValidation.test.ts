@@ -12,7 +12,7 @@ describe("validação de anexos do ChatMed",()=>{
   it("aceita os contêineres comuns de Office e impede executáveis e SVG",()=>{
     for(const ext of ["doc","xls","ppt"])expect(decodeChatFile(file("fixture."+ext,Buffer.from("d0cf11e0a1b11ae10000","hex"))).meta.size).toBe(10);
     for(const ext of ["docx","xlsx","pptx","odt","ods","odp"])expect(decodeChatFile(file("fixture."+ext,Buffer.from("504b03040000","hex"))).meta.name).toBe("fixture."+ext);
-    for(const ext of ["exe","html","svg","js","docm"])expect(chatFileError({name:"fixture."+ext,size:10})).toContain("Formato");
+    for(const ext of ["exe","html","svg","js","docm"])expect(chatFileError({name:"fixture."+ext,size:10})).toContain("Este tipo de arquivo não é suportado");
   });
   it("limita tamanho, rejeita base64 inválido e limpa controles/caminhos do nome",()=>{
     expect(()=>decodeChatFile({name:"f.pdf",base64:"invalid!"})).toThrow();
