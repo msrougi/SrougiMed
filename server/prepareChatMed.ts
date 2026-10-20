@@ -22,6 +22,12 @@ export async function prepareChatMed(db: Pick<Connection, "query">) {
       UNIQUE KEY chatmed_retry (senderId,clientId),
       KEY chatmed_history (conversationId,id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin`);
+    await db.query(`CREATE TABLE IF NOT EXISTS chatmed_attachments (
+      messageId INT UNSIGNED NOT NULL PRIMARY KEY,
+      fileName VARCHAR(180) NOT NULL, mimeType VARCHAR(100) CHARACTER SET ascii NOT NULL,
+      byteSize INT UNSIGNED NOT NULL, fileHash CHAR(64) CHARACTER SET ascii NOT NULL,
+      fileData LONGBLOB NOT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin`);
     await db.query(`CREATE TABLE IF NOT EXISTS chatmed_reads (
       conversationId INT UNSIGNED NOT NULL, userId INT NOT NULL,
       lastReadId INT UNSIGNED NOT NULL DEFAULT 0,

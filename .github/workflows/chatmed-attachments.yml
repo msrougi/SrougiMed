@@ -1,0 +1,46 @@
+name: ChatMed attachments checks
+on:
+  push:
+    branches: [chatmed-emoji-anexos]
+  pull_request:
+    paths:
+      - "server/chatMed*"
+      - "server/chatFile*"
+      - "server/prepareChatMed.ts"
+      - "shared/chat*"
+      - "client/src/components/ChatMed.tsx"
+      - "client/src/lib/chatMed.test.tsx"
+      - ".github/workflows/chatmed-attachments.yml"
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: synthetic-ci-only
+          MYSQL_DATABASE: srougi_test_chatmed
+          MYSQL_ROOT_HOST: "%"
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -psynthetic-ci-only"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - run: pnpm test
+        env:
+          SROUGI_CHAT_TEST_DATABASE_URL: mysql://root:synthetic-ci-only@127.0.0.1:3306/srougi_test_chatmed
+      - run: pnpm build

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { ChatAttachment } from "./chatAttachments";
 
 // A single canonical name prevents spaces/capitalization from splitting a team.
 export const chatGroupSchema = z.string().normalize("NFKC").trim()
@@ -20,4 +21,4 @@ export const chatSendSchema = chatThreadSchema.extend({
 export type ChatThread = z.infer<typeof chatThreadSchema>;
 export type ChatHistoryInput = z.infer<typeof chatHistorySchema>;
 export type ChatSendInput = z.infer<typeof chatSendSchema>;
-export type ChatMessage = { id: number; senderId: number; senderName: string; text: string; createdAt: Date };
+export type ChatMessage = { id: number; senderId: number; senderName: string; text: string; createdAt: Date; attachment?: ChatAttachment };

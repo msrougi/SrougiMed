@@ -1,11 +1,14 @@
 import { TRPCError } from "@trpc/server";
+import { decodeChatFile } from "./chatFileValidation";
+import type { z } from "zod";
+import type { chatFilePayloadSchema } from "../shared/chatAttachments";
 import type { Pool, PoolConnection, RowDataPacket, ResultSetHeader } from "mysql2/promise";
 import type { ChatThread, ChatHistoryInput, ChatSendInput, ChatMessage } from "../shared/chatMed";
 
 type Actor = { id: number; name: string | null; username: string | null; chatGroup: string | null };
 type Db = Pick<Pool, "getConnection">;
 const forbidden = () => new TRPCError({ code: "FORBIDDEN", message: "Esta conversa não está disponível no seu grupo de chat." });
-const message = (row: any): ChatMessage => ({ id: Number(row.id), senderId: Number(row.senderId), senderName: row.senderName, text: row.body, createdAt: row.createdAt });
+const message = (row: any): ChatMessage => ({ id: Number(row.id), senderId: Number(row.senderId), senderName: row.senderName, text: row.body, createdAt: row.createdAt, ...(row.fileName ? { attachment: {name:row.fileName,mime:row.mimeType,size:Number(row.byteSize)} } : {}) });
 
 export class ChatMedStore {
   constructor(private pool: Db) {}
@@ -72,9 +75,10 @@ export class ChatMedStore {
       const incremental = Boolean(input.afterId);
       const size = incremental ? 100 : 50;
       const cursor = input.beforeId ?? input.afterId;
-      const [rows] = await db.query<RowDataPacket[]>(`SELECT id,senderId,senderName,body,createdAt FROM chatmed_messages
-        WHERE conversationId=? ${cursor ? `AND id ${incremental ? ">" : "<"} ?` : ""}
-        ORDER BY id ${incremental ? "ASC" : "DESC"} LIMIT ?`, [id,...(cursor ? [cursor] : []),size+1]);
+      const [rows] = await db.query<RowDataPacket[]>(`SELECT m.id,m.senderId,m.senderName,m.body,m.createdAt,a.fileName,a.mimeType,a.byteSize FROM chatmed_messages m
+        LEFT JOIN chatmed_attachments a ON a.messageId=m.id
+        WHERE m.conversationId=? ${cursor ? `AND m.id ${incremental ? ">" : "<"} ?` : ""}
+        ORDER BY m.id ${incremental ? "ASC" : "DESC"} LIMIT ?`, [id,...(cursor ? [cursor] : []),size+1]);
       const hasMore = rows.length > size;
       const page = rows.slice(0,size);
       if (!incremental) page.reverse();
@@ -90,6 +94,39 @@ export class ChatMedStore {
       const [rows] = await db.query<RowDataPacket[]>("SELECT id,conversationId,senderId,senderName,body,createdAt FROM chatmed_messages WHERE senderId=? AND clientId=? FOR UPDATE", [userId,input.clientId]);
       if (Number(rows[0].conversationId) !== id || rows[0].body !== input.text) throw new TRPCError({ code: "CONFLICT", message: "Reenvio inválido. Atualize a conversa e tente novamente." });
       return message(rows[0]);
+    });
+  }
+
+
+  async sendFile(userId:number, input:ChatThread & z.infer<typeof chatFilePayloadSchema>) {
+    const file=decodeChatFile(input);
+    const body=input.text.trim() || "📎 "+file.meta.name;
+    return this.run(userId,input,async(db,actor,peer)=>{
+      const id=await this.conversation(db,actor,peer,true);
+      const [inserted]=await db.query<ResultSetHeader>(`INSERT IGNORE INTO chatmed_messages(conversationId,senderId,senderName,body,clientId)
+        VALUES(?,?,?,?,?)`,[id,userId,(actor.name || actor.username || "Usuário").slice(0,200),body,input.clientId]);
+      const [rows]=await db.query<RowDataPacket[]>("SELECT id,conversationId,senderId,senderName,body,createdAt FROM chatmed_messages WHERE senderId=? AND clientId=? FOR UPDATE",[userId,input.clientId]);
+      const row=rows[0];
+      if(!row || Number(row.conversationId)!==id || row.body!==body)throw new TRPCError({code:"CONFLICT",message:"Reenvio de arquivo inválido. Tente novamente."});
+      if(inserted.affectedRows===1) {
+        await db.query("INSERT INTO chatmed_attachments(messageId,fileName,mimeType,byteSize,fileHash,fileData) VALUES(?,?,?,?,?,?)",[row.id,file.meta.name,file.meta.mime,file.meta.size,file.hash,file.data]);
+      } else {
+        const [old]=await db.query<RowDataPacket[]>("SELECT fileName,fileHash FROM chatmed_attachments WHERE messageId=?",[row.id]);
+        if(!old[0] || old[0].fileName!==file.meta.name || old[0].fileHash!==file.hash)throw new TRPCError({code:"CONFLICT",message:"Reenvio de arquivo inválido. Tente novamente."});
+      }
+      return message({...row,fileName:file.meta.name,mimeType:file.meta.mime,byteSize:file.meta.size});
+    });
+  }
+
+  async attachment(userId:number,input:ChatThread & {messageId:number}) {
+    return this.run(userId,input,async(db,actor,peer)=>{
+      const id=await this.conversation(db,actor,peer);
+      if(!id)throw forbidden();
+      const [rows]=await db.query<RowDataPacket[]>(`SELECT a.fileName,a.mimeType,a.byteSize,a.fileData FROM chatmed_attachments a
+        JOIN chatmed_messages m ON m.id=a.messageId WHERE m.conversationId=? AND m.id=?`,[id,input.messageId]);
+      if(!rows[0])throw forbidden();
+      const row=rows[0];
+      return {name:row.fileName as string,mime:row.mimeType as string,size:Number(row.byteSize),base64:(row.fileData as Buffer).toString("base64")};
     });
   }
 
