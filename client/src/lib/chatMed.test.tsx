@@ -96,4 +96,18 @@ describe("janela ChatMed",()=>{
     expect(screen.queryByText(/fixture.pdf/)).toBeNull();
   });
 
+  it("busca imagem pela conversa autenticada e revoga a prévia ao fechar",async()=>{
+    const revoke=vi.fn();
+    Object.defineProperty(URL,"createObjectURL",{configurable:true,value:vi.fn(()=>"blob:synthetic-preview")});
+    Object.defineProperty(URL,"revokeObjectURL",{configurable:true,value:revoke});
+    api.history.mockResolvedValue({messages:[{...first,attachment:{name:"fixture.png",mime:"image/png",size:3}}],hasMore:false});
+    api.attachment.mockResolvedValue({name:"fixture.png",mime:"image/png",size:3,base64:"YWJj"});
+    const view=render(<ChatMed userId={1}/>);await openConversation();
+    expect(api.attachment).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button",{name:"Ver imagem"}));
+    expect(await screen.findByAltText("fixture.png")).toBeTruthy();
+    expect(api.attachment).toHaveBeenCalledWith({group:"equipe",peerId:null,messageId:1});
+    view.unmount();expect(revoke).toHaveBeenCalledWith("blob:synthetic-preview");
+  });
+
 });
