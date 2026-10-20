@@ -16,7 +16,7 @@ describe.skipIf(!url)("códigos de e-mail — MySQL isolado",()=>{
     vi.stubEnv("OFFICE_ACCESS_POLICY_ENABLED","false");const connection=await pool.getConnection();try{await prepareNetworkAccess(connection);await prepareNetworkAccess(connection);}finally{connection.release();}
   });
   beforeEach(async()=>{
-    vi.stubEnv("AUTH_LOGIN_EMAILS_JSON","");vi.stubEnv("SECOND_FACTOR_ENABLED","false");vi.stubEnv("OFFICE_ACCESS_POLICY_ENABLED","true");vi.stubEnv("OFFICE_PUBLIC_IP","198.51.100.1");vi.stubEnv("OFFICE_CLIENT_IP_HEADER","true-client-ip");vi.stubEnv("OFFICE_IP_HEADER_VERIFIED","true");vi.stubEnv("JWT_SECRET","synthetic-network-test-key");
+    vi.stubEnv("CF_ACCESS_ENABLED","false");vi.stubEnv("AUTH_LOGIN_EMAILS_JSON","");vi.stubEnv("SECOND_FACTOR_ENABLED","false");vi.stubEnv("OFFICE_ACCESS_POLICY_ENABLED","true");vi.stubEnv("OFFICE_PUBLIC_IP","198.51.100.1");vi.stubEnv("OFFICE_CLIENT_IP_HEADER","true-client-ip");vi.stubEnv("OFFICE_IP_HEADER_VERIFIED","true");vi.stubEnv("JWT_SECRET","synthetic-network-test-key");
     mails=[];store=new LoginEmailCodeStore(pool,async mail=>{mails.push(mail);});
     await pool.query("DELETE FROM srougi_login_codes");await pool.query("DELETE FROM users");
     await pool.query("INSERT INTO users(id,username,email,password) VALUES(?,?,?,?)",[1,user.username,user.email,user.password]);
@@ -88,5 +88,16 @@ describe.skipIf(!url)("códigos de e-mail — MySQL isolado",()=>{
       await expect(prepareLoginEmails(c)).rejects.toThrow("AUTH_LOGIN_EMAILS_INVALID");
     }finally{c.release();}
     const [rows]=await pool.query<any[]>("SELECT email FROM users WHERE id=1");expect(rows[0].email).toBe(user.email);
+  });
+  it("Cloudflare Access dispensa configuração de envio e exige e-mails individuais",async()=>{
+    vi.stubEnv("CF_ACCESS_ENABLED","true");vi.stubEnv("CF_ACCESS_TEAM_DOMAIN","https://fixture.cloudflareaccess.com");vi.stubEnv("CF_ACCESS_AUD","a".repeat(64));
+    vi.stubEnv("RESEND_API_KEY","");vi.stubEnv("AUTH_EMAIL_FROM","");
+    const c=await pool.getConnection();try{
+      await prepareNetworkAccess(c);
+      await pool.query("INSERT INTO users(id,username,email,password) VALUES(2,'other',?,'synthetic')",[user.email]);
+      await expect(prepareNetworkAccess(c)).rejects.toThrow("CLOUDFLARE_ACCESS_ACCOUNT_EMAIL_DUPLICATE");
+      await pool.query("UPDATE users SET email=NULL WHERE id=2");
+      await expect(prepareNetworkAccess(c)).rejects.toThrow("CLOUDFLARE_ACCESS_ACCOUNT_EMAIL_MISSING");
+    }finally{c.release();}
   });
 });

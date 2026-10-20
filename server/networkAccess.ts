@@ -1,3 +1,4 @@
+import {cloudflareAccessEnabled,accessConfiguration} from "./cloudflareAccess";
 import {authEmailConfiguration} from "./authEmail";
 import { createHash, createHmac } from "node:crypto";
 import { isIP } from "node:net";
@@ -71,6 +72,11 @@ export function assertNetworkAccess(user:NetworkUser,req:Request) {
 }
 
 export function validateNetworkConfiguration() {
+  if(cloudflareAccessEnabled()){
+    accessConfiguration();
+    if(!authSecret())throw Error("CLOUDFLARE_ACCESS_SESSION_SECRET_MISSING");
+    return;
+  }
   if(process.env.SECOND_FACTOR_ENABLED==="true"){
     try{authEmailConfiguration();if(!authSecret())throw Error();}catch{throw new Error("SECOND_FACTOR_EMAIL_NOT_CONFIGURED");}
     return;

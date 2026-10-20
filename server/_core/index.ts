@@ -1,3 +1,4 @@
+import {mountCloudflareAccess} from "../cloudflareAccess";
 import { restoreRecordNumbers } from "../restoreRecordNumbers";
 import { prepareChatMed } from "../prepareChatMed";
 import { prepareNetworkAccess } from "../prepareNetworkAccess";
@@ -45,6 +46,8 @@ async function startServer() {
   }
   const app = express();
   const server = createServer(app);
+  // Configure Render health checks to /healthz before enabling Access.
+  mountCloudflareAccess(app);
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));

@@ -1,3 +1,4 @@
+import {cloudflareAccessEnabled,assertAccessAccountsReady} from "./cloudflareAccess";
 import type { Connection } from "mysql2/promise";
 import {prepareLoginEmails} from "./prepareLoginEmails";
 import {authRecipientAllowed} from "./authEmail";
@@ -21,6 +22,11 @@ export async function prepareNetworkAccess(db:Pick<Connection,"query">) {
     KEY trusted_user(userId),KEY trusted_expiry(expiresAt)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
   await prepareLoginEmails(db);
+  if(cloudflareAccessEnabled()){
+    const [accounts]=await db.query<any[]>("SELECT email FROM users");
+    assertAccessAccountsReady(accounts);
+    return;
+  }
   if(process.env.SECOND_FACTOR_ENABLED==="true") {
     const [accounts]=await db.query<any[]>("SELECT id,email FROM users");
     if(accounts.some(user=>!z.string().email().safeParse(user.email).success))throw new Error("SECOND_FACTOR_ACCOUNT_EMAIL_MISSING");

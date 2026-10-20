@@ -1,3 +1,4 @@
+import {cloudflareAccessEnabled,requestAccessIdentity,assertAccessAccount,assertAccessSession} from "../cloudflareAccess";
 import { NOT_ADMIN_ERR_MSG, UNAUTHED_ERR_MSG } from '@shared/const';
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
@@ -12,11 +13,20 @@ const t = initTRPC.context<TrpcContext>().create({
 
 export const router = t.router;
 const deviceProcedure = t.procedure.use(async ({ ctx, path, next }) => {
+  if(cloudflareAccessEnabled()){
+    const identity=await requestAccessIdentity(ctx.req);
+    if(ctx.user && !["auth.logout","customAuth.login","customAuth.verifyLoginCode"].includes(path)){
+      await assertAccessAccount(ctx.user,identity);
+      assertAccessSession(ctx.user,ctx.req,identity);
+    }
+  }
   // Logout and switching accounts must remain possible from a blocked session.
   if (ctx.user && !["auth.logout","customAuth.login","customAuth.verifyLoginCode"].includes(path)) {
     assertDeviceAccess(ctx.user, ctx.req.headers ?? {});
-    assertNetworkAccess(ctx.user,ctx.req);
-    await assertSecondFactorAccess(ctx.user,ctx.req);
+    if(!cloudflareAccessEnabled()){
+      assertNetworkAccess(ctx.user,ctx.req);
+      await assertSecondFactorAccess(ctx.user,ctx.req);
+    }
   }
   return next();
 });
