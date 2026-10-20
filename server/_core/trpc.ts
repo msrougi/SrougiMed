@@ -3,6 +3,7 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import type { TrpcContext } from "./context";
 import { assertDeviceAccess } from "../deviceAccess";
+import { assertNetworkAccess } from "../networkAccess";
 
 const t = initTRPC.context<TrpcContext>().create({
   transformer: superjson,
@@ -11,8 +12,9 @@ const t = initTRPC.context<TrpcContext>().create({
 export const router = t.router;
 const deviceProcedure = t.procedure.use(async ({ ctx, path, next }) => {
   // Logout and switching accounts must remain possible from a blocked session.
-  if (ctx.user && path !== "auth.logout" && path !== "customAuth.login") {
+  if (ctx.user && !["auth.logout","customAuth.login","customAuth.verifyLoginCode"].includes(path)) {
     assertDeviceAccess(ctx.user, ctx.req.headers ?? {});
+    assertNetworkAccess(ctx.user,ctx.req);
   }
   return next();
 });

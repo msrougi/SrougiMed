@@ -1,6 +1,9 @@
 import { recordNumberSchema } from "../shared/recordNumber";
 import { chatMedRouter } from "./chatMedRouter";
 import { assertDeviceAccess } from "./deviceAccess";
+import { beginNetworkLogin,emailCodeStore } from "./loginEmailCode";
+import type { EmailProof } from "./networkAccess";
+import type { TrpcContext } from "./_core/context";
 import { chatGroupSchema } from "../shared/chatMed";
 import { changePasswordSchema } from "../shared/changePassword";
 import { patientSearchSchema, phoneBookSearchSchema, legacyPatientSearchSchema, legacyPhoneBookSearchSchema } from "../shared/pagination";
@@ -22,6 +25,12 @@ function withoutPassword<T extends { password?: unknown }>(user: T | null) {
   return safeUser;
 }
 
+function issueLogin(user:{id:number;username?:string|null;name?:string|null;role?:string},ctx:TrpcContext,proof?:EmailProof) {
+  const token=jwt.sign({userId:user.id,username:user.username,role:user.role,...proof},ENV.cookieSecret,{expiresIn:"7d"});
+  ctx.res.cookie(COOKIE_NAME,token,getSessionCookieOptions(ctx.req));
+  return {success:true as const,requiresCode:false as const,user:{id:user.id,username:user.username,name:user.name,role:user.role}};
+}
+
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
@@ -39,6 +48,10 @@ export const appRouter = router({
 
   // Autenticação customizada
   customAuth: router({
+    verifyLoginCode: publicProcedure.input(z.object({challengeId:z.string().regex(/^[a-f0-9]{64}$/),code:z.string().trim().regex(/^[0-9]{6}$/)}).strict()).mutation(async({input,ctx})=>{
+      const result=await (await emailCodeStore()).verify(input.challengeId,input.code,ctx.req);
+      return issueLogin(result.user as any,ctx,result.proof);
+    }),
     changePassword: protectedProcedure.input(changePasswordSchema).mutation(async ({ input, ctx }) => {
       const { changeOwnPassword } = await import("./db");
       return changeOwnPassword(ctx.user.id, input);
@@ -54,25 +67,10 @@ export const appRouter = router({
         }
         assertDeviceAccess(user, ctx.req.headers ?? {});
 
-        // Criar sessão usando JWT
-        const token = jwt.sign(
-          { userId: user.id, username: user.username, role: user.role },
-          ENV.cookieSecret,
-          { expiresIn: "7d" }
-        );
+        const challenge=await beginNetworkLogin(user,ctx.req);
+        if(challenge)return challenge;
+        return issueLogin(user,ctx);
 
-        const cookieOptions = getSessionCookieOptions(ctx.req);
-        ctx.res.cookie(COOKIE_NAME, token, cookieOptions);
-
-        return {
-          success: true,
-          user: {
-            id: user.id,
-            username: user.username,
-            name: user.name,
-            role: user.role,
-          },
-        };
       }),
     
     getCurrentUser: publicProcedure.query(async ({ ctx }) => {
