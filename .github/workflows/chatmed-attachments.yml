@@ -47,11 +47,12 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Prepare isolated authentication databases
-        run: docker exec ${{ job.services.mysql.id }} mysql -uroot -psynthetic-ci-only -e "CREATE DATABASE srougi_test_network; CREATE DATABASE srougi_test_devices;"
+        run: docker exec ${{ job.services.mysql.id }} mysql -uroot -psynthetic-ci-only -e "CREATE DATABASE srougi_test_network; CREATE DATABASE srougi_test_devices; CREATE DATABASE srougi_test_sort;"
       - run: pnpm check
       - run: pnpm test
         env:
           SROUGI_NETWORK_TEST_DATABASE_URL: mysql://root:synthetic-ci-only@127.0.0.1:3306/srougi_test_network
           SROUGI_DEVICE_TEST_DATABASE_URL: mysql://root:synthetic-ci-only@127.0.0.1:3306/srougi_test_devices
+          SROUGI_SORT_TEST_DATABASE_URL: mysql://root:synthetic-ci-only@127.0.0.1:3306/srougi_test_sort
           SROUGI_CHAT_TEST_DATABASE_URL: mysql://root:synthetic-ci-only@127.0.0.1:3306/srougi_test_chatmed
       - run: pnpm build
