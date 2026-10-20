@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { chatMentionListSchema } from "./chatMentions";
 
 export const CHAT_FILE_MAX_BYTES = 5 * 1024 * 1024;
 export const CHAT_FILE_TYPES: Record<string, string> = {
@@ -16,6 +17,7 @@ export const chatFilePayloadSchema = z.object({
   base64:z.string().min(4).max(4*Math.ceil(CHAT_FILE_MAX_BYTES/3)),
   text:z.string().trim().max(4000).default(""),
   clientId:z.string().uuid(),
+  mentions:chatMentionListSchema.optional(),
 }).strict();
 export type ChatAttachment = { name:string; mime:string; size:number };
 export function chatFileExtension(name:string) { return name.split(".").pop()?.toLowerCase() || ""; }

@@ -21,15 +21,15 @@ describe.skipIf(!url)("ChatMed — MySQL isolado com dados fictícios",()=>{
     try { await prepareChatMed(connection);await prepareChatMed(connection); } finally {connection.release();}
   });
   beforeEach(async()=>{
-    for(const table of ["chatmed_attachments","chatmed_reads","chatmed_messages","chatmed_conversations","users"])await pool.query(`DELETE FROM ${table}`);
+    for(const table of ["chatmed_mentions","chatmed_attachments","chatmed_reads","chatmed_messages","chatmed_conversations","users"])await pool.query(`DELETE FROM ${table}`);
     await pool.query("INSERT INTO users(id,name,username,chatGroup) VALUES (1,'Fixture A','a','equipe a'),(2,'Fixture B','b','equipe a'),(3,'Fixture C','c','equipe a'),(4,'Fixture D','d','equipe b'),(5,'Sem grupo','e',NULL)");
   });
   afterAll(async()=>{await pool?.end();});
   it("lista canal e somente colegas do mesmo grupo, sem dados de autenticação",async()=>{
     const list=await store.threads(1);
     expect(list.group).toBe("equipe a");expect(list.threads.map(x=>x.peerId)).toEqual([null,2,3]);
-    expect(await store.threads(5)).toEqual({group:null,threads:[],unread:0});
-    expect(JSON.stringify(list)).not.toMatch(/password|Fixture D|username/);
+    expect(await store.threads(5)).toEqual({group:null,threads:[],unread:0,members:[],mentionUnread:0});
+    expect(JSON.stringify(list)).not.toMatch(/password|Fixture D/);
   });
   it("canal coletivo entrega a todos do grupo, mas não a outra equipe",async()=>{
     const sent=await send(1);
@@ -121,6 +121,42 @@ describe.skipIf(!url)("ChatMed — MySQL isolado com dados fictícios",()=>{
     await expect(store.sendFile(1,{...dm,...payload("fixture.png")})).rejects.toMatchObject({code:"BAD_REQUEST"});
     expect((await store.history(1,dm)).messages).toHaveLength(0);
     await send(1,group,"Olá! 😊 👍 ❤️");expect((await store.history(2,group)).messages[0].text).toBe("Olá! 😊 👍 ❤️");
+  });
+
+  it("menções persistem e avisam somente destinatário, até leitura",async()=>{
+    const text="Olá @Fixture B! @Fixture B";
+    const mentions=[4,16].map(start=>({userId:2,start,end:start+"@Fixture B".length}));
+    const input={...group,text,mentions,clientId:randomUUID()};
+    const sent=await store.send(1,input);
+    expect(sent.mentions).toHaveLength(2);
+    expect((await store.threads(2)).mentionUnread).toBe(1);
+    expect((await store.threads(3)).mentionUnread).toBe(0);
+    expect((await new ChatMedStore(pool).history(2,group)).messages[0].mentions).toEqual(sent.mentions);
+    expect((await store.send(1,input)).id).toBe(sent.id);
+    await expect(store.send(1,{...input,mentions:[]})).rejects.toMatchObject({code:"CONFLICT"});
+    await store.read(2,{...group,lastSeenId:sent.id});
+    expect((await store.threads(2)).mentionUnread).toBe(0);
+  });
+  it("não aceita alvo externo, nome forjado, sobreposição nem menção privada",async()=>{
+    for(const [text,mentions,thread] of [
+      ["@Fixture D",[{userId:4,start:0,end:10}],group],
+      ["@Fixture D",[{userId:2,start:0,end:10}],group],
+      ["@Fixture B",[{userId:2,start:0,end:10},{userId:2,start:0,end:10}],group],
+      ["@Fixture B",[{userId:2,start:0,end:10}],dm],
+    ] as const) {
+      await expect(store.send(1,{...thread,text,mentions:[...mentions],clientId:randomUUID()})).rejects.toBeTruthy();
+    }
+    expect((await store.history(1,group)).messages).toHaveLength(0);
+    expect((await store.threads(1)).members.map(m=>m.id)).toEqual([1,2,3]);
+  });
+  it("legenda de anexo preserva menções e mudança de grupo remove acesso",async()=>{
+    const sent=await store.sendFile(1,{...group,...payload(),text:"@Fixture B",mentions:[{userId:2,start:0,end:10}]});
+    expect(sent.mentions?.[0].userId).toBe(2);
+    expect((await store.threads(2)).mentionUnread).toBe(1);
+    await pool.query("UPDATE users SET chatGroup='equipe b' WHERE id=2");
+    expect((await store.threads(2)).mentionUnread).toBe(0);
+    expect((await store.threads(1)).members.map(m=>m.id)).toEqual([1,3]);
+    await expect(store.history(2,group)).rejects.toMatchObject({code:"FORBIDDEN"});
   });
 
 });
