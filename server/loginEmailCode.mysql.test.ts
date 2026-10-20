@@ -15,7 +15,7 @@ describe.skipIf(!url)("códigos de e-mail — MySQL isolado",()=>{
     vi.stubEnv("OFFICE_ACCESS_POLICY_ENABLED","false");const connection=await pool.getConnection();try{await prepareNetworkAccess(connection);await prepareNetworkAccess(connection);}finally{connection.release();}
   });
   beforeEach(async()=>{
-    vi.stubEnv("OFFICE_ACCESS_POLICY_ENABLED","true");vi.stubEnv("OFFICE_PUBLIC_IP","198.51.100.1");vi.stubEnv("OFFICE_CLIENT_IP_HEADER","true-client-ip");vi.stubEnv("OFFICE_IP_HEADER_VERIFIED","true");vi.stubEnv("JWT_SECRET","synthetic-network-test-key");
+    vi.stubEnv("SECOND_FACTOR_ENABLED","false");vi.stubEnv("OFFICE_ACCESS_POLICY_ENABLED","true");vi.stubEnv("OFFICE_PUBLIC_IP","198.51.100.1");vi.stubEnv("OFFICE_CLIENT_IP_HEADER","true-client-ip");vi.stubEnv("OFFICE_IP_HEADER_VERIFIED","true");vi.stubEnv("JWT_SECRET","synthetic-network-test-key");
     mails=[];store=new LoginEmailCodeStore(pool,async mail=>{mails.push(mail);});
     await pool.query("DELETE FROM srougi_login_codes");await pool.query("DELETE FROM users");
     await pool.query("INSERT INTO users(id,username,email,password) VALUES(?,?,?,?)",[1,user.username,user.email,user.password]);
@@ -60,5 +60,14 @@ describe.skipIf(!url)("códigos de e-mail — MySQL isolado",()=>{
     const challenge=await store.start(user,request());
     const results=await Promise.allSettled([store.verify(challenge.challengeId,mails[0].code,request()),store.verify(challenge.challengeId,mails[0].code,request())]);
     expect(results.filter(result=>result.status==="fulfilled")).toHaveLength(1);
+  });
+  it("modo geral confirma e-mail sem depender de IP fixo ou cabeçalho do proxy",async()=>{
+    vi.stubEnv("SECOND_FACTOR_ENABLED","true");vi.stubEnv("OFFICE_IP_HEADER_VERIFIED","false");
+    const r={headers:{"user-agent":"Fixture"}} as any;
+    const challenge=await store.start(user,r);
+    expect(challenge.trustAvailable).toBe(true);
+    const verified=await store.verify(challenge.challengeId,mails[0].code,r);
+    expect(verified.proof.emailCodeIp).toBe("");
+    expect(verified.user.id).toBe(1);
   });
 });
