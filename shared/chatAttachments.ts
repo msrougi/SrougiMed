@@ -22,7 +22,7 @@ export const chatFilePayloadSchema = z.object({
 export type ChatAttachment = { name:string; mime:string; size:number };
 export function chatFileExtension(name:string) { return name.split(".").pop()?.toLowerCase() || ""; }
 export function chatFileError(file:{name:string;size:number}) {
-  if(!CHAT_FILE_TYPES[chatFileExtension(file.name)])return "Formato não permitido. Use imagem, PDF ou documento Office.";
+  if(!CHAT_FILE_TYPES[chatFileExtension(file.name)])return "Este tipo de arquivo não é suportado. Envie somente imagens, textos e documentos.";
   if(file.size<1 || file.size>CHAT_FILE_MAX_BYTES)return "O arquivo deve ter até 5 MB e não pode estar vazio.";
   return null;
 }
