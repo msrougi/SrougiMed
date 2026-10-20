@@ -1,13 +1,14 @@
 // @vitest-environment jsdom
 import { afterEach,beforeEach,describe,expect,it,vi } from "vitest";
 import { cleanup,fireEvent,render,screen,waitFor } from "@testing-library/react";
-const api=vi.hoisted(()=>({history:vi.fn(),send:vi.fn(),read:vi.fn(),refetch:vi.fn(),data:null as any}));
+const api=vi.hoisted(()=>({history:vi.fn(),send:vi.fn(),sendFile:vi.fn(),attachment:vi.fn(),read:vi.fn(),refetch:vi.fn(),data:null as any}));
 vi.mock("@/lib/trpc",async()=>{
   const {useState}=await import("react");
   return {trpc:{
-    useUtils:()=>({client:{chatMed:{history:{query:api.history}}}}),
+    useUtils:()=>({client:{chatMed:{history:{query:api.history},attachment:{query:api.attachment}}}}),
     chatMed:{
       threads:{useQuery:()=>({data:api.data,error:null,isLoading:false,refetch:api.refetch})},
+      sendFile:{useMutation:()=>({error:null,isPending:false,mutateAsync:api.sendFile})},
       read:{useMutation:()=>({mutate:(input:any,options:any)=>{api.read(input);options?.onSuccess();}})},
       send:{useMutation:()=>{
         const [error,setError]=useState<Error|null>(null);
@@ -27,6 +28,7 @@ beforeEach(()=>{
   api.data={group:"equipe",unread:2,threads:[{peerId:null,name:"equipe",unread:1,lastMessage:"Olá, equipe",lastAt:first.createdAt},{peerId:2,name:"Colega fictícia",unread:1,lastMessage:null,lastAt:null}]};
   api.history.mockImplementation(async input=>({messages:input.afterId?[]:[first],hasMore:false}));
   api.send.mockImplementation(async input=>({...first,id:2,senderId:1,senderName:"Você",text:input.text}));
+  api.sendFile.mockImplementation(async input=>({...first,id:3,senderId:1,text:input.text || "📎 "+input.name,attachment:{name:input.name,mime:"application/pdf",size:10}}));
 });
 afterEach(cleanup);
 async function openConversation(name="# equipe") {
@@ -68,4 +70,30 @@ describe("janela ChatMed",()=>{
   it("une páginas e incrementos sem duplicar mensagens nem mudar a ordem",()=>{
     expect(mergeChatMessages([{...first,id:3},first],[{...first,id:2},first]).map(message=>message.id)).toEqual([1,2,3]);
   });
+  it("insere emoji sem enviar e mantém o limite do texto",async()=>{
+    render(<ChatMed userId={1}/>);await openConversation();
+    fireEvent.click(screen.getByRole("button",{name:"Escolher emoji"}));
+    fireEvent.click(screen.getByRole("button",{name:"Inserir 👍"}));
+    expect((screen.getByLabelText("Mensagem") as HTMLTextAreaElement).value).toBe("👍");
+    expect(api.send).not.toHaveBeenCalled();
+  });
+  it("envia um PDF sem exigir legenda e mostra o anexo no histórico",async()=>{
+    render(<ChatMed userId={1}/>);await openConversation();
+    fireEvent.change(screen.getByLabelText("Selecionar anexo"),{target:{files:[new File(["%PDF-1.4"],"fixture.pdf",{type:"application/pdf"})]}});
+    fireEvent.click(screen.getByRole("button",{name:"Enviar mensagem"}));
+    await waitFor(()=>expect(api.sendFile).toHaveBeenCalledOnce());
+    expect(api.sendFile.mock.calls[0][0]).toMatchObject({group:"equipe",peerId:null,name:"fixture.pdf",text:"",base64:btoa("%PDF-1.4")});
+    expect(await screen.findByRole("button",{name:"Baixar"})).toBeTruthy();
+    expect(api.send).not.toHaveBeenCalled();
+  });
+  it("rejeita executável antes de transmitir e permite remover a seleção",async()=>{
+    render(<ChatMed userId={1}/>);await openConversation();
+    fireEvent.change(screen.getByLabelText("Selecionar anexo"),{target:{files:[new File(["fixture"],"fixture.exe")]}});
+    expect(screen.getByRole("alert").textContent).toContain("Formato não permitido");
+    expect(api.sendFile).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText("Selecionar anexo"),{target:{files:[new File(["%PDF-1.4"],"fixture.pdf")]}});
+    fireEvent.click(screen.getByRole("button",{name:"Remover anexo"}));
+    expect(screen.queryByText(/fixture.pdf/)).toBeNull();
+  });
+
 });

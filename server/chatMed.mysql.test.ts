@@ -21,7 +21,7 @@ describe.skipIf(!url)("ChatMed — MySQL isolado com dados fictícios",()=>{
     try { await prepareChatMed(connection);await prepareChatMed(connection); } finally {connection.release();}
   });
   beforeEach(async()=>{
-    for(const table of ["chatmed_reads","chatmed_messages","chatmed_conversations","users"])await pool.query(`DELETE FROM ${table}`);
+    for(const table of ["chatmed_attachments","chatmed_reads","chatmed_messages","chatmed_conversations","users"])await pool.query(`DELETE FROM ${table}`);
     await pool.query("INSERT INTO users(id,name,username,chatGroup) VALUES (1,'Fixture A','a','equipe a'),(2,'Fixture B','b','equipe a'),(3,'Fixture C','c','equipe a'),(4,'Fixture D','d','equipe b'),(5,'Sem grupo','e',NULL)");
   });
   afterAll(async()=>{await pool?.end();});
@@ -82,4 +82,45 @@ describe.skipIf(!url)("ChatMed — MySQL isolado com dados fictícios",()=>{
     const incoming=await store.history(2,{...group,afterId:after});
     expect(incoming.messages.map(m=>m.text)).toEqual(["Nova"]);
   });
+  const payload=(name="fixture.pdf")=>({name,base64:Buffer.from("%PDF-1.4 synthetic fixture").toString("base64"),text:"Arquivo de teste",clientId:randomUUID()});
+  it("preserva anexo após reconectar e entrega bytes somente aos participantes",async()=>{
+    const file=payload();const sent=await store.sendFile(1,{...dm,...file});
+    expect(sent.attachment).toMatchObject({name:"fixture.pdf",mime:"application/pdf"});
+    const history=await new ChatMedStore(pool).history(2,{...dm,peerId:1});
+    expect(history.messages[0].attachment?.name).toBe("fixture.pdf");
+    expect(JSON.stringify(history)).not.toContain("base64");
+    const downloaded=await store.attachment(2,{...dm,peerId:1,messageId:sent.id});
+    expect(downloaded.base64).toBe(file.base64);
+    await expect(store.attachment(3,{...dm,peerId:2,messageId:sent.id})).rejects.toMatchObject({code:"FORBIDDEN"});
+    await expect(store.attachment(4,{...dm,peerId:1,messageId:sent.id})).rejects.toMatchObject({code:"FORBIDDEN"});
+  });
+  it("anexo do canal fica disponível ao grupo, sem aceitar ID de arquivo privado",async()=>{
+    const sent=await store.sendFile(1,{...group,...payload()});
+    expect((await store.attachment(3,{...group,messageId:sent.id})).name).toBe("fixture.pdf");
+    const privateFile=await store.sendFile(1,{...dm,...payload()});
+    await expect(store.attachment(3,{...group,messageId:privateFile.id})).rejects.toMatchObject({code:"FORBIDDEN"});
+  });
+  it("mudança de grupo revoga também o download",async()=>{
+    const sent=await store.sendFile(1,{...dm,...payload()});
+    await pool.query("UPDATE users SET chatGroup='equipe b' WHERE id=2");
+    await expect(store.attachment(2,{...dm,peerId:1,messageId:sent.id})).rejects.toMatchObject({code:"FORBIDDEN"});
+  });
+  it("reenvio concorrente de arquivo não duplica e não troca seus bytes",async()=>{
+    const file={...dm,...payload()};
+    const sent=await Promise.all([store.sendFile(1,file),store.sendFile(1,file)]);
+    expect(sent[0].id).toBe(sent[1].id);
+    const [count]=await pool.query<any[]>("SELECT COUNT(*) AS total FROM chatmed_attachments");expect(Number(count[0].total)).toBe(1);
+    await expect(store.sendFile(1,{...file,base64:Buffer.from("%PDF-1.4 other fixture").toString("base64")})).rejects.toMatchObject({code:"CONFLICT"});
+  });
+  it("não converte mensagem de texto existente em arquivo com o mesmo identificador",async()=>{
+    const file=payload();await send(1,dm,file.text,file.clientId);
+    await expect(store.sendFile(1,{...dm,...file})).rejects.toMatchObject({code:"CONFLICT"});
+    const [count]=await pool.query<any[]>("SELECT COUNT(*) AS total FROM chatmed_attachments");expect(Number(count[0].total)).toBe(0);
+  });
+  it("conteúdo inválido não cria mensagem nem anexo e emoji persiste",async()=>{
+    await expect(store.sendFile(1,{...dm,...payload("fixture.png")})).rejects.toMatchObject({code:"BAD_REQUEST"});
+    expect((await store.history(1,dm)).messages).toHaveLength(0);
+    await send(1,group,"Olá! 😊 👍 ❤️");expect((await store.history(2,group)).messages[0].text).toBe("Olá! 😊 👍 ❤️");
+  });
+
 });
