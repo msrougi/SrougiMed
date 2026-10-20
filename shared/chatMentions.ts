@@ -8,7 +8,7 @@ export function mentionBoundary(text:string,start:number,end:number) {
   return (start===0 || /[\s([{]/.test(text[start-1])) && (end===text.length || /[\s.,!?;:)\]}]/.test(text[end]));
 }
 export function findMentionQuery(text:string,caret:number) {
-  const match=text.slice(0,caret).match(/(?:^|[\s(])@([^\s@]{0,60})$/u);
+  const match=text.slice(0,caret).match(/(?:^|[\s(])@([^\s@]{0,60})$/);
   return match?{start:caret-match[1].length-1,end:caret,query:match[1]}:null;
 }
 export function filterMentionMembers(members:ChatMentionMember[],query:string) {
