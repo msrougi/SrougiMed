@@ -234,7 +234,7 @@ export async function searchPatientsLegacy(
     .select()
     .from(patients)
     .where(patientSearchWhere(filters))
-    .orderBy(asc(patients.id))
+    .orderBy(asc(patients.name), asc(patients.id))
     .limit(filters.limit)
     .offset(filters.offset);
 }
@@ -263,7 +263,7 @@ export async function searchPatients(input: PatientSearchInput) {
               .select()
               .from(patients)
               .where(where)
-              .orderBy(asc(patients.id))
+              .orderBy(asc(patients.name), asc(patients.id))
               .limit(meta.pageSize)
               .offset((meta.page - 1) * meta.pageSize);
       return { items, ...meta };
@@ -394,7 +394,7 @@ export async function searchPhoneBookLegacy(
     .select()
     .from(phoneBook)
     .where(where)
-    .orderBy(asc(phoneBook.id))
+    .orderBy(asc(phoneBook.name), asc(phoneBook.id))
     .limit(filters.limit)
     .offset(filters.offset);
 }
@@ -424,7 +424,7 @@ export async function searchPhoneBook(input: PhoneBookSearchInput) {
               .select()
               .from(phoneBook)
               .where(where)
-              .orderBy(asc(phoneBook.id))
+              .orderBy(asc(phoneBook.name), asc(phoneBook.id))
               .limit(meta.pageSize)
               .offset((meta.page - 1) * meta.pageSize);
       return { items, ...meta };
