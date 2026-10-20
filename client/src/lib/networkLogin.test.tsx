@@ -13,19 +13,28 @@ vi.mock("@/components/ThemeSwitcher",()=>({default:()=>null}));
 import Login from "../pages/Login";
 afterEach(cleanup);
 beforeEach(()=>vi.clearAllMocks());
-function challenge(){act(()=>api.loginOptions.onSuccess({requiresCode:true,challengeId:"a".repeat(64),emailHint:"f***@example.invalid"}));}
+function challenge(){act(()=>api.loginOptions.onSuccess({requiresCode:true,challengeId:"a".repeat(64),emailHint:"f***@example.invalid",trustAvailable:true}));}
 describe("tela de confirmação por e-mail",()=>{
   it("mantém o usuário no login até confirmar o código e limpa a senha",()=>{
     render(<Login/>);fireEvent.change(screen.getByLabelText("Usuário"),{target:{value:"rose"}});fireEvent.change(screen.getByLabelText("Senha"),{target:{value:"synthetic"}});
     fireEvent.click(screen.getByRole("button",{name:"Entrar"}));expect(api.login).toHaveBeenCalledWith({username:"rose",password:"synthetic"});
     challenge();expect(api.navigate).not.toHaveBeenCalled();expect(api.clear).not.toHaveBeenCalled();expect(screen.getByText(/f\*\*\*@example.invalid/)).toBeTruthy();
     fireEvent.change(screen.getByLabelText("Código de acesso"),{target:{value:"12a3456"}});fireEvent.click(screen.getByRole("button",{name:"Verificar código"}));
-    expect(api.verify).toHaveBeenCalledWith({challengeId:"a".repeat(64),code:"123456"});
+    expect(api.verify).toHaveBeenCalledWith({challengeId:"a".repeat(64),code:"123456",trustDevice:true});
     act(()=>api.verifyOptions.onSuccess({success:true}));expect(api.clear).toHaveBeenCalledOnce();expect(api.navigate).toHaveBeenCalledWith("/dashboard");
   });
   it("informa erro sem navegar e permite solicitar novo código com senha novamente",()=>{
     render(<Login/>);challenge();fireEvent.change(screen.getByLabelText("Código de acesso"),{target:{value:"123456"}});fireEvent.click(screen.getByRole("button",{name:"Verificar código"}));
     act(()=>api.verifyOptions.onError({message:"Código inválido ou expirado"}));expect(api.error).toHaveBeenCalledWith("Código inválido ou expirado");expect(api.navigate).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button",{name:"Voltar ao login / solicitar novo código"}));expect((screen.getByLabelText("Senha") as HTMLInputElement).value).toBe("");
+  });
+  it("confiança de 30 dias começa marcada e permite desmarcar",()=>{
+    render(<Login/>);challenge();
+    const checkbox=screen.getByRole("checkbox");
+    expect((checkbox as HTMLInputElement).checked).toBe(true);
+    fireEvent.click(checkbox);
+    fireEvent.change(screen.getByLabelText("Código de acesso"),{target:{value:"123456"}});
+    fireEvent.click(screen.getByRole("button",{name:"Verificar código"}));
+    expect(api.verify).toHaveBeenCalledWith({challengeId:"a".repeat(64),code:"123456",trustDevice:false});
   });
 });

@@ -18,8 +18,9 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const [challenge,setChallenge]=useState<{id:string;emailHint:string}|null>(null);
+  const [challenge,setChallenge]=useState<{id:string;emailHint:string;trustAvailable:boolean}|null>(null);
   const [code,setCode]=useState("");
+  const [trustDevice,setTrustDevice]=useState(true);
   const finishLogin=()=>{
     queryClient.clear();toast.success("Login realizado com sucesso!");setLocation("/dashboard");
   };
@@ -29,7 +30,7 @@ export default function Login() {
   });
   const loginMutation = trpc.customAuth.login.useMutation({
     onSuccess: (data) => {
-      if(data.requiresCode){setChallenge({id:data.challengeId,emailHint:data.emailHint});setPassword("");setCode("");setIsLoading(false);return;}
+      if(data.requiresCode){setChallenge({id:data.challengeId,emailHint:data.emailHint,trustAvailable:Boolean(data.trustAvailable)});setPassword("");setCode("");setIsLoading(false);return;}
       finishLogin();
     },
     onError: (error) => {
@@ -42,7 +43,7 @@ export default function Login() {
     e.preventDefault();
     if(challenge){
       if(!/^[0-9]{6}$/.test(code)){toast.error("Informe os 6 dígitos do código");return;}
-      setIsLoading(true);verifyMutation.mutate({challengeId:challenge.id,code});return;
+      setIsLoading(true);verifyMutation.mutate({challengeId:challenge.id,code,trustDevice});return;
     }
     if (!username || !password) {
       toast.error("Por favor, preencha todos os campos");
@@ -75,7 +76,7 @@ export default function Login() {
 
           {/* Formulário de Login */}
           {new URLSearchParams(window.location.search).get("acesso") === "computador" && <p role="alert" className="mb-5 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">{DESKTOP_ONLY_ERROR}</p>}
-          {new URLSearchParams(window.location.search).get("acesso") === "codigo" && <p role="alert" className="mb-4 text-sm text-muted-foreground">Entre novamente para confirmar seu acesso fora do escritório com um código por e-mail.</p>}
+          {new URLSearchParams(window.location.search).get("acesso") === "codigo" && <p role="alert" className="mb-4 text-sm text-muted-foreground">Entre novamente para confirmar seu acesso com um código por e-mail.</p>}
           {new URLSearchParams(window.location.search).get("acesso") === "escritorio" && <p role="alert" className="mb-4 text-sm text-amber-800 dark:text-amber-200">{OFFICE_ONLY_ERROR}</p>}
           <form onSubmit={handleSubmit} className="space-y-6">
             {challenge ? <div>
@@ -83,6 +84,7 @@ export default function Login() {
               <p className="mb-3 text-sm text-muted-foreground">Enviamos um código para {challenge.emailHint}. Ele expira em 5 minutos.</p>
               <Input id="email-code" value={code} inputMode="numeric" autoComplete="one-time-code" maxLength={6} disabled={isLoading}
                 onChange={event=>setCode(event.target.value.replace(/\D/g,"").slice(0,6))} placeholder="6 dígitos" autoFocus />
+              {challenge.trustAvailable && <label className="mt-4 flex items-start gap-2 text-sm"><input type="checkbox" checked={trustDevice} onChange={event=>setTrustDevice(event.target.checked)} disabled={isLoading} className="mt-1" /><span>Confiar neste dispositivo por 30 dias<span className="mt-1 block text-xs text-muted-foreground">Desmarque se estiver usando um computador público ou compartilhado. Login e senha continuam obrigatórios.</span></span></label>}
             </div> : <>
 
             <div className="space-y-2">

@@ -51,6 +51,8 @@ export default function AdminPanel() {
     role: "user" as "admin" | "user",
   });
 
+  const [revokeId,setRevokeId]=useState<number|null>(null);
+  const revokeMutation=trpc.admin.revokeTrustedDevices.useMutation({onSuccess:()=>{setRevokeId(null);toast.success("Dispositivos revogados. Será necessário confirmar o código novamente.");},onError:error=>toast.error(error.message || "Não foi possível revogar os dispositivos")});
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [changeRoleId, setChangeRoleId] = useState<number | null>(null);
   const [newRole, setNewRole] = useState<"admin" | "user">("user");
@@ -239,6 +241,7 @@ export default function AdminPanel() {
                       }}>
                       <Pencil className="h-4 w-4" /><span className="ml-1">Editar</span>
                     </Button>
+                    <Button variant="outline" size="sm" onClick={()=>setRevokeId(user.id)}>Revogar dispositivos</Button>
                     <Button
                       variant="outline"
                       size="sm"
@@ -416,6 +419,12 @@ export default function AdminPanel() {
         </DialogContent>
       </Dialog>
 
+      <AlertDialog open={revokeId!==null} onOpenChange={open=>{if(!open && !revokeMutation.isPending)setRevokeId(null);}}>
+        <AlertDialogContent>
+          <AlertDialogHeader><AlertDialogTitle>Revogar dispositivos confiáveis</AlertDialogTitle><AlertDialogDescription>Todos os navegadores lembrados deste usuário precisarão validar o 2FA novamente. A senha será mantida.</AlertDialogDescription></AlertDialogHeader>
+          <div className="flex justify-end gap-2"><AlertDialogCancel disabled={revokeMutation.isPending}>Cancelar</AlertDialogCancel><Button disabled={revokeMutation.isPending} onClick={()=>{if(revokeId)revokeMutation.mutate({userId:revokeId});}}>Revogar</Button></div>
+        </AlertDialogContent>
+      </AlertDialog>
       {/* Dialog para deletar usuário */}
       <AlertDialog open={deleteId !== null} onOpenChange={(open) => {
         if (!open) setDeleteId(null);

@@ -8,7 +8,7 @@ import { COOKIE_NAME } from "../shared/const";
 import { EMAIL_CODE_REQUIRED, OFFICE_ONLY_ERROR, hasNetworkRule, networkLogin } from "../shared/networkAccess";
 
 export type NetworkUser = { id: number; username?: string | null; email?: string | null; password?: string | null };
-export type EmailProof = { emailCodeAt: number; emailCodeIp: string; emailCodeAgent: string; emailCodeAccount: string };
+export type EmailProof = { trustedDeviceId?: string; emailCodeAt: number; emailCodeIp: string; emailCodeAgent: string; emailCodeAccount: string };
 export const networkPolicyEnabled = () => process.env.OFFICE_ACCESS_POLICY_ENABLED === "true";
 export const authSecret = () => process.env.JWT_SECRET || ENV.cookieSecret;
 export const fingerprint = (value: string) => createHmac("sha256",authSecret()).update(value).digest("hex");
@@ -41,6 +41,7 @@ export function clientIp(req: Request) {
   return typeof value==="string" ? normalizeIp(value) : null;
 }
 export function networkDecision(user: NetworkUser,req: Request): "allow" | "code" | "deny" {
+  if(process.env.SECOND_FACTOR_ENABLED==="true")return "code";
   if (!networkPolicyEnabled() || !hasNetworkRule(user.username)) return "allow";
   const ip=clientIp(req),office=normalizeIp(process.env.OFFICE_PUBLIC_IP);
   if (ip && office && ip===office) return "allow";
@@ -48,10 +49,12 @@ export function networkDecision(user: NetworkUser,req: Request): "allow" | "code
 }
 export function makeEmailProof(user:NetworkUser,req:Request):EmailProof {
   const ip=clientIp(req);
-  if (!ip) throw new TRPCError({code:"FORBIDDEN",message:"Não foi possível validar sua conexão. Entre em contato com o administrador."});
-  return {emailCodeAt:Date.now(),emailCodeIp:ip,emailCodeAgent:agentHash(req),emailCodeAccount:accountFingerprint(user)};
+  if (!ip && process.env.SECOND_FACTOR_ENABLED!=="true") throw new TRPCError({code:"FORBIDDEN",message:"Não foi possível validar sua conexão. Entre em contato com o administrador."});
+  return {emailCodeAt:Date.now(),emailCodeIp:ip || "",emailCodeAgent:agentHash(req),emailCodeAccount:accountFingerprint(user)};
 }
 export function assertNetworkAccess(user:NetworkUser,req:Request) {
+  // Global second factor is enforced asynchronously by assertSecondFactorAccess.
+  if(process.env.SECOND_FACTOR_ENABLED==="true")return;
   const decision=networkDecision(user,req);
   if(decision==="allow")return;
   if(decision==="deny")throw new TRPCError({code:"FORBIDDEN",message:OFFICE_ONLY_ERROR});
@@ -67,6 +70,10 @@ export function assertNetworkAccess(user:NetworkUser,req:Request) {
 }
 
 export function validateNetworkConfiguration() {
+  if(process.env.SECOND_FACTOR_ENABLED==="true"){
+    if(!process.env.RESEND_API_KEY || !process.env.AUTH_EMAIL_FROM || !authSecret())throw new Error("SECOND_FACTOR_EMAIL_NOT_CONFIGURED");
+    return;
+  }
   if(!networkPolicyEnabled())return;
   if(!normalizeIp(process.env.OFFICE_PUBLIC_IP) || process.env.OFFICE_IP_HEADER_VERIFIED!=="true" || !["true-client-ip","cf-connecting-ip"].includes(process.env.OFFICE_CLIENT_IP_HEADER || "")) throw new Error("OFFICE_NETWORK_NOT_VERIFIED");
   if(!process.env.RESEND_API_KEY || !process.env.AUTH_EMAIL_FROM || !authSecret())throw new Error("OFFICE_EMAIL_NOT_CONFIGURED");
