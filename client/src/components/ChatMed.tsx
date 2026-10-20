@@ -252,7 +252,7 @@ function ChatConversation({ userId,thread,name,members,onBack,onActivity }: {
         <Button type="button" variant="ghost" size="icon" aria-label="Anexar arquivo" disabled={busy || blocked || loading} onClick={()=>fileInput.current?.click()}><Paperclip className="h-5 w-5" /></Button>
         {thread.peerId===null && <Button type="button" variant="ghost" size="icon" aria-label="Marcar pessoa" disabled={busy || blocked || loading}
           onClick={()=>{const start=draftInput.current?.selectionStart ?? draft.length,end=draftInput.current?.selectionEnd ?? draft.length;const prefix=start>0 && !/\s/.test(draft[start-1])?" @":"@";editDraft(draft.slice(0,start)+prefix+draft.slice(end),start+prefix.length);setTimeout(()=>{draftInput.current?.focus();draftInput.current?.setSelectionRange(start+prefix.length,start+prefix.length);},0);}}><AtSign className="h-5 w-5"/></Button>}
-        <span className="text-[10px] text-muted-foreground">Imagem, PDF ou Office · até 5 MB</span>
+        <span className="text-[10px] text-muted-foreground">Imagens, textos e documentos · até 5 MB</span>
       </div>
       {emojiOpen && <ChatEmojiPicker onSelect={addEmoji} onClose={closeEmojis}/> }
       {file && <div className="mb-2 flex items-center gap-2 rounded-lg border bg-muted p-2 text-xs"><Paperclip className="h-4 w-4 shrink-0"/><span className="min-w-0 flex-1 truncate">{file.name} · {(file.size/1024).toFixed(0)} KB</span>

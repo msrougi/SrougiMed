@@ -90,7 +90,7 @@ describe("janela ChatMed",()=>{
   it("rejeita executável antes de transmitir e permite remover a seleção",async()=>{
     render(<ChatMed userId={1}/>);await openConversation();
     fireEvent.change(screen.getByLabelText("Selecionar anexo"),{target:{files:[new File(["fixture"],"fixture.exe")]}});
-    expect(screen.getByRole("alert").textContent).toContain("Formato não permitido");
+    expect(screen.getByRole("alert").textContent).toContain("Este tipo de arquivo não é suportado. Envie somente imagens, textos e documentos.");
     expect(api.sendFile).not.toHaveBeenCalled();
     fireEvent.change(screen.getByLabelText("Selecionar anexo"),{target:{files:[new File(["%PDF-1.4"],"fixture.pdf")]}});
     fireEvent.click(screen.getByRole("button",{name:"Remover anexo"}));
