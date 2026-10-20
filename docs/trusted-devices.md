@@ -12,7 +12,7 @@ Preparação de banco aditiva/idempotente: srougi_trusted_devices; não alterar 
 
 ## Ativação operacional
 1. Confirmar um e-mail individual correto em todas as contas, inclusive administradores/testes, em Editar usuário.
-2. Configurar RESEND_API_KEY, AUTH_EMAIL_FROM (remetente verificado) e JWT_SECRET no Render; validar envio e recebimento real com uma conta autorizada.
+2. Configurar o provedor de e-mail (Resend ou Cloudflare), AUTH_EMAIL_FROM (remetente verificado) e JWT_SECRET no Render; validar envio e recebimento real com uma conta autorizada. Para Cloudflare e configuração privada dos e-mails, seguir docs/cloudflare-2fa.md.
 3. Ativar SECOND_FACTOR_ENABLED=true por último. A inicialização recusa contas sem e-mail válido e remetente ausente; não exige IP fixo ou cabeçalho de IP para este modo.
 4. Validar primeiro login com código, reentrada com senha sem código, opção desmarcada, navegador novo, revogação e troca de senha. Não são testes de carga nem testes destrutivos.
 5. Recuperação operacional: SECOND_FACTOR_ENABLED=false restaura o modo anterior; conferir OFFICE_ACCESS_POLICY_ENABLED antes, pois a antiga regra de rede volta a valer se ainda estiver habilitada.

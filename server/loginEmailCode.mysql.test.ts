@@ -1,6 +1,7 @@
 import {beforeAll,beforeEach,afterAll,describe,expect,it,vi} from "vitest";
 import mysql from "mysql2/promise";
 import {LoginEmailCodeStore,type CodeMail} from "./loginEmailCode";
+import {prepareLoginEmails} from "./prepareLoginEmails";
 import {prepareNetworkAccess} from "./prepareNetworkAccess";
 const url=process.env.SROUGI_NETWORK_TEST_DATABASE_URL;
 if(url){const u=new URL(url);if(!["127.0.0.1","localhost","[::1]"].includes(u.hostname)||!/^\/srougi_test_network[a-z0-9_]*$/.test(u.pathname))throw Error("Network tests require isolated localhost database");}
@@ -15,7 +16,7 @@ describe.skipIf(!url)("códigos de e-mail — MySQL isolado",()=>{
     vi.stubEnv("OFFICE_ACCESS_POLICY_ENABLED","false");const connection=await pool.getConnection();try{await prepareNetworkAccess(connection);await prepareNetworkAccess(connection);}finally{connection.release();}
   });
   beforeEach(async()=>{
-    vi.stubEnv("SECOND_FACTOR_ENABLED","false");vi.stubEnv("OFFICE_ACCESS_POLICY_ENABLED","true");vi.stubEnv("OFFICE_PUBLIC_IP","198.51.100.1");vi.stubEnv("OFFICE_CLIENT_IP_HEADER","true-client-ip");vi.stubEnv("OFFICE_IP_HEADER_VERIFIED","true");vi.stubEnv("JWT_SECRET","synthetic-network-test-key");
+    vi.stubEnv("AUTH_LOGIN_EMAILS_JSON","");vi.stubEnv("SECOND_FACTOR_ENABLED","false");vi.stubEnv("OFFICE_ACCESS_POLICY_ENABLED","true");vi.stubEnv("OFFICE_PUBLIC_IP","198.51.100.1");vi.stubEnv("OFFICE_CLIENT_IP_HEADER","true-client-ip");vi.stubEnv("OFFICE_IP_HEADER_VERIFIED","true");vi.stubEnv("JWT_SECRET","synthetic-network-test-key");
     mails=[];store=new LoginEmailCodeStore(pool,async mail=>{mails.push(mail);});
     await pool.query("DELETE FROM srougi_login_codes");await pool.query("DELETE FROM users");
     await pool.query("INSERT INTO users(id,username,email,password) VALUES(?,?,?,?)",[1,user.username,user.email,user.password]);
@@ -69,5 +70,23 @@ describe.skipIf(!url)("códigos de e-mail — MySQL isolado",()=>{
     const verified=await store.verify(challenge.challengeId,mails[0].code,r);
     expect(verified.proof.emailCodeIp).toBe("");
     expect(verified.user.id).toBe(1);
+  });
+  it("atualiza somente e-mails dos três logins autorizados, sem mudar senhas, e é repetível",async()=>{
+    await pool.query("INSERT INTO users(id,username,email,password) VALUES (2,'gislene','old@example.invalid','hash2'),(3,'rosani','old@example.invalid','hash3'),(4,'other','untouched@example.invalid','hash4')");
+    const mapping={rose:"r@example.invalid",gislene:"g@example.invalid",rosani:"s@example.invalid"};
+    vi.stubEnv("AUTH_LOGIN_EMAILS_JSON",JSON.stringify(mapping));
+    const c=await pool.getConnection();try{await prepareLoginEmails(c);await prepareLoginEmails(c);}finally{c.release();}
+    const [rows]=await pool.query<any[]>("SELECT id,email,password FROM users ORDER BY id");
+    expect(rows.map(r=>r.email)).toEqual([mapping.rose,mapping.gislene,mapping.rosani,"untouched@example.invalid"]);
+    expect(rows.map(r=>r.password)).toEqual([user.password,"hash2","hash3","hash4"]);
+  });
+  it("mapeamento incompleto ou login ausente não altera parcialmente os e-mails",async()=>{
+    vi.stubEnv("AUTH_LOGIN_EMAILS_JSON",JSON.stringify({rose:"r@example.invalid",gislene:"g@example.invalid",rosani:"s@example.invalid"}));
+    const c=await pool.getConnection();try{
+      await expect(prepareLoginEmails(c)).rejects.toThrow("AUTH_LOGIN_ACCOUNT_NOT_UNIQUE");
+      vi.stubEnv("AUTH_LOGIN_EMAILS_JSON","{}");
+      await expect(prepareLoginEmails(c)).rejects.toThrow("AUTH_LOGIN_EMAILS_INVALID");
+    }finally{c.release();}
+    const [rows]=await pool.query<any[]>("SELECT email FROM users WHERE id=1");expect(rows[0].email).toBe(user.email);
   });
 });
