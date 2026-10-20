@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Heart } from "lucide-react";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
+import { OFFICE_ONLY_ERROR } from "@shared/networkAccess";
 import { DESKTOP_ONLY_ERROR } from "@shared/deviceAccess";
 import { useState } from "react";
 import { useLocation } from "wouter";
@@ -17,11 +18,19 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  const [challenge,setChallenge]=useState<{id:string;emailHint:string}|null>(null);
+  const [code,setCode]=useState("");
+  const finishLogin=()=>{
+    queryClient.clear();toast.success("Login realizado com sucesso!");setLocation("/dashboard");
+  };
+  const verifyMutation=trpc.customAuth.verifyLoginCode.useMutation({
+    onSuccess:finishLogin,
+    onError:error=>{toast.error(error.message || "Não foi possível validar o código");setIsLoading(false);},
+  });
   const loginMutation = trpc.customAuth.login.useMutation({
-    onSuccess: () => {
-      queryClient.clear();
-      toast.success("Login realizado com sucesso!");
-      setLocation("/dashboard");
+    onSuccess: (data) => {
+      if(data.requiresCode){setChallenge({id:data.challengeId,emailHint:data.emailHint});setPassword("");setCode("");setIsLoading(false);return;}
+      finishLogin();
     },
     onError: (error) => {
       toast.error(error.message || "Erro ao fazer login");
@@ -31,6 +40,10 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if(challenge){
+      if(!/^[0-9]{6}$/.test(code)){toast.error("Informe os 6 dígitos do código");return;}
+      setIsLoading(true);verifyMutation.mutate({challengeId:challenge.id,code});return;
+    }
     if (!username || !password) {
       toast.error("Por favor, preencha todos os campos");
       return;
@@ -62,7 +75,16 @@ export default function Login() {
 
           {/* Formulário de Login */}
           {new URLSearchParams(window.location.search).get("acesso") === "computador" && <p role="alert" className="mb-5 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">{DESKTOP_ONLY_ERROR}</p>}
+          {new URLSearchParams(window.location.search).get("acesso") === "codigo" && <p role="alert" className="mb-4 text-sm text-muted-foreground">Entre novamente para confirmar seu acesso fora do escritório com um código por e-mail.</p>}
+          {new URLSearchParams(window.location.search).get("acesso") === "escritorio" && <p role="alert" className="mb-4 text-sm text-amber-800 dark:text-amber-200">{OFFICE_ONLY_ERROR}</p>}
           <form onSubmit={handleSubmit} className="space-y-6">
+            {challenge ? <div>
+              <Label htmlFor="email-code">Código de acesso</Label>
+              <p className="mb-3 text-sm text-muted-foreground">Enviamos um código para {challenge.emailHint}. Ele expira em 5 minutos.</p>
+              <Input id="email-code" value={code} inputMode="numeric" autoComplete="one-time-code" maxLength={6} disabled={isLoading}
+                onChange={event=>setCode(event.target.value.replace(/\D/g,"").slice(0,6))} placeholder="6 dígitos" autoFocus />
+            </div> : <>
+
             <div className="space-y-2">
               <Label htmlFor="username" className="text-gray-700 dark:text-slate-200 font-medium">
                 Usuário
@@ -95,13 +117,16 @@ export default function Login() {
               />
             </div>
 
+            </> }
             <Button
               type="submit"
               className="w-full bg-gradient-to-r from-[#087e78] to-[#087e78] dark:to-[#075e59] hover:from-[#064b49] hover:to-[#087e78] text-white font-semibold py-6 text-lg"
               disabled={isLoading}
             >
-              {isLoading ? "Entrando..." : "Entrar"}
+              {isLoading ? "Validando..." : challenge ? "Verificar código" : "Entrar"}
             </Button>
+            {challenge && <Button type="button" variant="outline" className="w-full" disabled={isLoading}
+              onClick={()=>{setChallenge(null);setCode("");}}>Voltar ao login / solicitar novo código</Button>}
           </form>
 
         </div>

@@ -1,5 +1,6 @@
 import { restoreRecordNumbers } from "../restoreRecordNumbers";
 import { prepareChatMed } from "../prepareChatMed";
+import { prepareNetworkAccess } from "../prepareNetworkAccess";
 import { getDb } from "../db";
 import "dotenv/config";
 import express from "express";
@@ -37,6 +38,7 @@ async function startServer() {
     const connection = await database.$client.promise().getConnection();
     try {
       await prepareChatMed(connection);
+      await prepareNetworkAccess(connection);
       const result = await restoreRecordNumbers(connection);
       console.log("[record-numbers]", JSON.stringify(result));
     } finally { connection.release(); }

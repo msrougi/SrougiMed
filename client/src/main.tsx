@@ -1,4 +1,5 @@
 import "./lib/appInstall";
+import { EMAIL_CODE_REQUIRED, OFFICE_ONLY_ERROR } from "@shared/networkAccess";
 import { DESKTOP_ONLY_ERROR } from "@shared/deviceAccess";
 import { deviceAccessHint } from "./lib/deviceAccess";
 import { trpc } from "@/lib/trpc";
@@ -17,10 +18,11 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
   if (!(error instanceof TRPCClientError)) return;
   if (typeof window === "undefined") return;
 
-  if (error.message === DESKTOP_ONLY_ERROR) {
+  if ([DESKTOP_ONLY_ERROR,EMAIL_CODE_REQUIRED,OFFICE_ONLY_ERROR].includes(error.message)) {
+    const reason=error.message===DESKTOP_ONLY_ERROR?"computador":error.message===OFFICE_ONLY_ERROR?"escritorio":"codigo";
     queryClient.clear();
-    if (window.location.pathname !== "/" || new URLSearchParams(window.location.search).get("acesso") !== "computador") {
-      window.location.replace("/?acesso=computador");
+    if (window.location.pathname !== "/" || new URLSearchParams(window.location.search).get("acesso") !== reason) {
+      window.location.replace("/?acesso="+reason);
     }
     return;
   }
