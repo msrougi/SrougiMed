@@ -1,3 +1,4 @@
+import {authEmailConfiguration} from "./authEmail";
 import { createHash, createHmac } from "node:crypto";
 import { isIP } from "node:net";
 import jwtModule from "jsonwebtoken";
@@ -71,10 +72,10 @@ export function assertNetworkAccess(user:NetworkUser,req:Request) {
 
 export function validateNetworkConfiguration() {
   if(process.env.SECOND_FACTOR_ENABLED==="true"){
-    if(!process.env.RESEND_API_KEY || !process.env.AUTH_EMAIL_FROM || !authSecret())throw new Error("SECOND_FACTOR_EMAIL_NOT_CONFIGURED");
+    try{authEmailConfiguration();if(!authSecret())throw Error();}catch{throw new Error("SECOND_FACTOR_EMAIL_NOT_CONFIGURED");}
     return;
   }
   if(!networkPolicyEnabled())return;
   if(!normalizeIp(process.env.OFFICE_PUBLIC_IP) || process.env.OFFICE_IP_HEADER_VERIFIED!=="true" || !["true-client-ip","cf-connecting-ip"].includes(process.env.OFFICE_CLIENT_IP_HEADER || "")) throw new Error("OFFICE_NETWORK_NOT_VERIFIED");
-  if(!process.env.RESEND_API_KEY || !process.env.AUTH_EMAIL_FROM || !authSecret())throw new Error("OFFICE_EMAIL_NOT_CONFIGURED");
+  try{authEmailConfiguration();if(!authSecret())throw Error();}catch{throw new Error("OFFICE_EMAIL_NOT_CONFIGURED");}
 }

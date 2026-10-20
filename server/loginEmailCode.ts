@@ -10,16 +10,8 @@ import { OFFICE_ONLY_ERROR, hasNetworkRule } from "../shared/networkAccess";
 
 import {secondFactorEnabled,trustedDeviceStore} from "./trustedDevices";
 
-export type CodeMail = {to:string;code:string;challengeId:string};
-export async function sendLoginCode(mail:CodeMail) {
-  if(!process.env.RESEND_API_KEY || !process.env.AUTH_EMAIL_FROM)throw new Error("AUTH_EMAIL_NOT_CONFIGURED");
-  const response=await fetch("https://api.resend.com/emails",{
-    method:"POST",signal:AbortSignal.timeout(10000),
-    headers:{Authorization:`Bearer ${process.env.RESEND_API_KEY}`,"Content-Type":"application/json","Idempotency-Key":`srougi-login-${mail.challengeId}`},
-    body:JSON.stringify({from:process.env.AUTH_EMAIL_FROM,to:[mail.to],subject:"Seu código de acesso ao SrougiMed",text:`Seu código de acesso ao SrougiMed é: ${mail.code}\n\nEle expira em 5 minutos e só pode ser usado uma vez. Nunca compartilhe este código. Se não foi você, ignore este e-mail e avise o administrador.`}),
-  });
-  if(!response.ok)throw new Error("AUTH_EMAIL_DELIVERY_FAILED");
-}
+import {sendLoginCode,type CodeMail} from "./authEmail";
+export {sendLoginCode,type CodeMail} from "./authEmail";
 const invalid=()=>new TRPCError({code:"BAD_REQUEST",message:"Código inválido ou expirado. Confira o código ou entre novamente para solicitar outro."});
 const digest=(id:string,code:string)=>fingerprint(`email-code:${id}:${code}`);
 export class LoginEmailCodeStore {

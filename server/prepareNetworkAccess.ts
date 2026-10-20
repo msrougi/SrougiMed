@@ -1,4 +1,6 @@
 import type { Connection } from "mysql2/promise";
+import {prepareLoginEmails} from "./prepareLoginEmails";
+import {authRecipientAllowed} from "./authEmail";
 import { z } from "zod";
 import { networkPolicyEnabled,validateNetworkConfiguration } from "./networkAccess";
 import { remoteCodeLogins } from "../shared/networkAccess";
@@ -18,9 +20,11 @@ export async function prepareNetworkAccess(db:Pick<Connection,"query">) {
     revoked BOOLEAN NOT NULL DEFAULT 0,createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),expiresAt DATETIME(3) NOT NULL,
     KEY trusted_user(userId),KEY trusted_expiry(expiresAt)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+  await prepareLoginEmails(db);
   if(process.env.SECOND_FACTOR_ENABLED==="true") {
     const [accounts]=await db.query<any[]>("SELECT id,email FROM users");
     if(accounts.some(user=>!z.string().email().safeParse(user.email).success))throw new Error("SECOND_FACTOR_ACCOUNT_EMAIL_MISSING");
+    if(accounts.some(user=>!authRecipientAllowed(user.email)))throw new Error("SECOND_FACTOR_RECIPIENT_NOT_ALLOWED");
     return;
   }
   if(!networkPolicyEnabled())return;
