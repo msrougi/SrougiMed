@@ -299,3 +299,57 @@
   padding-top: max(1rem, env(safe-area-inset-top));
   padding-bottom: max(1rem, env(safe-area-inset-bottom));
 }
+
+/* Solid dialog surfaces also work when older browsers reject modern colors.
+   Keep these rules outside cascade layers for the compatibility fallback. */
+[data-slot="dialog-content"],
+[data-slot="alert-dialog-content"] {
+  background-color: #ffffff;
+}
+.dark [data-slot="dialog-content"],
+.dark [data-slot="alert-dialog-content"] {
+  background-color: #0b1519;
+}
+[data-slot="dialog-overlay"],
+[data-slot="alert-dialog-overlay"] {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+@supports not (color: oklch(1 0 0)) {
+  :root:not(.dark) [data-slot="dialog-content"],
+  :root:not(.dark) [data-slot="alert-dialog-content"] {
+    --background: #ffffff;
+    --foreground: #292524;
+    --card: #ffffff;
+    --card-foreground: #292524;
+    --popover: #ffffff;
+    --popover-foreground: #292524;
+    --secondary: #fafafa;
+    --secondary-foreground: #57534e;
+    --muted: #f4f4f5;
+    --muted-foreground: #71717a;
+    --accent: #f4f4f5;
+    --accent-foreground: #18181b;
+    --border: #e4e4e7;
+    --input: #e4e4e7;
+    color: #292524;
+    border-color: #e4e4e7;
+  }
+  .dark [data-slot="dialog-content"],
+  .dark [data-slot="alert-dialog-content"] {
+    color: #e5edf0;
+    border-color: #2b4149;
+  }
+}
+@supports not (max-height: 100dvh) {
+  [data-slot="dialog-content"],
+  [data-slot="alert-dialog-content"] {
+    max-height: calc(100vh - 2rem);
+  }
+}
+@supports not (translate: -50% -50%) {
+  [data-slot="dialog-content"],
+  [data-slot="alert-dialog-content"] {
+    transform: translate(-50%, -50%);
+  }
+}
