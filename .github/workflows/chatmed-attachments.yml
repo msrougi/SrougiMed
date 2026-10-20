@@ -17,6 +17,7 @@ on:
       - "client/src/components/ChatEmojiPicker.tsx"
       - "client/src/lib/chatEmojiPicker.test.tsx"
       - "client/src/lib/chatMed.test.tsx"
+      - "client/src/lib/chatEmojiText.ts"
       - ".github/workflows/chatmed-attachments.yml"
 permissions:
   contents: read

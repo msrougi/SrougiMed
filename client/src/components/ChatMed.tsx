@@ -1,3 +1,4 @@
+import {chatEmojiTextStyle} from "@/lib/chatEmojiText";
 import ChatEmojiPicker from "./ChatEmojiPicker";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowLeft, MessageCircle, Send, Users, UserRound, Loader2, Smile, Paperclip, X, Download, AtSign, Image as ImageIcon } from "lucide-react";
@@ -227,7 +228,7 @@ function ChatConversation({ userId,thread,name,members,onBack,onActivity }: {
         <div className={`flex ${message.senderId === userId ? "justify-end" : "justify-start"}`}>
           <div className={`max-w-[88%] rounded-2xl px-3 py-2 shadow-sm ${message.senderId === userId ? "rounded-br-sm bg-[#087e78] text-white" : "rounded-bl-sm border bg-background text-foreground"}`}>
             <p className="mb-1 text-xs font-semibold opacity-80">{message.senderId === userId ? "Você" : message.senderName}</p>
-            <p className="whitespace-pre-wrap break-words text-sm [overflow-wrap:anywhere]">{mentionText(message,userId)}</p>
+            <p className="whitespace-pre-wrap break-words text-sm [overflow-wrap:anywhere]" style={chatEmojiTextStyle(message.text)}>{mentionText(message,userId)}</p>
             {message.attachment && <ChatAttachmentView message={message} thread={thread} />}
             <time className="mt-1 block text-right text-[10px] opacity-70" dateTime={new Date(message.createdAt).toISOString()}>{time(message.createdAt)}</time>
           </div>

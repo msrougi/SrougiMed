@@ -132,4 +132,13 @@ describe("janela ChatMed",()=>{
     await screen.findByText("Conversa privada entre vocês");
     expect(screen.queryByRole("button",{name:"Marcar pessoa"})).toBeNull();
   });
+  it.each([
+    ["😀",48],["👍🏽",48],["👩‍⚕️",48],["🇧🇷",48],["❤️ 😊",32],["👍👍👍👍",32],["Olá 😊",null],["123",null],
+  ] as const)("dimensiona emojis na mensagem %s sem aumentar texto comum",async(text,size)=>{
+    api.history.mockResolvedValue({messages:[{...first,text}],hasMore:false});
+    render(<ChatMed userId={1}/>);await openConversation();
+    const message=screen.getByText(text);
+    expect(message.style.fontSize).toBe(size===null?"":size+"px");
+    expect(message.textContent).toBe(text);
+  });
 });
