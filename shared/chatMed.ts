@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { chatMentionListSchema, type ChatMention } from "./chatMentions";
 import type { ChatAttachment } from "./chatAttachments";
 
 // A single canonical name prevents spaces/capitalization from splitting a team.
@@ -17,8 +18,9 @@ export const chatHistorySchema = chatThreadSchema.extend({
 export const chatSendSchema = chatThreadSchema.extend({
   text: z.string().trim().min(1, "Digite uma mensagem").max(4000, "A mensagem deve ter até 4.000 caracteres"),
   clientId: z.string().uuid(),
+  mentions: chatMentionListSchema.optional(),
 }).strict();
 export type ChatThread = z.infer<typeof chatThreadSchema>;
 export type ChatHistoryInput = z.infer<typeof chatHistorySchema>;
 export type ChatSendInput = z.infer<typeof chatSendSchema>;
-export type ChatMessage = { id: number; senderId: number; senderName: string; text: string; createdAt: Date; attachment?: ChatAttachment };
+export type ChatMessage = { id: number; senderId: number; senderName: string; text: string; createdAt: Date; attachment?: ChatAttachment; mentions?: ChatMention[] };

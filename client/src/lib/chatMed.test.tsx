@@ -25,7 +25,7 @@ import ChatMed,{mergeChatMessages} from "../components/ChatMed";
 const first={id:1,senderId:2,senderName:"Colega fictícia",text:"Olá, equipe",createdAt:new Date("2026-10-19T10:00:00Z")};
 beforeEach(()=>{
   vi.clearAllMocks();
-  api.data={group:"equipe",unread:2,threads:[{peerId:null,name:"equipe",unread:1,lastMessage:"Olá, equipe",lastAt:first.createdAt},{peerId:2,name:"Colega fictícia",unread:1,lastMessage:null,lastAt:null}]};
+  api.data={group:"equipe",mentionUnread:0,members:[{id:1,name:"Fixture A",username:"a"},{id:2,name:"Colega fictícia",username:"colega"}],unread:2,threads:[{peerId:null,name:"equipe",unread:1,lastMessage:"Olá, equipe",lastAt:first.createdAt},{peerId:2,name:"Colega fictícia",unread:1,lastMessage:null,lastAt:null}]};
   api.history.mockImplementation(async input=>({messages:input.afterId?[]:[first],hasMore:false}));
   api.send.mockImplementation(async input=>({...first,id:2,senderId:1,senderName:"Você",text:input.text}));
   api.sendFile.mockImplementation(async input=>({...first,id:3,senderId:1,text:input.text || "📎 "+input.name,attachment:{name:input.name,mime:"application/pdf",size:10}}));
@@ -110,4 +110,25 @@ describe("janela ChatMed",()=>{
     view.unmount();expect(revoke).toHaveBeenCalledWith("blob:synthetic-preview");
   });
 
+  it("seleciona integrante com @ e envia a menção estruturada",async()=>{
+    render(<ChatMed userId={1}/>);await openConversation();
+    fireEvent.change(screen.getByLabelText("Mensagem"),{target:{value:"@co",selectionStart:3}});
+    fireEvent.click(await screen.findByRole("option",{name:/Colega fictícia/}));
+    expect(api.send).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button",{name:"Enviar mensagem"}));
+    await waitFor(()=>expect(api.send).toHaveBeenCalledOnce());
+    expect(api.send.mock.calls[0][0]).toMatchObject({text:"@Colega fictícia",mentions:[{userId:2,start:0,end:16}]});
+  });
+  it("fecha sugestões sem enviar e não oferece menções no particular",async()=>{
+    render(<ChatMed userId={1}/>);await openConversation();
+    fireEvent.change(screen.getByLabelText("Mensagem"),{target:{value:"@",selectionStart:1}});
+    expect(await screen.findByRole("listbox")).toBeTruthy();
+    fireEvent.keyDown(screen.getByLabelText("Mensagem"),{key:"Escape"});
+    expect(screen.queryByRole("listbox")).toBeNull();
+    expect(api.send).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button",{name:"Voltar às conversas"}));
+    fireEvent.click(screen.getByRole("button",{name:/Colega fictícia/}));
+    await screen.findByText("Conversa privada entre vocês");
+    expect(screen.queryByRole("button",{name:"Marcar pessoa"})).toBeNull();
+  });
 });
