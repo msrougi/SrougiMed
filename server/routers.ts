@@ -2,6 +2,7 @@ import { recordNumberSchema } from "../shared/recordNumber";
 import { chatMedRouter } from "./chatMedRouter";
 import { assertDeviceAccess } from "./deviceAccess";
 import { beginNetworkLogin,emailCodeStore } from "./loginEmailCode";
+import { recordAccessIp } from "./accessIpLog";
 import type { EmailProof } from "./networkAccess";
 import type { TrpcContext } from "./_core/context";
 import { chatGroupSchema } from "../shared/chatMed";
@@ -28,6 +29,7 @@ function withoutPassword<T extends { password?: unknown }>(user: T | null) {
 function issueLogin(user:{id:number;username?:string|null;name?:string|null;role?:string},ctx:TrpcContext,proof?:EmailProof) {
   const token=jwt.sign({userId:user.id,username:user.username,role:user.role,...proof},ENV.cookieSecret,{expiresIn:"7d"});
   ctx.res.cookie(COOKIE_NAME,token,getSessionCookieOptions(ctx.req));
+  recordAccessIp(user,ctx.req,"login");
   return {success:true as const,requiresCode:false as const,user:{id:user.id,username:user.username,name:user.name,role:user.role}};
 }
 
