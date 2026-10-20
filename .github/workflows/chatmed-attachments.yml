@@ -14,6 +14,8 @@ on:
       - "server/prepareChatMed.ts"
       - "shared/chat*"
       - "client/src/components/ChatMed.tsx"
+      - "client/src/components/ChatEmojiPicker.tsx"
+      - "client/src/lib/chatEmojiPicker.test.tsx"
       - "client/src/lib/chatMed.test.tsx"
       - ".github/workflows/chatmed-attachments.yml"
 permissions:

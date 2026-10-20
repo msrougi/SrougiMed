@@ -73,6 +73,7 @@ describe("janela ChatMed",()=>{
   it("insere emoji sem enviar e mantém o limite do texto",async()=>{
     render(<ChatMed userId={1}/>);await openConversation();
     fireEvent.click(screen.getByRole("button",{name:"Escolher emoji"}));
+    fireEvent.scroll(screen.getByRole("group",{name:"Lista de emojis"}),{target:{scrollTop:15*36}});
     fireEvent.click(screen.getByRole("button",{name:"Inserir 👍"}));
     expect((screen.getByLabelText("Mensagem") as HTMLTextAreaElement).value).toBe("👍");
     expect(api.send).not.toHaveBeenCalled();

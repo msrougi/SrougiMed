@@ -1,4 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import ChatEmojiPicker from "./ChatEmojiPicker";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowLeft, MessageCircle, Send, Users, UserRound, Loader2, Smile, Paperclip, X, Download, AtSign, Image as ImageIcon } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "./ui/button";
@@ -202,13 +203,14 @@ function ChatConversation({ userId,thread,name,members,onBack,onActivity }: {
     setDraft(value);setMentionQuery(null);
     setTimeout(()=>{if(alive.current){draftInput.current?.focus();draftInput.current?.setSelectionRange(caret,caret);}},0);
   }
-  function addEmoji(emoji:string) {
+  const closeEmojis=useCallback(()=>{setEmojiOpen(false);draftInput.current?.focus();},[]);
+  const addEmoji=useCallback((emoji:string)=>{
     const input=draftInput.current;
     const begin=input?.selectionStart ?? draft.length,end=input?.selectionEnd ?? draft.length;
     if(draft.length-(end-begin)+emoji.length>4000)return;
     editDraft(draft.slice(0,begin)+emoji+draft.slice(end),begin+emoji.length);setEmojiOpen(false);
     setTimeout(()=>{if(alive.current){input?.focus();input?.setSelectionRange(begin+emoji.length,begin+emoji.length);}},0);
-  }
+  },[draft,thread.peerId]);
   return <div className="flex min-h-0 flex-1 flex-col">
     <div className="flex shrink-0 items-center gap-2 border-b px-3 py-2">
       <Button type="button" variant="ghost" size="icon" aria-label="Voltar às conversas" onClick={onBack}><ArrowLeft className="h-5 w-5" /></Button>
@@ -252,16 +254,7 @@ function ChatConversation({ userId,thread,name,members,onBack,onActivity }: {
           onClick={()=>{const start=draftInput.current?.selectionStart ?? draft.length,end=draftInput.current?.selectionEnd ?? draft.length;const prefix=start>0 && !/\s/.test(draft[start-1])?" @":"@";editDraft(draft.slice(0,start)+prefix+draft.slice(end),start+prefix.length);setTimeout(()=>{draftInput.current?.focus();draftInput.current?.setSelectionRange(start+prefix.length,start+prefix.length);},0);}}><AtSign className="h-5 w-5"/></Button>}
         <span className="text-[10px] text-muted-foreground">Imagem, PDF ou Office · até 5 MB</span>
       </div>
-      {emojiOpen && <div role="group" aria-label="Emojis" style={{height:160}} className="mb-2 flex flex-col rounded-lg border bg-background">
-        <div className="flex shrink-0 items-center justify-between pl-3 pr-1">
-          <span className="text-xs font-medium">Emojis</span>
-          <Button type="button" variant="ghost" size="icon" aria-label="Fechar emojis" title="Fechar emojis"
-            onClick={()=>{setEmojiOpen(false);draftInput.current?.focus();}}><X className="h-4 w-4" /></Button>
-        </div>
-        <div tabIndex={0} style={{overflowY:"scroll"}} className="grid min-h-0 flex-1 grid-cols-5 gap-1 overscroll-contain p-2 sm:grid-cols-6">
-        {["😀","😃","😄","😁","😆","😅","😂","🤣","😊","🙂","🙃","😉","😍","🥰","😘","😗","😚","😙","🤩","🥳","😎","🤓","🧐","🤔","🤨","😐","😑","😶","🫥","😏","😒","🙄","😬","😮","😯","😲","😳","🥺","🥹","😢","😭","😤","😠","😡","🤬","😱","😨","😰","😥","😓","🤗","🤭","🫢","🫣","🤫","🫡","🤥","😴","🥱","😪","🤤","🤯","🥵","🥶","😵","🤪","😜","😝","😛","🫠","🤒","🤕","🤧","🤢","🤮","😷","👋","🤚","✋","🖐️","🖖","👌","🤌","🤏","✌️","🤞","🫰","🤟","🤘","🤙","👈","👉","👆","👇","☝️","👍","👎","✊","👊","🤛","🤜","👏","🙌","👐","🤲","🤝","🙏","💪","🦾","🫶","✍️","👀","👁️","👂","🧠","🫀","🫁","🦷","🦴","👩‍⚕️","👨‍⚕️","🧑‍⚕️","🧑‍💻","👩‍💻","👨‍💻","👩","👨","🧑","👶","👧","👦","🧒","👵","👴","🧓","👥","🫂","❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","🩷","🩵","🩶","💔","❣️","💕","💞","💓","💗","💖","💘","💝","💟","✅","☑️","✔️","❌","❎","⚠️","🚫","⛔","🛑","❗","❓","❕","❔","‼️","⁉️","ℹ️","🆗","🆘","🆕","🆙","🆒","🔴","🟠","🟡","🟢","🔵","🟣","⚫","⚪","🟤","⭐","🌟","✨","💫","🔥","💯","🎉","🎊","🎈","🎁","🎂","🏆","🥇","🎯","💡","🔔","🔕","📣","📢","💬","🗨️","📞","☎️","📱","💻","🖥️","⌨️","🖨️","📷","📸","🎥","🎧","🎤","📅","📆","🗓️","⏰","⏱️","⌛","⏳","🕐","🕑","🕒","🕓","🕔","🕕","🕖","🕗","🕘","🕙","🕚","🕛","📌","📍","📝","📋","📄","📃","📑","📚","📖","📒","📓","✏️","🖊️","📎","🖇️","📁","📂","🗂️","🗃️","🗄️","🗑️","✉️","📩","📤","📥","📦","🔍","🔎","🔒","🔓","🔑","🛡️","⚙️","🛠️","🔧","🔗","🧾","💳","💰","💵","🏥","🏨","🏠","🏢","🚑","🩺","💊","💉","🩹","🩼","🩻","🧪","🧬","🔬","🌡️","🧴","🧼","🧽","🧻","🧤","🥼","🛏️","🪑","🚪","🚶","🏃","🚗","🚕","🚌","🚇","✈️","☀️","🌤️","☁️","🌧️","⛈️","🌈","🌙","🌞","🌻","🌷","🌹","🌸","🌿","🍀","🌳","🐶","🐱","🐼","🦋","🐢","🐝","🐬","🐳","🍎","🍏","🍊","🍋","🍌","🍉","🍇","🍓","🫐","🍍","🥑","🥕","🥦","🍞","🧀","🍳","🍽️","🥗","🍲","☕","🍵","🧃","🥤","💧","🧊"].map(emoji=><button type="button" key={emoji} aria-label={"Inserir "+emoji} className="rounded p-2 text-xl hover:bg-muted focus-visible:ring-2" onClick={()=>addEmoji(emoji)}>{emoji}</button>)}
-        </div>
-      </div>}
+      {emojiOpen && <ChatEmojiPicker onSelect={addEmoji} onClose={closeEmojis}/> }
       {file && <div className="mb-2 flex items-center gap-2 rounded-lg border bg-muted p-2 text-xs"><Paperclip className="h-4 w-4 shrink-0"/><span className="min-w-0 flex-1 truncate">{file.name} · {(file.size/1024).toFixed(0)} KB</span>
         <Button type="button" variant="ghost" size="icon" aria-label="Remover anexo" disabled={busy} onClick={()=>{setFile(null);setFileError("");}}><X className="h-4 w-4"/></Button></div>}
       {fileError && <p role="alert" className="mb-2 text-xs text-red-700 dark:text-red-300">{fileError}</p>}
