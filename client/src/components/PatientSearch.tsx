@@ -83,6 +83,7 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
   };
 
   const handleSearch = () => {
+    if (isLoading) return;
     const cpf = cpfSearchSchema.safeParse(filters.cpf);
     if (!cpf.success) {
       toast.error(cpf.error.issues[0].message);
@@ -113,7 +114,13 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
   return (
     <div className="space-y-6">
       {/* Filtros */}
-      <div className="bg-white dark:bg-card rounded-lg shadow p-4 sm:p-6">
+      <form
+        onSubmit={event => {
+          event.preventDefault();
+          handleSearch();
+        }}
+        className="bg-white dark:bg-card rounded-lg shadow p-4 sm:p-6"
+      >
         <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-100 mb-4">
           Filtros de Busca
         </h3>
@@ -178,7 +185,7 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
           </div>
           <div className="flex items-end [&>button]:w-full">
             <Button
-              onClick={handleSearch}
+              type="submit"
               disabled={isLoading}
               className="w-full"
             >
@@ -186,7 +193,7 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
             </Button>
           </div>
         </div>
-      </div>
+      </form>
 
       {/* Resultados */}
       <div className="bg-white dark:bg-card rounded-lg shadow overflow-hidden">
@@ -210,7 +217,7 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
         )}
         {!hasSearched ? (
           <div className="p-6 text-center text-gray-600 dark:text-slate-300">
-            Digite os critérios de busca e clique em "Buscar" para encontrar
+            Digite os critérios de busca e pressione Enter ou clique em "Buscar" para encontrar
             pacientes
           </div>
         ) : isLoading ? (
