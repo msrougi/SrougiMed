@@ -1,5 +1,6 @@
 import {beforeEach,afterEach,describe,it,expect,vi} from "vitest";
 import jwt from "jsonwebtoken";
+import express from "express";
 const fixture=vi.hoisted(()=>({authenticate:vi.fn(),getUser:vi.fn(),lookup:vi.fn(),start:vi.fn(),verify:vi.fn(),trusted:vi.fn(),create:vi.fn()}));
 vi.mock("./db",()=>({authenticateUser:fixture.authenticate,getUserById:fixture.getUser,getDb:async()=>({$client:{promise:()=>({query:fixture.lookup})}})}));
 vi.mock("./loginEmailCode",async original=>({...await original<typeof import("./loginEmailCode")>(),emailCodeStore:async()=>({start:fixture.start,verify:fixture.verify})}));
@@ -81,5 +82,18 @@ describe("confirmação nativa com destinatário cadastrado",()=>{
     vi.stubEnv("NATIVE_EMAIL_LOGIN","false");await expect(caller().api.customAuth.sendLoginCode({})).rejects.toMatchObject({code:"UNAUTHORIZED"});
     vi.stubEnv("NATIVE_EMAIL_LOGIN","true");vi.stubEnv("CF_ACCESS_ENABLED","true");expect(validateNetworkConfiguration).toThrow("NATIVE_EMAIL_LOGIN_MODE_CONFLICT");
     expect(maskLoginEmail("a@example.invalid")).toBe("a*****@example.invalid");
+  });
+  it("logout expira o cookie intermediário na resposta HTTP real",async()=>{
+    const app=express();
+    app.post("/logout",async(req,res)=>{
+      await appRouter.createCaller({user:null,req,res} as any).auth.logout();res.sendStatus(200);
+    });
+    const server=await new Promise<ReturnType<typeof app.listen>>(resolve=>{const s=app.listen(0,"127.0.0.1",()=>resolve(s));});
+    try{
+      const response=await fetch("http://127.0.0.1:"+(server.address() as {port:number}).port+"/logout",{method:"POST"});
+      const cookie=response.headers.getSetCookie().find(c=>c.startsWith(NATIVE_PENDING_COOKIE+"="));
+      expect(cookie).toContain("Expires=Thu, 01 Jan 1970");
+      expect(cookie).not.toMatch(/Max-Age=[1-9]/);
+    }finally{await new Promise<void>((resolve,reject)=>server.close(error=>error?reject(error):resolve()));}
   });
 });

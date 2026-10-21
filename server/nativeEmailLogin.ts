@@ -9,7 +9,7 @@ import {assertDeviceAccess} from "./deviceAccess";
 import {getSessionCookieOptions} from "./_core/cookies";
 
 export const NATIVE_PENDING_COOKIE="__Host-srougi_email_pending";
-export const nativePendingOptions={httpOnly:true,secure:true,sameSite:"strict" as const,path:"/",maxAge:5*60*1000};
+export const nativePendingOptions={httpOnly:true,secure:true,sameSite:"strict" as const,path:"/"};
 export const nativeEmailLoginEnabled=()=>process.env.NATIVE_EMAIL_LOGIN==="true" && process.env.SECOND_FACTOR_ENABLED==="true" && process.env.CF_ACCESS_ENABLED!=="true";
 const denied=()=>new TRPCError({code:"UNAUTHORIZED",message:"Entre novamente com usuário e senha para solicitar um código."});
 
@@ -29,7 +29,7 @@ export async function prepareNativeEmailLogin(user:NetworkUser,req:Request,res:R
   const pending=jwt.sign({userId:user.id,account:accountFingerprint(user),agent:agentHash(req)},authSecret(),
     {algorithm:"HS256",issuer:"srougimed",audience:"native-email-pending",expiresIn:"5m"});
   res.clearCookie(COOKIE_NAME,{...getSessionCookieOptions(req),maxAge:-1});
-  res.cookie(NATIVE_PENDING_COOKIE,pending,nativePendingOptions);
+  res.cookie(NATIVE_PENDING_COOKIE,pending,{...nativePendingOptions,maxAge:5*60*1000});
   return {success:false as const,requiresCode:false as const,requiresSendCode:true as const,emailHint:maskLoginEmail(accessEmail(user.email)!)};
 }
 export async function sendNativeEmailCode(req:Request) {
