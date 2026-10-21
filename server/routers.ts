@@ -1,3 +1,4 @@
+import {accessLoginFlowEnabled,isBiaPasswordOnly,issueSelectiveSession,startCloudflareLogin,ACCESS_PENDING_COOKIE} from "./cloudflareLoginFlow";
 import {cloudflareAccessEnabled,assertAccessUser} from "./cloudflareAccess";
 import {secondFactorEnabled,trustedDeviceStore,TRUST_COOKIE,trustCookieOptions} from "./trustedDevices";
 import { recordNumberSchema } from "../shared/recordNumber";
@@ -44,6 +45,7 @@ export const appRouter = router({
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      if(accessLoginFlowEnabled())ctx.res.clearCookie(ACCESS_PENDING_COOKIE,{httpOnly:true,secure:true,sameSite:"lax",path:"/"});
       return {
         success: true,
       } as const;
@@ -79,6 +81,10 @@ export const appRouter = router({
         }
         assertDeviceAccess(user, ctx.req.headers ?? {});
 
+        if(accessLoginFlowEnabled()){
+          if(isBiaPasswordOnly(user))return issueSelectiveSession(user,ctx.req,ctx.res);
+          return startCloudflareLogin(user,ctx.req,ctx.res);
+        }
         if(cloudflareAccessEnabled()){
           const identity=await assertAccessUser(user,ctx.req);
           if(!identity)throw new TRPCError({code:"FORBIDDEN",message:"Confirme o acesso pela Cloudflare."});

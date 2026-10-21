@@ -1,3 +1,4 @@
+import {accessLoginFlowEnabled,assertSelectiveSession} from "../cloudflareLoginFlow";
 import {cloudflareAccessEnabled,requestAccessIdentity,assertAccessAccount,assertAccessSession} from "../cloudflareAccess";
 import { NOT_ADMIN_ERR_MSG, UNAUTHED_ERR_MSG } from '@shared/const';
 import { initTRPC, TRPCError } from "@trpc/server";
@@ -13,7 +14,9 @@ const t = initTRPC.context<TrpcContext>().create({
 
 export const router = t.router;
 const deviceProcedure = t.procedure.use(async ({ ctx, path, next }) => {
-  if(cloudflareAccessEnabled()){
+  if(accessLoginFlowEnabled()){
+    if(ctx.user && !["auth.logout","customAuth.login","customAuth.verifyLoginCode"].includes(path))await assertSelectiveSession(ctx.user,ctx.req);
+  } else if(cloudflareAccessEnabled()){
     const identity=await requestAccessIdentity(ctx.req);
     if(ctx.user && !["auth.logout","customAuth.login","customAuth.verifyLoginCode"].includes(path)){
       await assertAccessAccount(ctx.user,identity);

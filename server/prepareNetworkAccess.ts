@@ -1,3 +1,4 @@
+import {accessLoginFlowEnabled} from "./cloudflareLoginFlow";
 import {cloudflareAccessEnabled,assertAccessAccountsReady} from "./cloudflareAccess";
 import type { Connection } from "mysql2/promise";
 import {prepareLoginEmails} from "./prepareLoginEmails";
@@ -23,7 +24,7 @@ export async function prepareNetworkAccess(db:Pick<Connection,"query">) {
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
   await prepareLoginEmails(db);
   if(cloudflareAccessEnabled()){
-    const [accounts]=await db.query<any[]>("SELECT email FROM users");
+    const [accounts]=await db.query<any[]>(accessLoginFlowEnabled()?"SELECT id,username,role,email FROM users":"SELECT email FROM users");
     assertAccessAccountsReady(accounts);
     return;
   }

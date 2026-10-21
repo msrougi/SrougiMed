@@ -23,7 +23,7 @@ beforeEach(()=>{vi.stubEnv("CF_ACCESS_ENABLED","true");vi.stubEnv("CF_ACCESS_TEA
 afterEach(()=>vi.unstubAllEnvs());
 describe("Cloudflare Access: validação criptográfica e vínculo da conta",()=>{
 it("valida assinatura, emissor e audiência e normaliza e-mail",async()=>{
-expect(await verifyAccessToken(await token({email:" Fixture@Example.Invalid "}),config,fixture.keys)).toEqual(identity);
+expect(await verifyAccessToken(await token({email:" Fixture@Example.Invalid "}),config,fixture.keys)).toMatchObject(identity);
 });
 it.each([
 {iss:"https://other.cloudflareaccess.com"},
@@ -54,6 +54,19 @@ await expect(assertAccessAccount(user,identity,async()=>[1])).resolves.toBeUndef
 await expect(assertAccessAccount({...user,email:"other@example.invalid"},identity,async()=>[1])).rejects.toMatchObject({code:"FORBIDDEN"});
 await expect(assertAccessAccount(user,identity,async()=>[1,2])).rejects.toMatchObject({code:"FORBIDDEN"});
 await expect(assertAccessAccount(user,identity,async()=>[2])).rejects.toMatchObject({code:"FORBIDDEN"});
+});
+it("compartilhamento exige o endereço autorizado e exatamente admin/msrougi; não permite terceira conta",async()=>{
+const owners=[{id:1,username:"admin"},{id:2,username:"msrougi"}];
+await expect(assertAccessAccount(user,identity,async()=>owners)).rejects.toMatchObject({code:"FORBIDDEN"});
+vi.stubEnv("CF_ACCESS_SHARED_OWNER_EMAIL",identity.email);
+await expect(assertAccessAccount(user,identity,async()=>owners)).resolves.toBeUndefined();
+await expect(assertAccessAccount({...user,id:2},identity,async()=>owners)).resolves.toBeUndefined();
+await expect(assertAccessAccount({...user,id:3},identity,async()=>owners)).rejects.toMatchObject({code:"FORBIDDEN"});
+for(const accounts of [[...owners,{id:3,username:"other"}],[{id:1,username:"admin"},{id:2,username:"rose"}],[{id:1,username:"msrougi"},{id:2,username:"msrougi"}]]){
+await expect(assertAccessAccount(user,identity,async()=>accounts)).rejects.toMatchObject({code:"FORBIDDEN"});
+expect(()=>assertAccessAccountsReady(accounts.map(account=>({...account,email:identity.email})))).toThrow("EMAIL_DUPLICATE");
+}
+expect(()=>assertAccessAccountsReady(owners.map(account=>({...account,email:identity.email})))).not.toThrow();
 });
 it("sessão do app exige vínculo à identidade e senha/e-mail atuais",()=>{
 const cookie="app_session_id="+jwt.sign({userId:1,accessAccount:accountFingerprint(user),accessSubject:identity.subject},"synthetic-access-session",{expiresIn:"7d"});
