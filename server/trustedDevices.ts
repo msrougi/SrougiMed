@@ -1,3 +1,5 @@
+import {isSecondFactorPasswordOnly} from "./secondFactorPolicy";
+import {nativeEmailLoginEnabled,assertNativeEmailAccount} from "./nativeEmailLogin";
 import {randomBytes,timingSafeEqual} from "node:crypto";
 import type {Pool,RowDataPacket} from "mysql2/promise";
 import type {Request} from "express";
@@ -65,6 +67,11 @@ export async function assertSecondFactorAccess(user:NetworkUser,req:Request) {
   if(!secondFactorEnabled())return;
   let proof:Partial<EmailProof>={};
   try{proof=jwt.verify(cookie(req,COOKIE_NAME)||"",authSecret(),{algorithms:["HS256"]}) as any;}catch{}
+  if(isSecondFactorPasswordOnly(user)) {
+    if((proof as any).userId!==user.id || (proof as any).passwordOnlyAccount!==accountFingerprint(user))throw new TRPCError({code:"FORBIDDEN",message:EMAIL_CODE_REQUIRED});
+    return;
+  }
+  if(nativeEmailLoginEnabled())await assertNativeEmailAccount(user);
   const age=Date.now()-Number(proof.emailCodeAt);
   let valid=Boolean(proof.emailCodeAt && age>=0 && proof.emailCodeAgent===agentHash(req) && proof.emailCodeAccount===accountFingerprint(user));
   if(valid)valid=proof.trustedDeviceId?await (await trustedDeviceStore()).valid(user,req,proof.trustedDeviceId):age<=12*60*60*1000;

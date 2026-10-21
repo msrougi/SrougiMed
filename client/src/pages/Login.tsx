@@ -3,7 +3,7 @@ import { Heart } from "lucide-react";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
 import { OFFICE_ONLY_ERROR } from "@shared/networkAccess";
 import { DESKTOP_ONLY_ERROR } from "@shared/deviceAccess";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,9 +18,17 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const [challenge,setChallenge]=useState<{id:string;emailHint:string;trustAvailable:boolean}|null>(null);
+  const [challenge,setChallenge]=useState<{id:string;emailHint:string;trustAvailable:boolean;resendAvailable:boolean}|null>(null);
+  const [confirmation,setConfirmation]=useState<{emailHint:string}|null>(null);
+  const [canResend,setCanResend]=useState(false);
   const [code,setCode]=useState("");
   const [trustDevice,setTrustDevice]=useState(true);
+  useEffect(()=>{
+    if(!challenge?.resendAvailable)return;
+    setCanResend(false);
+    const timer=window.setTimeout(()=>setCanResend(true),60000);
+    return ()=>window.clearTimeout(timer);
+  },[challenge?.id]);
   const finishLogin=()=>{
     queryClient.clear();toast.success("Login realizado com sucesso!");setLocation("/dashboard");
   };
@@ -28,10 +36,18 @@ export default function Login() {
     onSuccess:finishLogin,
     onError:error=>{toast.error(error.message || "Não foi possível validar o código");setIsLoading(false);},
   });
+  const sendMutation=trpc.customAuth.sendLoginCode.useMutation({
+    onSuccess:data=>{
+      setChallenge({id:data.challengeId,emailHint:data.emailHint,trustAvailable:Boolean(data.trustAvailable),resendAvailable:Boolean(data.resendAvailable)});
+      setConfirmation(null);setCode("");setIsLoading(false);
+    },
+    onError:error=>{toast.error(error.message || "Não foi possível enviar o código");setIsLoading(false);},
+  });
   const loginMutation = trpc.customAuth.login.useMutation({
     onSuccess: (data) => {
       if("requiresAccess" in data && data.requiresAccess){window.location.assign(data.redirectUrl);return;}
-      if(data.requiresCode){setChallenge({id:data.challengeId,emailHint:data.emailHint,trustAvailable:Boolean(data.trustAvailable)});setPassword("");setCode("");setIsLoading(false);return;}
+      if("requiresSendCode" in data && data.requiresSendCode){setConfirmation({emailHint:data.emailHint});setChallenge(null);setPassword("");setCode("");setIsLoading(false);return;}
+      if(data.requiresCode){setChallenge({id:data.challengeId,emailHint:data.emailHint,trustAvailable:Boolean(data.trustAvailable),resendAvailable:Boolean(data.resendAvailable)});setPassword("");setCode("");setIsLoading(false);return;}
       finishLogin();
     },
     onError: (error) => {
@@ -42,6 +58,7 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if(confirmation){setIsLoading(true);sendMutation.mutate({});return;}
     if(challenge){
       if(!/^[0-9]{6}$/.test(code)){toast.error("Informe os 6 dígitos do código");return;}
       setIsLoading(true);verifyMutation.mutate({challengeId:challenge.id,code,trustDevice});return;
@@ -80,7 +97,11 @@ export default function Login() {
           {new URLSearchParams(window.location.search).get("acesso") === "codigo" && <p role="alert" className="mb-4 text-sm text-muted-foreground">Entre novamente para confirmar seu acesso com um código por e-mail.</p>}
           {new URLSearchParams(window.location.search).get("acesso") === "escritorio" && <p role="alert" className="mb-4 text-sm text-amber-800 dark:text-amber-200">{OFFICE_ONLY_ERROR}</p>}
           <form onSubmit={handleSubmit} className="space-y-6">
-            {challenge ? <div>
+            {confirmation ? <div className="space-y-3 text-center" aria-live="polite">
+              <h2 className="text-xl font-semibold text-foreground">Confirme seu acesso</h2>
+              <p className="text-sm text-muted-foreground">Enviaremos um código de acesso para <strong className="break-all text-foreground">{confirmation.emailHint}</strong>.</p>
+              <p className="text-xs text-muted-foreground">Você não precisa informar seu e-mail. Usaremos o endereço cadastrado para sua conta.</p>
+            </div> : challenge ? <div>
               <Label htmlFor="email-code">Código de acesso</Label>
               <p className="mb-3 text-sm text-muted-foreground">Enviamos um código para {challenge.emailHint}. Ele expira em 5 minutos.</p>
               <Input id="email-code" value={code} inputMode="numeric" autoComplete="one-time-code" maxLength={6} disabled={isLoading}
@@ -126,10 +147,13 @@ export default function Login() {
               className="w-full bg-gradient-to-r from-[#087e78] to-[#087e78] dark:to-[#075e59] hover:from-[#064b49] hover:to-[#087e78] text-white font-semibold py-6 text-lg"
               disabled={isLoading}
             >
-              {isLoading ? "Validando..." : challenge ? "Verificar código" : "Entrar"}
+              {isLoading ? confirmation ? "Enviando código..." : "Validando..." : confirmation ? "Enviar código" : challenge ? "Verificar código" : "Entrar"}
             </Button>
-            {challenge && <Button type="button" variant="outline" className="w-full" disabled={isLoading}
-              onClick={()=>{setChallenge(null);setCode("");}}>Voltar ao login / solicitar novo código</Button>}
+            {challenge?.resendAvailable && <Button type="button" variant="outline" className="w-full" disabled={isLoading || !canResend}
+              onClick={()=>{setIsLoading(true);sendMutation.mutate({});}}>Reenviar código</Button>}
+            {challenge?.resendAvailable && !canResend && <p className="text-center text-xs text-muted-foreground">Aguarde um minuto para reenviar. Se não encontrar o e-mail, confira o spam.</p>}
+            {(challenge || confirmation) && <Button type="button" variant="outline" className="w-full" disabled={isLoading}
+              onClick={()=>{setConfirmation(null);setChallenge(null);setCode("");setPassword("");}}>Voltar ao login / solicitar novo código</Button>}
           </form>
 
         </div>

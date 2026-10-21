@@ -66,3 +66,7 @@ Referências:
 https://developers.cloudflare.com/cloudflare-one/integrations/identity-providers/one-time-pin/
 https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/validating-json/
 https://developers.cloudflare.com/cloudflare-one/access-controls/access-settings/session-management/
+
+## Alternativa com interface própria
+
+O fluxo optativo de confirmação dentro do app, com envio pelo provedor configurado, está em [native-email-login.md](native-email-login.md). Não ativar os dois mecanismos simultaneamente. Publicar a alternativa não altera por si só as variáveis de produção.

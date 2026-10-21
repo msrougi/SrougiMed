@@ -1,3 +1,5 @@
+import {nativeEmailLoginEnabled,sendNativeEmailCode,NATIVE_PENDING_COOKIE,nativePendingOptions} from "./nativeEmailLogin";
+import {isSecondFactorPasswordOnly} from "./secondFactorPolicy";
 import {accessLoginFlowEnabled,isBiaPasswordOnly,issueSelectiveSession,startCloudflareLogin,ACCESS_PENDING_COOKIE} from "./cloudflareLoginFlow";
 import {cloudflareAccessEnabled,assertAccessUser} from "./cloudflareAccess";
 import {secondFactorEnabled,trustedDeviceStore,TRUST_COOKIE,trustCookieOptions} from "./trustedDevices";
@@ -30,7 +32,7 @@ function withoutPassword<T extends { password?: unknown }>(user: T | null) {
 }
 
 function issueLogin(user:{id:number;username?:string|null;name?:string|null;role?:string;email?:string|null;password?:string|null},ctx:TrpcContext,proof?:EmailProof,access?:{accessAccount:string;accessSubject:string}) {
-  const token=jwt.sign({userId:user.id,username:user.username,role:user.role,...proof,...access},ENV.cookieSecret,{expiresIn:"7d"});
+  const token=jwt.sign({userId:user.id,username:user.username,role:user.role,...proof,...access,...(isSecondFactorPasswordOnly(user)?{passwordOnlyAccount:accountFingerprint(user)}:{})},ENV.cookieSecret,{expiresIn:"7d"});
   ctx.res.cookie(COOKIE_NAME,token,getSessionCookieOptions(ctx.req));
   recordAccessIp(user,ctx.req,"login");
   return {success:true as const,requiresCode:false as const,user:{id:user.id,username:user.username,name:user.name,role:user.role}};
@@ -45,6 +47,7 @@ export const appRouter = router({
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      if(nativeEmailLoginEnabled())ctx.res.clearCookie(NATIVE_PENDING_COOKIE,nativePendingOptions);
       if(accessLoginFlowEnabled())ctx.res.clearCookie(ACCESS_PENDING_COOKIE,{httpOnly:true,secure:true,sameSite:"lax",path:"/"});
       return {
         success: true,
@@ -54,6 +57,7 @@ export const appRouter = router({
 
   // Autenticação customizada
   customAuth: router({
+    sendLoginCode:publicProcedure.input(z.object({}).strict()).mutation(({ctx})=>sendNativeEmailCode(ctx.req)),
     verifyLoginCode: publicProcedure.input(z.object({challengeId:z.string().regex(/^[a-f0-9]{64}$/),code:z.string().trim().regex(/^[0-9]{6}$/),trustDevice:z.boolean().default(false)}).strict()).mutation(async({input,ctx})=>{
       if(cloudflareAccessEnabled())throw new TRPCError({code:"BAD_REQUEST",message:"A confirmação de acesso é feita pela Cloudflare. Entre com usuário e senha."});
       const result=await (await emailCodeStore()).verify(input.challengeId,input.code,ctx.req);
@@ -64,6 +68,7 @@ export const appRouter = router({
       } else if(secondFactorEnabled()){
         ctx.res.clearCookie(TRUST_COOKIE,{...trustCookieOptions,maxAge:-1});
       }
+      if(nativeEmailLoginEnabled())ctx.res.clearCookie(NATIVE_PENDING_COOKIE,nativePendingOptions);
       return issueLogin(result.user as any,ctx,result.proof);
     }),
     changePassword: protectedProcedure.input(changePasswordSchema).mutation(async ({ input, ctx }) => {
@@ -90,7 +95,7 @@ export const appRouter = router({
           if(!identity)throw new TRPCError({code:"FORBIDDEN",message:"Confirme o acesso pela Cloudflare."});
           return issueLogin(user,ctx,undefined,{accessAccount:accountFingerprint(user),accessSubject:identity.subject});
         }
-        const challenge=await beginNetworkLogin(user,ctx.req);
+        const challenge=await beginNetworkLogin(user,ctx.req,ctx.res);
         if(challenge){
           if("trustedProof" in challenge)return issueLogin(user,ctx,challenge.trustedProof);
           return challenge;

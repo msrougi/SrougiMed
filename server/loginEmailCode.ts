@@ -1,6 +1,7 @@
+import {nativeEmailLoginEnabled,prepareNativeEmailLogin,assertNativeEmailAccount,maskLoginEmail} from "./nativeEmailLogin";
 import { randomBytes, randomInt, timingSafeEqual } from "node:crypto";
 import type { Pool, RowDataPacket } from "mysql2/promise";
-import type { Request } from "express";
+import type { Request,Response } from "express";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { getDb } from "./db";
@@ -37,7 +38,7 @@ export class LoginEmailCodeStore {
       try {await this.deliver({to:email.data,code,challengeId:id});await db.query("UPDATE srougi_login_codes SET ready=1 WHERE id=? AND consumed=0",[id]);}
       catch {await db.query("UPDATE srougi_login_codes SET consumed=1 WHERE id=?",[id]);throw new TRPCError({code:"INTERNAL_SERVER_ERROR",message:"Não foi possível enviar o código. Aguarde um minuto e tente novamente ou fale com o administrador."});}
       const [local,domain]=email.data.split("@");
-      return {success:false as const,requiresCode:true as const,challengeId:id,emailHint:`${local.slice(0,1)}***@${domain}`,expiresIn:300,trustAvailable:secondFactorEnabled()};
+      return {success:false as const,requiresCode:true as const,challengeId:id,emailHint:nativeEmailLoginEnabled()?maskLoginEmail(email.data):`${local.slice(0,1)}***@${domain}`,expiresIn:300,trustAvailable:secondFactorEnabled(),resendAvailable:nativeEmailLoginEnabled()};
     }catch(error){try{await db.rollback();}catch{}throw error;}finally{db.release();}
   }
 
@@ -59,6 +60,7 @@ export class LoginEmailCodeStore {
         // Invalid attempts must commit rather than roll back the attempt counter.
         await db.commit();throw invalid();
       }
+      if(nativeEmailLoginEnabled())await assertNativeEmailAccount(user as NetworkUser);
       assertDeviceAccess(user as NetworkUser,req.headers);
       if(networkDecision(user as any,req)==="deny")throw new TRPCError({code:"FORBIDDEN",message:OFFICE_ONLY_ERROR});
       await db.query("UPDATE srougi_login_codes SET consumed=1 WHERE id=?",[id]);
@@ -72,7 +74,7 @@ export async function emailCodeStore() {
   if(!db)throw new TRPCError({code:"INTERNAL_SERVER_ERROR",message:"Autenticação indisponível. Tente novamente."});
   return new LoginEmailCodeStore(db.$client.promise());
 }
-export async function beginNetworkLogin(user:NetworkUser,req:Request) {
+export async function beginNetworkLogin(user:NetworkUser,req:Request,res?:Response) {
   if(process.env.NODE_ENV==="production" && hasNetworkRule(user.username))console.info("[access-network]",JSON.stringify({login:user.username,at:new Date().toISOString(),candidates:observedNetwork(req)}));
   const decision=networkDecision(user,req);
   if(decision==="deny")throw new TRPCError({code:"FORBIDDEN",message:OFFICE_ONLY_ERROR});
@@ -81,6 +83,7 @@ export async function beginNetworkLogin(user:NetworkUser,req:Request) {
       const id=await (await trustedDeviceStore()).fromCookie(user,req);
       if(id)return {trustedProof:{...makeEmailProof(user,req),trustedDeviceId:id}};
     }
+    if(nativeEmailLoginEnabled()){if(!res)throw Error("NATIVE_EMAIL_RESPONSE_REQUIRED");return prepareNativeEmailLogin(user,req,res);}
     return (await emailCodeStore()).start(user,req);
   }
   return null;
