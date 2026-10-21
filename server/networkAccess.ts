@@ -1,3 +1,4 @@
+import {isSecondFactorPasswordOnly,passwordOnlyBiaId} from "./secondFactorPolicy";
 import {validateAccessLoginFlow} from "./cloudflareLoginFlow";
 import {cloudflareAccessEnabled,accessConfiguration,accessEmail} from "./cloudflareAccess";
 import {authEmailConfiguration} from "./authEmail";
@@ -10,7 +11,7 @@ import { ENV } from "./_core/env";
 import { COOKIE_NAME } from "../shared/const";
 import { EMAIL_CODE_REQUIRED, OFFICE_ONLY_ERROR, hasNetworkRule, networkLogin } from "../shared/networkAccess";
 
-export type NetworkUser = { id: number; username?: string | null; email?: string | null; password?: string | null };
+export type NetworkUser = { id: number; username?: string | null; email?: string | null; password?: string | null; role?: string };
 export type EmailProof = { trustedDeviceId?: string; emailCodeAt: number; emailCodeIp: string; emailCodeAgent: string; emailCodeAccount: string };
 export const networkPolicyEnabled = () => process.env.OFFICE_ACCESS_POLICY_ENABLED === "true";
 export const authSecret = () => process.env.JWT_SECRET || ENV.cookieSecret;
@@ -44,7 +45,7 @@ export function clientIp(req: Request) {
   return typeof value==="string" ? normalizeIp(value) : null;
 }
 export function networkDecision(user: NetworkUser,req: Request): "allow" | "code" | "deny" {
-  if(process.env.SECOND_FACTOR_ENABLED==="true")return "code";
+  if(process.env.SECOND_FACTOR_ENABLED==="true")return isSecondFactorPasswordOnly(user)?"allow":"code";
   if (!networkPolicyEnabled() || !hasNetworkRule(user.username)) return "allow";
   const ip=clientIp(req),office=normalizeIp(process.env.OFFICE_PUBLIC_IP);
   if (ip && office && ip===office) return "allow";
@@ -73,6 +74,8 @@ export function assertNetworkAccess(user:NetworkUser,req:Request) {
 }
 
 export function validateNetworkConfiguration() {
+  if(process.env.NATIVE_EMAIL_LOGIN==="true" && (cloudflareAccessEnabled() || process.env.SECOND_FACTOR_ENABLED!=="true"))throw Error("NATIVE_EMAIL_LOGIN_MODE_CONFLICT");
+  if(process.env.SECOND_FACTOR_ENABLED==="true" && passwordOnlyBiaId() && !/^[1-9][0-9]*$/.test(passwordOnlyBiaId()!))throw Error("SECOND_FACTOR_BIA_ID_INVALID");
   if(cloudflareAccessEnabled()){
     accessConfiguration();
     validateAccessLoginFlow();

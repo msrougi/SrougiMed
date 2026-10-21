@@ -1,3 +1,5 @@
+import {isSecondFactorPasswordOnly,passwordOnlyBiaId} from "./secondFactorPolicy";
+import {nativeEmailLoginEnabled} from "./nativeEmailLogin";
 import {accessLoginFlowEnabled} from "./cloudflareLoginFlow";
 import {cloudflareAccessEnabled,assertAccessAccountsReady} from "./cloudflareAccess";
 import type { Connection } from "mysql2/promise";
@@ -29,9 +31,12 @@ export async function prepareNetworkAccess(db:Pick<Connection,"query">) {
     return;
   }
   if(process.env.SECOND_FACTOR_ENABLED==="true") {
-    const [accounts]=await db.query<any[]>("SELECT id,email FROM users");
-    if(accounts.some(user=>!z.string().email().safeParse(user.email).success))throw new Error("SECOND_FACTOR_ACCOUNT_EMAIL_MISSING");
-    if(accounts.some(user=>!authRecipientAllowed(user.email)))throw new Error("SECOND_FACTOR_RECIPIENT_NOT_ALLOWED");
+    const [accounts]=await db.query<any[]>("SELECT id,username,role,email FROM users");
+    if(passwordOnlyBiaId() && accounts.filter(isSecondFactorPasswordOnly).length!==1)throw Error("SECOND_FACTOR_BIA_ACCOUNT_NOT_READY");
+    const required=accounts.filter(user=>!isSecondFactorPasswordOnly(user));
+    if(nativeEmailLoginEnabled())assertAccessAccountsReady(required);
+    if(required.some(user=>!z.string().email().safeParse(user.email).success))throw new Error("SECOND_FACTOR_ACCOUNT_EMAIL_MISSING");
+    if(required.some(user=>!authRecipientAllowed(user.email)))throw new Error("SECOND_FACTOR_RECIPIENT_NOT_ALLOWED");
     return;
   }
   if(!networkPolicyEnabled())return;

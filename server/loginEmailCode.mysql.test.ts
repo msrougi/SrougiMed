@@ -3,10 +3,11 @@ import mysql from "mysql2/promise";
 import {LoginEmailCodeStore,type CodeMail} from "./loginEmailCode";
 import {prepareLoginEmails} from "./prepareLoginEmails";
 import {prepareNetworkAccess} from "./prepareNetworkAccess";
+import {getDb} from "./db";
 const url=process.env.SROUGI_NETWORK_TEST_DATABASE_URL;
 if(url){const u=new URL(url);if(!["127.0.0.1","localhost","[::1]"].includes(u.hostname)||!/^\/srougi_test_network[a-z0-9_]*$/.test(u.pathname))throw Error("Network tests require isolated localhost database");}
 describe.skipIf(!url)("códigos de e-mail — MySQL isolado",()=>{
-  let pool:mysql.Pool,store:LoginEmailCodeStore;
+  let pool:mysql.Pool,store:LoginEmailCodeStore,appDatabase:Awaited<ReturnType<typeof getDb>>;
   let mails:CodeMail[]=[];
   const user={id:1,username:"rose",email:"fixture@example.invalid",password:"synthetic-hash"};
   const request=(ip="198.51.100.2",agent="Fixture")=>({headers:{"true-client-ip":ip,"user-agent":agent}} as any);
@@ -16,12 +17,42 @@ describe.skipIf(!url)("códigos de e-mail — MySQL isolado",()=>{
     vi.stubEnv("OFFICE_ACCESS_POLICY_ENABLED","false");const connection=await pool.getConnection();try{await prepareNetworkAccess(connection);await prepareNetworkAccess(connection);}finally{connection.release();}
   });
   beforeEach(async()=>{
+    vi.stubEnv("NATIVE_EMAIL_LOGIN","false");vi.stubEnv("SECOND_FACTOR_BIA_USER_ID","");
     vi.stubEnv("CF_ACCESS_SHARED_OWNER_EMAIL","");vi.stubEnv("CF_ACCESS_LOGIN_FLOW","false");vi.stubEnv("CF_ACCESS_BIA_USER_ID","");vi.stubEnv("CF_ACCESS_ENABLED","false");vi.stubEnv("AUTH_LOGIN_EMAILS_JSON","");vi.stubEnv("SECOND_FACTOR_ENABLED","false");vi.stubEnv("OFFICE_ACCESS_POLICY_ENABLED","true");vi.stubEnv("OFFICE_PUBLIC_IP","198.51.100.1");vi.stubEnv("OFFICE_CLIENT_IP_HEADER","true-client-ip");vi.stubEnv("OFFICE_IP_HEADER_VERIFIED","true");vi.stubEnv("JWT_SECRET","synthetic-network-test-key");
     mails=[];store=new LoginEmailCodeStore(pool,async mail=>{mails.push(mail);});
     await pool.query("DELETE FROM srougi_login_codes");await pool.query("DELETE FROM users");
     await pool.query("INSERT INTO users(id,username,email,password) VALUES(?,?,?,?)",[1,user.username,user.email,user.password]);
   });
-  afterAll(async()=>{await pool?.end();vi.unstubAllEnvs();});
+  afterAll(async()=>{await pool?.end();if(appDatabase)await appDatabase.$client.promise().end();vi.unstubAllEnvs();});
+  it("modo nativo usa o e-mail do cadastro, consome código uma vez e recusa endereço duplicado",async()=>{
+    vi.stubEnv("SECOND_FACTOR_ENABLED","true");vi.stubEnv("NATIVE_EMAIL_LOGIN","true");vi.stubEnv("DATABASE_URL",url!);
+    appDatabase=await getDb();
+    const r={headers:{"user-agent":"Fixture"}} as any;
+    const challenge=await store.start(user,r);
+    expect(challenge).toMatchObject({emailHint:"fi*****@example.invalid",resendAvailable:true,trustAvailable:true});
+    await expect(store.verify(challenge.challengeId,mails[0].code,r)).resolves.toMatchObject({user:{id:1}});
+    await expect(store.verify(challenge.challengeId,mails[0].code,r)).rejects.toThrow("inválido ou expirado");
+    await pool.query("UPDATE srougi_login_codes SET createdAt=DATE_SUB(NOW(3),INTERVAL 61 SECOND)");
+    const next=await store.start(user,r);
+    await pool.query("INSERT INTO users(id,username,email,password) VALUES(2,'other',?,'synthetic')",[user.email]);
+    await expect(store.verify(next.challengeId,mails[1].code,r)).rejects.toMatchObject({code:"FORBIDDEN"});
+    const [rows]=await pool.query<any[]>("SELECT consumed FROM srougi_login_codes WHERE id=?",[next.challengeId]);
+    expect(Number(rows[0].consumed)).toBe(0);
+  });
+  it("preparação nativa permite Bia sem e-mail e preserva somente o compartilhamento autorizado",async()=>{
+    vi.stubEnv("SECOND_FACTOR_ENABLED","true");vi.stubEnv("NATIVE_EMAIL_LOGIN","true");vi.stubEnv("SECOND_FACTOR_BIA_USER_ID","9");
+    vi.stubEnv("AUTH_EMAIL_PROVIDER","resend");vi.stubEnv("AUTH_EMAIL_FROM","access@example.invalid");vi.stubEnv("RESEND_API_KEY","synthetic-only");
+    vi.stubEnv("CF_ACCESS_SHARED_OWNER_EMAIL","owner@example.invalid");
+    await pool.query("INSERT INTO users(id,username,email,password,role) VALUES(9,'bia',NULL,'synthetic','user'),(2,'admin','owner@example.invalid','synthetic','admin'),(3,'msrougi','owner@example.invalid','synthetic','user')");
+    const c=await pool.getConnection();try{
+      await prepareNetworkAccess(c);
+      await pool.query("INSERT INTO users(id,username,email,password) VALUES(4,'other','owner@example.invalid','synthetic')");
+      await expect(prepareNetworkAccess(c)).rejects.toThrow("EMAIL_DUPLICATE");
+      await pool.query("DELETE FROM users WHERE id=4");
+      await pool.query("UPDATE users SET role='admin' WHERE id=9");
+      await expect(prepareNetworkAccess(c)).rejects.toThrow("BIA_ACCOUNT_NOT_READY");
+    }finally{c.release();}
+  });
   it("guarda apenas hash, entrega por e-mail e consome uma única vez",async()=>{
     const challenge=await store.start(user,request());
     expect(challenge.requiresCode).toBe(true);expect(challenge.emailHint).toBe("f***@example.invalid");
