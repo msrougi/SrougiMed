@@ -12,11 +12,11 @@ describe.skipIf(!url)("códigos de e-mail — MySQL isolado",()=>{
   const request=(ip="198.51.100.2",agent="Fixture")=>({headers:{"true-client-ip":ip,"user-agent":agent}} as any);
   beforeAll(async()=>{
     pool=mysql.createPool(url!);
-    await pool.query("CREATE TABLE IF NOT EXISTS users(id INT PRIMARY KEY,username VARCHAR(100),name TEXT,email VARCHAR(320),password VARCHAR(255)) ENGINE=InnoDB");
+    await pool.query("CREATE TABLE IF NOT EXISTS users(id INT PRIMARY KEY,username VARCHAR(100),name TEXT,email VARCHAR(320),password VARCHAR(255),role VARCHAR(20) DEFAULT 'user') ENGINE=InnoDB");
     vi.stubEnv("OFFICE_ACCESS_POLICY_ENABLED","false");const connection=await pool.getConnection();try{await prepareNetworkAccess(connection);await prepareNetworkAccess(connection);}finally{connection.release();}
   });
   beforeEach(async()=>{
-    vi.stubEnv("CF_ACCESS_ENABLED","false");vi.stubEnv("AUTH_LOGIN_EMAILS_JSON","");vi.stubEnv("SECOND_FACTOR_ENABLED","false");vi.stubEnv("OFFICE_ACCESS_POLICY_ENABLED","true");vi.stubEnv("OFFICE_PUBLIC_IP","198.51.100.1");vi.stubEnv("OFFICE_CLIENT_IP_HEADER","true-client-ip");vi.stubEnv("OFFICE_IP_HEADER_VERIFIED","true");vi.stubEnv("JWT_SECRET","synthetic-network-test-key");
+    vi.stubEnv("CF_ACCESS_SHARED_OWNER_EMAIL","");vi.stubEnv("CF_ACCESS_LOGIN_FLOW","false");vi.stubEnv("CF_ACCESS_BIA_USER_ID","");vi.stubEnv("CF_ACCESS_ENABLED","false");vi.stubEnv("AUTH_LOGIN_EMAILS_JSON","");vi.stubEnv("SECOND_FACTOR_ENABLED","false");vi.stubEnv("OFFICE_ACCESS_POLICY_ENABLED","true");vi.stubEnv("OFFICE_PUBLIC_IP","198.51.100.1");vi.stubEnv("OFFICE_CLIENT_IP_HEADER","true-client-ip");vi.stubEnv("OFFICE_IP_HEADER_VERIFIED","true");vi.stubEnv("JWT_SECRET","synthetic-network-test-key");
     mails=[];store=new LoginEmailCodeStore(pool,async mail=>{mails.push(mail);});
     await pool.query("DELETE FROM srougi_login_codes");await pool.query("DELETE FROM users");
     await pool.query("INSERT INTO users(id,username,email,password) VALUES(?,?,?,?)",[1,user.username,user.email,user.password]);
@@ -88,6 +88,46 @@ describe.skipIf(!url)("códigos de e-mail — MySQL isolado",()=>{
       await expect(prepareLoginEmails(c)).rejects.toThrow("AUTH_LOGIN_EMAILS_INVALID");
     }finally{c.release();}
     const [rows]=await pool.query<any[]>("SELECT email FROM users WHERE id=1");expect(rows[0].email).toBe(user.email);
+  });
+  it("vincula os logins adicionais autorizados e recusa compartilhar e-mail entre contas",async()=>{
+    await pool.query("INSERT INTO users(id,username,email,password) VALUES (2,'gislene',NULL,'hash2'),(3,'rosani',NULL,'hash3'),(4,'miguel',NULL,'hash4'),(5,'msrougi',NULL,'hash5'),(6,'admin',NULL,'hash6')");
+    const mapping={rose:"r@example.invalid",gislene:"g@example.invalid",rosani:"s@example.invalid",miguel:"m@example.invalid",msrougi:"owner@example.invalid",admin:"admin@example.invalid"};
+    vi.stubEnv("AUTH_LOGIN_EMAILS_JSON",JSON.stringify(mapping));
+    const c=await pool.getConnection();try{
+      await prepareLoginEmails(c);await prepareLoginEmails(c);
+      vi.stubEnv("AUTH_LOGIN_EMAILS_JSON",JSON.stringify({...mapping,miguel:mapping.rose}));
+      await expect(prepareLoginEmails(c)).rejects.toThrow("AUTH_LOGIN_EMAIL_NOT_UNIQUE");
+    }finally{c.release();}
+    const [rows]=await pool.query<any[]>("SELECT username,email,password FROM users ORDER BY id");
+    for(const row of rows)expect(row.email).toBe(mapping[row.username as keyof typeof mapping]);
+    expect(rows[3].password).toBe("hash4");
+  });
+  it("modo seletivo dispensa e-mail somente da conta Bia autorizada",async()=>{
+    vi.stubEnv("CF_ACCESS_ENABLED","true");vi.stubEnv("CF_ACCESS_LOGIN_FLOW","true");vi.stubEnv("CF_ACCESS_BIA_USER_ID","9");
+    vi.stubEnv("SROUGI_PUBLIC_ORIGIN","https://app.example.invalid");vi.stubEnv("CF_ACCESS_TEAM_DOMAIN","https://fixture.cloudflareaccess.com");vi.stubEnv("CF_ACCESS_AUD","a".repeat(64));
+    await pool.query("INSERT INTO users(id,username,email,password) VALUES(9,'bia',NULL,'synthetic')");
+    const c=await pool.getConnection();try{
+      await prepareNetworkAccess(c);
+      await pool.query("UPDATE users SET role='admin' WHERE id=9");
+      await expect(prepareNetworkAccess(c)).rejects.toThrow("EMAIL_MISSING");
+      await pool.query("UPDATE users SET role='user',id=10 WHERE id=9");
+      await expect(prepareNetworkAccess(c)).rejects.toThrow("EMAIL_MISSING");
+    }finally{c.release();}
+  });
+  it("sincroniza o endereço compartilhado de admin/msrougi somente quando autorizado e recusa terceiros",async()=>{
+    await pool.query("INSERT INTO users(id,username,email,password) VALUES (2,'gislene',NULL,'hash2'),(3,'rosani',NULL,'hash3'),(4,'admin',NULL,'hash4'),(5,'msrougi',NULL,'hash5')");
+    const mapping={rose:"r@example.invalid",gislene:"g@example.invalid",rosani:"s@example.invalid",admin:"owner@example.invalid",msrougi:"owner@example.invalid"};
+    vi.stubEnv("AUTH_LOGIN_EMAILS_JSON",JSON.stringify(mapping));
+    const c=await pool.getConnection();try{
+      await expect(prepareLoginEmails(c)).rejects.toThrow("AUTH_LOGIN_EMAIL_NOT_UNIQUE");
+      vi.stubEnv("CF_ACCESS_SHARED_OWNER_EMAIL",mapping.admin);
+      await prepareLoginEmails(c);
+      const [rows]=await pool.query<any[]>("SELECT email,password FROM users WHERE id IN(4,5) ORDER BY id");
+      expect(rows.map(row=>row.email)).toEqual([mapping.admin,mapping.msrougi]);
+      expect(rows.map(row=>row.password)).toEqual(["hash4","hash5"]);
+      vi.stubEnv("AUTH_LOGIN_EMAILS_JSON",JSON.stringify({...mapping,rose:mapping.admin}));
+      await expect(prepareLoginEmails(c)).rejects.toThrow("AUTH_LOGIN_EMAIL_NOT_UNIQUE");
+    }finally{c.release();}
   });
   it("Cloudflare Access dispensa configuração de envio e exige e-mails individuais",async()=>{
     vi.stubEnv("CF_ACCESS_ENABLED","true");vi.stubEnv("CF_ACCESS_TEAM_DOMAIN","https://fixture.cloudflareaccess.com");vi.stubEnv("CF_ACCESS_AUD","a".repeat(64));

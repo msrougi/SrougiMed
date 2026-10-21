@@ -30,6 +30,7 @@ export default function Login() {
   });
   const loginMutation = trpc.customAuth.login.useMutation({
     onSuccess: (data) => {
+      if("requiresAccess" in data && data.requiresAccess){window.location.assign(data.redirectUrl);return;}
       if(data.requiresCode){setChallenge({id:data.challengeId,emailHint:data.emailHint,trustAvailable:Boolean(data.trustAvailable)});setPassword("");setCode("");setIsLoading(false);return;}
       finishLogin();
     },

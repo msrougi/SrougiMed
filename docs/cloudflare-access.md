@@ -1,45 +1,66 @@
 # Cloudflare Access no SrougiMed
 
-Modo preparado, desativado até configuração operacional e teste real. CF_ACCESS_ENABLED=true passa o segundo fator de e-mail ao Cloudflare Access. O envio próprio de códigos e a confiança interna de 30 dias não são usados nesse modo. Usuário e senha do SrougiMed continuam obrigatórios, e os papéis/grupos/permissões do app continuam no banco.
+Preparado no código, desativado por padrão. Não ativar só por publicar o código: é necessário configurar a aplicação Cloudflare, conferir contas/e-mails, configurar o Render e testar o PIN real.
 
-## Comportamento
-- Cloudflare Access pede e-mail e PIN diretamente, conforme política. Não exige a verificação prévia de destinatário do Email Service. Não precisa das credenciais Resend/Cloudflare Email Sending.
-- O Render valida RS256, assinatura via JWKS do domínio da equipe, emissor, audiência, expiração, emissão, subject e e-mail do token recebido em Cf-Access-Jwt-Assertion. Não confia em e-mail de cabeçalho avulso nem no cookie CF_Authorization como substituto dessa assertion.
-- Chaves públicas são mantidas em cache com renovação; não há busca de chaves em cada chamada. A validação de identidade é reutilizada somente dentro da mesma requisição.
-- O e-mail confirmado deve corresponder ao cadastro do usuário e pertencer a uma única conta no banco. A conferência vale no login e em chamadas tRPC de sessões abertas, inclusive de administradores.
-- O login do app vincula a sessão à identidade Cloudflare e ao estado atual da senha/e-mail. Sessões antigas precisam de novo login. Senha incorreta, conta excluída, troca de identidade ou alteração de senha/e-mail não mantêm acesso por sessão antiga.
-- A duração da sessão Cloudflare é configurada no painel (até um mês); o cookie de sessão do app continua com sua duração própria. Mudar senha invalida a sessão do app; não revoga automaticamente a sessão Cloudflare.
-- O modo desktop de Bia permanece independente.
-- Todos os caminhos do servidor (páginas, arquivos estáticos, API e callback OAuth) passam pelo verificador. A única exceção é GET/HEAD /healthz, resposta fixa “ok” sem dados.
-- A URL direta do Render não libera o app sem assertion válida. Portar um token Cloudflare válido ainda representa uma credencial válida até sua expiração: o gate local não consulta revogação em tempo real da Cloudflare.
+## Fluxo seletivo: exceção temporária da Bia
 
-## Configuração privada no Render
-CF_ACCESS_ENABLED=false inicialmente.
+Com CF_ACCESS_ENABLED=true e CF_ACCESS_LOGIN_FLOW=true:
+
+1. A página inicial fica pública; o usuário informa login e senha do SrougiMed.
+2. Depois de validar a senha, somente a conta Bia explicitamente cadastrada em CF_ACCESS_BIA_USER_ID pode entrar sem PIN. A exceção exige simultaneamente o ID, login `bia` e papel `user`. A restrição existente a desktop permanece; ela não identifica um computador específico, nem impede simulação de navegador desktop.
+3. Todos os demais usuários recebem um cookie intermediário de cinco minutos, HttpOnly, Secure, SameSite=Lax e host-only. Ele não é uma sessão e não autoriza nenhuma consulta de dados.
+4. O navegador segue para /auth/cloudflare, único caminho protegido pela aplicação Cloudflare Access. A Cloudflare pede e-mail/PIN ou reutiliza uma sessão externa ainda válida.
+5. O servidor valida assinatura RS256/JWKS, emissor, audiência, expiração, emissão, subject e e-mail da assertion. O e-mail precisa pertencer à conta que acabou de confirmar a senha. Por padrão, deve ser exclusivo; a única exceção autorizada é o par admin/msrougi descrito abaixo.
+6. Só então cria a sessão do app. A validade é o menor prazo entre sete dias e a expiração da assertion. Todas as chamadas tRPC de contas autenticadas revalidam a sessão assinada, o vínculo à senha/e-mail atuais e o navegador. Contas com 2FA também revalidam a exclusividade do e-mail. Sessões anteriores à ativação não são aceitas.
+
+Não há bypass por parâmetro, nome digitado, cabeçalho de e-mail, IP, papel administrador ou cookie intermediário. Não criar regra Bypass geral na Cloudflare. As páginas/assets públicos não contêm dados de pacientes. A API tRPC continua exigindo autenticação/autorização; outros caminhos /api/ (incluindo OAuth legado) são recusados nesse modo. A URL direta Render não substitui a confirmação Cloudflare: o callback continua exigindo a assertion válida. Uma sessão de app já emitida continua sendo credencial válida na origem até expirar ou até alteração da conta.
+
+## Associação conta/e-mail
+
+O campo E-mail em Admin > Gerenciar Usuários > Editar é a associação usada. Uma conta por endereço por padrão. As contas admin e msrougi podem compartilhar exclusivamente o endereço configurado em CF_ACCESS_SHARED_OWNER_EMAIL; a consulta exige exatamente esse par de logins/IDs distintos, e qualquer terceira conta causa recusa. Senhas, sessões e permissões continuam separadas entre admin e msrougi; confirmar o e-mail não promove a conta comum a administrador. O mesmo endereço precisa constar na política Allow da Cloudflare. Os nomes do usuário e da pessoa não precisam coincidir com o endereço.
+
+A variável privada AUTH_LOGIN_EMAILS_JSON mantém as chaves obrigatórias gislene, rosani e rose e admite as chaves opcionais miguel, msrougi e admin. Os valores são endereços individuais, nunca senhas. A sincronização valida logins únicos e colisões de endereço antes de atualizar, em uma transação. Não insere contas nem altera senhas/papéis/grupos. Remover a variável depois de aplicá-la, para não sobrescrever edições futuras. Não publicar os endereços pessoais no repositório.
+
+A inicialização recusa e-mails ausentes/duplicados das contas que exigem 2FA, exceto o par explicitamente autorizado. A exceção Bia exige que a conta configurada exista com ID/login/papel corretos; não deixar login sem uso habilitado sem e-mail. Editar o e-mail de uma conta invalida sua sessão do app e exige ajustar a política Cloudflare.
+
+## Ativação seletiva, nesta ordem
+
+1. Cadastrar todos os e-mails individuais, inclusive msrougi/admin; conferir o ID real de Bia. Manter CF_ACCESS_ENABLED=false.
+2. Em Zero Trust > Integrations > Identity providers, configurar One-time PIN.
+3. Criar/editar a aplicação Self-hosted: hostname público srougi.app e caminho **auth/cloudflare**. NÃO proteger o hostname inteiro para este fluxo. Qualquer aplicação abrangente existente para o mesmo hostname também precisa ser revista antes da ativação, para não continuar bloqueando a Bia na borda.
+4. Criar política Allow somente para os e-mails exatos das contas com 2FA. Selecionar One-time PIN como método de login. Configurar duração da aplicação/política/global conforme desejado, até um mês; não habilitar MFA adicional sem um provedor compatível.
+5. No Render, configurar Health Check Path=/healthz e as variáveis privadas:
+
+```dotenv
+CF_ACCESS_ENABLED=false
+CF_ACCESS_LOGIN_FLOW=true
 CF_ACCESS_TEAM_DOMAIN=https://nome-da-equipe.cloudflareaccess.com
-CF_ACCESS_AUD=tag-AUD-da-aplicacao (64 caracteres hexadecimais)
-JWT_SECRET=segredo de sessão existente
+CF_ACCESS_AUD=tag-AUD-da-aplicacao-de-64-caracteres-hexadecimais
+SROUGI_PUBLIC_ORIGIN=https://srougi.app
+CF_ACCESS_BIA_USER_ID=ID_REAL_DA_CONTA_BIA
+CF_ACCESS_SHARED_OWNER_EMAIL=endereco-privado-do-titular@example.invalid
+SECOND_FACTOR_ENABLED=false
+OFFICE_ACCESS_POLICY_ENABLED=false
+```
 
-O domínio da equipe e o AUD não são tokens de API. Nenhum token administrativo Cloudflare é necessário no app para validar assinaturas. A sincronização privada AUTH_LOGIN_EMAILS_JSON existente pode aplicar os e-mails autorizados de gislene, rosani e rose; não publique endereços pessoais no repositório. Todas as demais contas também precisam de e-mail individual válido, único e permitido na política Access. Crie/edite o e-mail do cadastro antes de permitir a nova conta na Cloudflare. A inicialização com o modo ativo recusa e-mails ausentes, inválidos ou duplicados.
+Preservar JWT_SECRET. Team Domain/AUD não são tokens administrativos. O app não precisa de token API Cloudflare nem de Email Sending/Resend para validar o acesso.
 
-## Ativação, nesta ordem
-1. Conferir e-mails de todas as contas que continuarão usando o app, inclusive administradores e testes. Usar endereços individuais. Não vincular duas contas ao mesmo e-mail.
-2. No Cloudflare Zero Trust, configurar Integrations > Identity providers > One-time PIN.
-3. Em Access controls > Applications, criar aplicação Self-hosted para srougi.app em todos os caminhos, incluindo qualquer hostname alternativo que permanecer em uso. Conferir se o DNS está passando pela Cloudflare.
-4. Criar política Allow por e-mails exatos autorizados. Não usar liberação de qualquer e-mail, qualquer domínio inteiro ou regra Bypass geral.
-5. Configurar durações global, da aplicação e da política para até um mês conforme combinado; revisar a precedência das durações. Não habilitar o segundo fator interno do app em paralelo.
-6. Copiar Team Domain e AUD para as variáveis do Render, mantendo CF_ACCESS_ENABLED=false.
-7. Alterar o Health Check Path do Render para /healthz antes da ativação.
-8. Desativar SECOND_FACTOR_ENABLED e OFFICE_ACCESS_POLICY_ENABLED; quando os cadastros/políticas estiverem conferidos, habilitar CF_ACCESS_ENABLED=true e publicar. O código dá precedência a Access mesmo se as flags antigas ficarem ligadas, mas limpá-las evita comportamento inesperado numa reversão.
-9. Testar: e-mail permitido recebe PIN; e-mail não autorizado não entra; senha do app continua exigida; identidade de Rose não entra em outra conta; usuário comum não ganha papel admin; conta Bia mantém regra desktop; URL direta Render sem assertion é negada e /healthz responde.
-10. Conferir o funcionamento do aplicativo instalado, renovação/expiração de sessão e troca de conta em um navegador real. Não considere produção validada apenas pelo CI.
+6. Depois de conferir contas, política e publicação, habilitar CF_ACCESS_ENABLED=true e publicar. Testar senha errada, PIN real, e-mail incorreto/duplicado, Bia desktop/celular, sessões antigas, administração e URL direta Render antes de considerar concluído.
+7. Para remover a dispensa da Bia, primeiro cadastrar e-mail exclusivo e incluí-lo na política, depois remover CF_ACCESS_BIA_USER_ID e publicar. Para limitar a um equipamento específico, será necessária configuração adicional no dispositivo; o bloqueio mobile atual não oferece essa garantia.
 
-## Troca de conta e revogação
-Sair do SrougiMed encerra a sessão do app, mas não a sessão Cloudflare, permitindo reentrada com senha enquanto a sessão externa estiver válida. Para trocar o e-mail da barreira Access, sair pelo endereço https://srougi.app/cdn-cgi/access/logout e autenticar com o outro e-mail.
-No modo Access, “Revogar dispositivos” do mecanismo interno retorna uma orientação, sem afirmar que revogou a Cloudflare. Revogações e remoções da política devem ser feitas no painel Zero Trust. Para bloquear imediatamente a conta dentro do app, excluir a conta ou alterar seu e-mail/senha, conforme a ação administrativa pretendida; isso não substitui revogação das credenciais Cloudflare.
+## Revogação e duração
 
-## Testes e limites
-Testes com chaves RSA locais e JWTs fictícios cobrem assinatura/algoritmo, claims, isolamento entre e-mails/contas, proteção HTTP de origem, endpoint de saúde, sessão vinculada, rejeição de sessão antiga e manutenção de papéis. Testes MySQL usam somente banco local isolado. Não geram PIN real nem alteram painéis, DNS ou dados de produção.
-Sem acesso ao painel nesta execução, domínio/equipe, AUD, política, plano, cadastros reais, publicação e entrega real do PIN permanecem pendentes. Não há restrição por localização de rede neste modo.
+Sair do app remove a sessão local e o cookie intermediário, mas não encerra automaticamente a sessão externa Cloudflare. Para trocar o e-mail da Cloudflare, usar https://srougi.app/cdn-cgi/access/logout e voltar ao login do app.
+
+No fluxo seletivo, a Cloudflare protege a etapa de confirmação, não cada consulta. Remover um e-mail/revogar na Cloudflare impede novas confirmações, mas não encerra por si só uma sessão local já emitida. Para bloqueio local imediato, alterar senha/e-mail ou excluir a conta conforme a ação administrativa pretendida. O botão interno de revogar dispositivos não afirma revogar essas sessões. Revogação de dispositivo/sessão individual no modo seletivo não está implementada.
+
+## Modo global anterior
+
+CF_ACCESS_ENABLED=true com CF_ACCESS_LOGIN_FLOW diferente de true preserva a barreira global anterior. Nesse modo a aplicação Cloudflare protege todos os caminhos, todos precisam de e-mail/PIN e não existe dispensa da Bia. O servidor exige assertion em todas as requisições, exceto GET/HEAD /healthz (resposta fixa sem dados). Não misturar política global com instruções do fluxo seletivo.
+
+## Validação e limites
+
+Testes isolados cobrem assinatura, identidade/conta, senha antes da confirmação, rejeição do cookie intermediário como sessão, expiração, mudança de senha/e-mail, troca de navegador, tentativa de usar outra conta/papel, manutenção do bloqueio mobile e isolamento de permissões. Testes MySQL usam apenas banco local de teste. Não enviam PIN real nem alteram dados de produção/painéis/DNS. A ativação e a entrega real do PIN ainda precisam ser verificadas no ambiente publicado.
 
 Referências:
 https://developers.cloudflare.com/cloudflare-one/integrations/identity-providers/one-time-pin/

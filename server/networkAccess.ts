@@ -1,4 +1,5 @@
-import {cloudflareAccessEnabled,accessConfiguration} from "./cloudflareAccess";
+import {validateAccessLoginFlow} from "./cloudflareLoginFlow";
+import {cloudflareAccessEnabled,accessConfiguration,accessEmail} from "./cloudflareAccess";
 import {authEmailConfiguration} from "./authEmail";
 import { createHash, createHmac } from "node:crypto";
 import { isIP } from "node:net";
@@ -74,6 +75,8 @@ export function assertNetworkAccess(user:NetworkUser,req:Request) {
 export function validateNetworkConfiguration() {
   if(cloudflareAccessEnabled()){
     accessConfiguration();
+    validateAccessLoginFlow();
+    if(process.env.CF_ACCESS_SHARED_OWNER_EMAIL && !accessEmail(process.env.CF_ACCESS_SHARED_OWNER_EMAIL))throw Error("CLOUDFLARE_ACCESS_SHARED_EMAIL_INVALID");
     if(!authSecret())throw Error("CLOUDFLARE_ACCESS_SESSION_SECRET_MISSING");
     return;
   }

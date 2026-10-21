@@ -1,3 +1,5 @@
+import {accessLoginFlowEnabled,isBiaPasswordOnly,finishCloudflareLogin,ACCESS_CALLBACK} from "./cloudflareLoginFlow";
+import {isSharedOwnerEmail} from "./accessEmailPolicy";
 import jwtModule from "jsonwebtoken";
 import {ENV} from "./_core/env";
 import {accountFingerprint,type NetworkUser} from "./networkAccess";
@@ -9,7 +11,7 @@ import {z} from "zod";
 
 export const cloudflareAccessEnabled=()=>process.env.CF_ACCESS_ENABLED==="true";
 export type AccessConfig={issuer:string;audience:string};
-export type AccessIdentity={email:string;subject:string};
+export type AccessIdentity={email:string;subject:string;expiresAt?:number};
 const emailSchema=z.string().trim().email().max(320);
 export const accessEmail=(value:unknown)=>{const email=emailSchema.safeParse(value);return email.success?email.data.toLowerCase():null;};
 const denied=()=>new TRPCError({code:"FORBIDDEN",message:"Confirme seu acesso pela Cloudflare antes de entrar no sistema."});
@@ -28,7 +30,7 @@ export async function verifyAccessToken(token:string,config=accessConfiguration(
   const {payload}=await jwtVerify(token,keys,{algorithms:["RS256"],issuer:config.issuer,audience:config.audience,requiredClaims:["exp","iat","sub","email"],maxTokenAge:"31d",clockTolerance:5});
   const email=accessEmail(payload.email);
   if(!email || typeof payload.sub!=="string" || !payload.sub)throw denied();
-  return {email,subject:payload.sub};
+  return {email,subject:payload.sub,expiresAt:payload.exp};
 }
 const identities=new WeakMap<Request,Promise<AccessIdentity>>();
 export function requestAccessIdentity(req:Request) {
@@ -46,14 +48,16 @@ export function requestAccessIdentity(req:Request) {
 async function accountIds(email:string) {
   const {getDb}=await import("./db");const db=await getDb();
   if(!db)throw new TRPCError({code:"INTERNAL_SERVER_ERROR",message:"Autenticação indisponível."});
-  const [rows]=await db.$client.promise().query<any[]>("SELECT id FROM users WHERE LOWER(TRIM(email))=? LIMIT 2",[email]);
-  return rows.map(row=>Number(row.id));
+  const [rows]=await db.$client.promise().query<any[]>("SELECT id,username FROM users WHERE LOWER(TRIM(email))=? LIMIT 3",[email]);
+  return rows.map(row=>({id:Number(row.id),username:row.username as string | null}));
 }
-export async function assertAccessAccount(user:{id:number;email?:string|null},identity:AccessIdentity,lookup:(email:string)=>Promise<number[]>=accountIds) {
+export async function assertAccessAccount(user:{id:number;email?:string|null},identity:AccessIdentity,lookup:(email:string)=>Promise<(number | {id:number;username?:string|null})[]>=accountIds) {
   const email=accessEmail(user.email);
   if(!email || email!==identity.email)throw new TRPCError({code:"FORBIDDEN",message:"O e-mail confirmado na Cloudflare não corresponde a este usuário. Troque o acesso da Cloudflare para usar outra conta."});
-  const ids=await lookup(email);
-  if(ids.length!==1 || ids[0]!==user.id)throw new TRPCError({code:"FORBIDDEN",message:"Peça ao administrador para configurar um e-mail individual e exclusivo nesta conta."});
+  const matches=await lookup(email);
+  const accounts=matches.map(match=>typeof match==="number"?{id:match}:match);
+  const ownsAccount=accounts.some(account=>account.id===user.id);
+  if(!ownsAccount || (accounts.length!==1 && !isSharedOwnerEmail(email,accounts)))throw new TRPCError({code:"FORBIDDEN",message:"Peça ao administrador para conferir o e-mail autorizado nesta conta."});
 }
 export async function assertAccessUser(user:{id:number;email?:string|null},req:Request) {
   if(!cloudflareAccessEnabled())return null;
@@ -71,19 +75,31 @@ export function assertAccessSession(user:NetworkUser,req:Request,identity:Access
 // Protect all origin routes (including direct Render URL and OAuth), not just the login form.
 export const cloudflareAccessGate:RequestHandler=(req,res,next)=>{
   if(!cloudflareAccessEnabled()){next();return;}
+  if(accessLoginFlowEnabled() && req.path!==ACCESS_CALLBACK){
+    // Only tRPC exposes application data; its per-account middleware requires a completed session.
+    // Block OAuth and any future unguarded raw API while allowing the public login shell/assets.
+    if(req.path.startsWith("/api/") && !/^\/api\/trpc(?:\/|$)/.test(req.path)) {res.sendStatus(403);return;}
+    next();return;
+  }
   void requestAccessIdentity(req).then(()=>next(),()=>{
     res.setHeader("Cache-Control","no-store");
     res.status(403).type("text/plain").send("Acesso não autorizado. Entre pelo endereço oficial do SrougiMed e confirme o acesso pela Cloudflare.");
   });
 };
-export function assertAccessAccountsReady(accounts:{email?:string|null}[]) {
-  const emails=accounts.map(account=>accessEmail(account.email));
-  if(emails.some(email=>!email))throw Error("CLOUDFLARE_ACCESS_ACCOUNT_EMAIL_MISSING");
-  if(new Set(emails).size!==emails.length)throw Error("CLOUDFLARE_ACCESS_ACCOUNT_EMAIL_DUPLICATE");
+export function assertAccessAccountsReady(accounts:{id?:number;username?:string|null;role?:string;email?:string|null}[]) {
+  const required=accounts.filter(account=>!isBiaPasswordOnly(account as any));
+  if(required.some(account=>!accessEmail(account.email)))throw Error("CLOUDFLARE_ACCESS_ACCOUNT_EMAIL_MISSING");
+  const emails=accounts.map(account=>accessEmail(account.email)).filter(Boolean);
+  for(const email of Array.from(new Set(emails))){
+    const matches=accounts.filter(account=>accessEmail(account.email)===email);
+    if(matches.length>1 && !isSharedOwnerEmail(email!,matches))throw Error("CLOUDFLARE_ACCESS_ACCOUNT_EMAIL_DUPLICATE");
+  }
+  if(accessLoginFlowEnabled() && process.env.CF_ACCESS_BIA_USER_ID && accounts.filter(account=>isBiaPasswordOnly(account as any)).length!==1)throw Error("CLOUDFLARE_ACCESS_BIA_ACCOUNT_NOT_READY");
 }
 
 export function mountCloudflareAccess(app:Pick<Express,"get"|"use">) {
   // The only public probe contains no account, database or application data.
   app.get("/healthz",(_req,res)=>{res.setHeader("Cache-Control","no-store");res.status(200).type("text/plain").send("ok");});
   app.use(cloudflareAccessGate);
+  app.get(ACCESS_CALLBACK,finishCloudflareLogin);
 }
