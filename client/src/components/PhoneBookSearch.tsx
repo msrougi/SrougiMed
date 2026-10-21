@@ -49,6 +49,7 @@ export default function PhoneBookSearch({ onEditEntry }: PhoneBookSearchProps) {
   const entries = result?.items ?? [];
 
   const handleSearch = () => {
+    if (isLoading) return;
     if (searchName.trim().length < 2) {
       toast.error("Digite pelo menos 2 caracteres para buscar");
       return;
@@ -77,7 +78,13 @@ export default function PhoneBookSearch({ onEditEntry }: PhoneBookSearchProps) {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white dark:bg-card rounded-lg shadow p-4 sm:p-6">
+      <form
+        onSubmit={event => {
+          event.preventDefault();
+          handleSearch();
+        }}
+        className="bg-white dark:bg-card rounded-lg shadow p-4 sm:p-6"
+      >
         <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-100 mb-4">
           Buscar Contato
         </h3>
@@ -93,7 +100,7 @@ export default function PhoneBookSearch({ onEditEntry }: PhoneBookSearchProps) {
           </div>
           <div className="flex items-end [&>button]:w-full">
             <Button
-              onClick={handleSearch}
+              type="submit"
               disabled={isLoading}
               className="bg-[#087e78] hover:bg-[#06665f]"
             >
@@ -101,7 +108,7 @@ export default function PhoneBookSearch({ onEditEntry }: PhoneBookSearchProps) {
             </Button>
           </div>
         </div>
-      </div>
+      </form>
 
       <div className="bg-white dark:bg-card rounded-lg shadow overflow-hidden">
         {error && (
@@ -124,7 +131,7 @@ export default function PhoneBookSearch({ onEditEntry }: PhoneBookSearchProps) {
         )}
         {!hasSearched ? (
           <div className="p-6 text-center text-gray-600 dark:text-slate-300">
-            Digite um nome e clique em "Buscar" para encontrar contatos
+            Digite um nome e pressione Enter ou clique em "Buscar" para encontrar contatos
           </div>
         ) : isLoading ? (
           <div className="p-6 text-center text-gray-600 dark:text-slate-300">
