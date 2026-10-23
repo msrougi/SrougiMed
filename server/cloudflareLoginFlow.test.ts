@@ -30,8 +30,45 @@ beforeAll(async()=>{
 });
 beforeEach(()=>{
   vi.clearAllMocks();
-  for(const [key,value] of Object.entries({CF_ACCESS_ENABLED:"true",CF_ACCESS_LOGIN_FLOW:"true",CF_ACCESS_BIA_USER_ID:"9",SROUGI_PUBLIC_ORIGIN:"https://app.example.invalid",CF_ACCESS_TEAM_DOMAIN:"https://fixture.cloudflareaccess.com",CF_ACCESS_AUD:"a".repeat(64),JWT_SECRET:"synthetic-access-session",SECOND_FACTOR_ENABLED:"true",OFFICE_ACCESS_POLICY_ENABLED:"true"}))vi.stubEnv(key,value);
+  for(const [key,value] of Object.entries({CF_ACCESS_ENABLED:"true",CF_ACCESS_LOGIN_FLOW:"true",BIA_DEVICE_ACCESS_ENABLED:"false",NATIVE_EMAIL_LOGIN:"false",CF_ACCESS_BIA_USER_ID:"9",SROUGI_PUBLIC_ORIGIN:"https://app.example.invalid",CF_ACCESS_TEAM_DOMAIN:"https://fixture.cloudflareaccess.com",CF_ACCESS_AUD:"a".repeat(64),JWT_SECRET:"synthetic-access-session",SECOND_FACTOR_ENABLED:"true",OFFICE_ACCESS_POLICY_ENABLED:"true"}))vi.stubEnv(key,value);
   fixture.authenticate.mockResolvedValue(user);fixture.getUser.mockResolvedValue(user);fixture.lookup.mockResolvedValue([[{id:1}],[]]);
+});
+
+describe("2FA da Bia com postura do Cloudflare One Client",()=>{
+  it("mantém o 2FA nativo dos demais usuários e só conclui a sessão da Bia após a Cloudflare",async()=>{
+    vi.stubEnv("CF_ACCESS_ENABLED","false");
+    vi.stubEnv("CF_ACCESS_LOGIN_FLOW","false");
+    vi.stubEnv("BIA_DEVICE_ACCESS_ENABLED","true");
+    vi.stubEnv("NATIVE_EMAIL_LOGIN","true");
+    vi.stubEnv("SECOND_FACTOR_BIA_USER_ID","");
+    const deviceBia={...bia,email:"bsbancala@example.invalid"};
+    fixture.begin.mockResolvedValueOnce({success:false,requiresCode:true,challengeId:"a".repeat(64),emailHint:"fi*****@example.invalid",trustAvailable:true,resendAvailable:true});
+    const commonLogin=caller();
+    await expect(commonLogin.api.customAuth.login({username:"fixture",password:"synthetic"})).resolves.toMatchObject({requiresCode:true});
+    expect(cookieValue(commonLogin.response,ACCESS_PENDING_COOKIE)).toBeUndefined();
+    fixture.begin.mockClear();
+
+    fixture.authenticate.mockResolvedValue(deviceBia);
+    fixture.getUser.mockResolvedValue(deviceBia);
+    fixture.lookup.mockResolvedValue([[{id:9,username:"bia"}],[]]);
+
+    const login=caller();
+    await expect(login.api.customAuth.login({username:"bia",password:"synthetic"})).resolves.toMatchObject({success:false,requiresAccess:true,redirectUrl:"https://app.example.invalid/auth/cloudflare"});
+    expect(fixture.begin).not.toHaveBeenCalled();
+    expect(cookieValue(login.response,"app_session_id")).toBeUndefined();
+
+    const app=express();mountCloudflareAccess(app);app.use((_req,res)=>res.send("public-login-shell"));
+    const server=await new Promise<ReturnType<typeof app.listen>>(resolve=>{const s=app.listen(0,"127.0.0.1",()=>resolve(s));});
+    try{
+      expect((await fetch("http://127.0.0.1:"+(server.address() as {port:number}).port+"/")).status).toBe(200);
+      const pending=ACCESS_PENDING_COOKIE+"="+cookieValue(login.response,ACCESS_PENDING_COOKIE);
+      const response=await fetch("http://127.0.0.1:"+(server.address() as {port:number}).port+ACCESS_CALLBACK,{redirect:"manual",headers:{cookie:pending,"user-agent":"Fixture Desktop","cf-access-jwt-assertion":await access(deviceBia.email)}});
+      expect(response.status).toBe(303);
+      const session=response.headers.getSetCookie().find(c=>c.startsWith("app_session_id="))!.split(";")[0];
+      await expect(caller(deviceBia,session).api.auth.me()).resolves.toMatchObject({id:9,username:"bia"});
+      await expect(caller({...deviceBia,id:10},session).api.auth.me()).rejects.toMatchObject({code:"FORBIDDEN"});
+    }finally{await new Promise<void>((resolve,reject)=>server.close(error=>error?reject(error):resolve()));}
+  });
 });
 afterEach(()=>vi.unstubAllEnvs());
 describe("2FA seletivo: senha antes da Cloudflare e exceção temporária da Bia",()=>{

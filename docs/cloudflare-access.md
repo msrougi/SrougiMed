@@ -2,6 +2,28 @@
 
 Preparado no código, desativado por padrão. Não ativar só por publicar o código: é necessário configurar a aplicação Cloudflare, conferir contas/e-mails, configurar o Render e testar o PIN real.
 
+## Postura somente para a Bia, mantendo o 2FA nativo
+
+O modo `BIA_DEVICE_ACCESS_ENABLED=true` funciona junto com `NATIVE_EMAIL_LOGIN=true` e `SECOND_FACTOR_ENABLED=true`, enquanto `CF_ACCESS_ENABLED` permanece `false`. As outras contas continuam recebendo o código da Resend dentro do SrougiMed. Somente a conta Bia, identificada simultaneamente por ID, login `bia` e papel `user`, segue para `/auth/cloudflare` depois de confirmar a senha.
+
+Nesse caminho, a política Cloudflare deve conter `Include: Email` para o endereço exclusivo da Bia e `Require: Device posture — Serial number list` para a lista que contém apenas o computador autorizado. One-time PIN permanece como método de login da aplicação. O e-mail da Bia não deve constar em outra política Allow que dispense a postura. Não ativar “Authenticate with Cloudflare One Client”, pois o PIN é o segundo fator desejado.
+
+Variáveis no Render:
+
+```dotenv
+CF_ACCESS_ENABLED=false
+CF_ACCESS_LOGIN_FLOW=false
+NATIVE_EMAIL_LOGIN=true
+SECOND_FACTOR_ENABLED=true
+BIA_DEVICE_ACCESS_ENABLED=true
+CF_ACCESS_BIA_USER_ID=ID_REAL_DA_CONTA_BIA
+CF_ACCESS_TEAM_DOMAIN=https://nome-da-equipe.cloudflareaccess.com
+CF_ACCESS_AUD=tag-AUD-da-aplicacao-de-64-caracteres-hexadecimais
+SROUGI_PUBLIC_ORIGIN=https://srougi.app
+```
+
+`SECOND_FACTOR_BIA_USER_ID` deve ser removida nesse modo. A inicialização falha se a antiga dispensa de senha estiver ativa ao mesmo tempo. O callback exige senha recente, assertion assinada da Cloudflare, e-mail exato e o mesmo navegador; somente então emite a sessão local. O equipamento é verificado pela política Access antes da emissão dessa assertion.
+
 ## Fluxo seletivo: exceção temporária da Bia
 
 Com CF_ACCESS_ENABLED=true e CF_ACCESS_LOGIN_FLOW=true:

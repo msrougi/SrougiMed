@@ -19,7 +19,7 @@ const cookieValue=(response:ReturnType<typeof caller>["response"],name:string)=>
 async function prepare(){const s=caller();await s.api.customAuth.login({username:user.username,password:"synthetic"});return NATIVE_PENDING_COOKIE+"="+cookieValue(s.response,NATIVE_PENDING_COOKIE);}
 beforeEach(()=>{
   vi.clearAllMocks();
-  for(const [key,value] of Object.entries({CF_ACCESS_ENABLED:"false",SECOND_FACTOR_ENABLED:"true",NATIVE_EMAIL_LOGIN:"true",SECOND_FACTOR_BIA_USER_ID:"9",JWT_SECRET:"synthetic-native-key",AUTH_EMAIL_PROVIDER:"resend",AUTH_EMAIL_FROM:"access@example.invalid",RESEND_API_KEY:"synthetic-resend",OFFICE_ACCESS_POLICY_ENABLED:"false"}))vi.stubEnv(key,value);
+  for(const [key,value] of Object.entries({CF_ACCESS_ENABLED:"false",BIA_DEVICE_ACCESS_ENABLED:"false",SECOND_FACTOR_ENABLED:"true",NATIVE_EMAIL_LOGIN:"true",SECOND_FACTOR_BIA_USER_ID:"9",JWT_SECRET:"synthetic-native-key",AUTH_EMAIL_PROVIDER:"resend",AUTH_EMAIL_FROM:"access@example.invalid",RESEND_API_KEY:"synthetic-resend",OFFICE_ACCESS_POLICY_ENABLED:"false"}))vi.stubEnv(key,value);
   fixture.authenticate.mockResolvedValue(user);fixture.getUser.mockResolvedValue(user);fixture.lookup.mockResolvedValue([[{id:1,username:user.username}],[]]);fixture.trusted.mockResolvedValue(null);
   fixture.start.mockResolvedValue({success:false,requiresCode:true,challengeId:"a".repeat(64),emailHint:"fi*****@example.invalid",trustAvailable:true,resendAvailable:true});
   fixture.verify.mockResolvedValue({user,proof:makeEmailProof(user,req())});
@@ -82,6 +82,14 @@ describe("confirmação nativa com destinatário cadastrado",()=>{
     vi.stubEnv("NATIVE_EMAIL_LOGIN","false");await expect(caller().api.customAuth.sendLoginCode({})).rejects.toMatchObject({code:"UNAUTHORIZED"});
     vi.stubEnv("NATIVE_EMAIL_LOGIN","true");vi.stubEnv("CF_ACCESS_ENABLED","true");expect(validateNetworkConfiguration).toThrow("NATIVE_EMAIL_LOGIN_MODE_CONFLICT");
     expect(maskLoginEmail("a@example.invalid")).toBe("a*****@example.invalid");
+  });
+  it("recusa ativar postura da Bia enquanto a exceção antiga de senha estiver configurada",()=>{
+    vi.stubEnv("BIA_DEVICE_ACCESS_ENABLED","true");
+    vi.stubEnv("CF_ACCESS_BIA_USER_ID","9");
+    vi.stubEnv("SROUGI_PUBLIC_ORIGIN","https://app.example.invalid");
+    vi.stubEnv("CF_ACCESS_TEAM_DOMAIN","https://fixture.cloudflareaccess.com");
+    vi.stubEnv("CF_ACCESS_AUD","a".repeat(64));
+    expect(validateNetworkConfiguration).toThrow("BIA_DEVICE_ACCESS_PASSWORD_EXCEPTION_CONFLICT");
   });
   it("logout expira o cookie intermediário na resposta HTTP real",async()=>{
     const app=express();

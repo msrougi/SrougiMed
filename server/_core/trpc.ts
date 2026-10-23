@@ -1,4 +1,4 @@
-import {accessLoginFlowEnabled,assertSelectiveSession} from "../cloudflareLoginFlow";
+import {accessLoginFlowEnabled,assertSelectiveSession,biaDeviceAccessEnabled,isBiaDeviceAccessUser} from "../cloudflareLoginFlow";
 import {cloudflareAccessEnabled,requestAccessIdentity,assertAccessAccount,assertAccessSession} from "../cloudflareAccess";
 import { NOT_ADMIN_ERR_MSG, UNAUTHED_ERR_MSG } from '@shared/const';
 import { initTRPC, TRPCError } from "@trpc/server";
@@ -28,7 +28,8 @@ const deviceProcedure = t.procedure.use(async ({ ctx, path, next }) => {
     assertDeviceAccess(ctx.user, ctx.req.headers ?? {});
     if(!cloudflareAccessEnabled()){
       assertNetworkAccess(ctx.user,ctx.req);
-      await assertSecondFactorAccess(ctx.user,ctx.req);
+      if(biaDeviceAccessEnabled() && isBiaDeviceAccessUser(ctx.user))await assertSelectiveSession(ctx.user,ctx.req);
+      else await assertSecondFactorAccess(ctx.user,ctx.req);
     }
   }
   return next();
