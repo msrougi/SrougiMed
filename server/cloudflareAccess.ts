@@ -1,4 +1,4 @@
-import {accessLoginFlowEnabled,isBiaPasswordOnly,finishCloudflareLogin,ACCESS_CALLBACK} from "./cloudflareLoginFlow";
+import {accessLoginFlowEnabled,biaDeviceAccessEnabled,isBiaPasswordOnly,finishCloudflareLogin,ACCESS_CALLBACK} from "./cloudflareLoginFlow";
 import {isSharedOwnerEmail} from "./accessEmailPolicy";
 import jwtModule from "jsonwebtoken";
 import {ENV} from "./_core/env";
@@ -74,7 +74,8 @@ export function assertAccessSession(user:NetworkUser,req:Request,identity:Access
 }
 // Protect all origin routes (including direct Render URL and OAuth), not just the login form.
 export const cloudflareAccessGate:RequestHandler=(req,res,next)=>{
-  if(!cloudflareAccessEnabled()){next();return;}
+  if(!cloudflareAccessEnabled() && !biaDeviceAccessEnabled()){next();return;}
+  if(biaDeviceAccessEnabled() && !cloudflareAccessEnabled() && req.path!==ACCESS_CALLBACK){next();return;}
   if(accessLoginFlowEnabled() && req.path!==ACCESS_CALLBACK){
     // Only tRPC exposes application data; its per-account middleware requires a completed session.
     // Block OAuth and any future unguarded raw API while allowing the public login shell/assets.

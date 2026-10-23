@@ -1,5 +1,5 @@
 import {isSecondFactorPasswordOnly,passwordOnlyBiaId} from "./secondFactorPolicy";
-import {validateAccessLoginFlow} from "./cloudflareLoginFlow";
+import {biaDeviceAccessEnabled,validateAccessLoginFlow} from "./cloudflareLoginFlow";
 import {cloudflareAccessEnabled,accessConfiguration,accessEmail} from "./cloudflareAccess";
 import {authEmailConfiguration} from "./authEmail";
 import { createHash, createHmac } from "node:crypto";
@@ -75,7 +75,14 @@ export function assertNetworkAccess(user:NetworkUser,req:Request) {
 
 export function validateNetworkConfiguration() {
   if(process.env.NATIVE_EMAIL_LOGIN==="true" && (cloudflareAccessEnabled() || process.env.SECOND_FACTOR_ENABLED!=="true"))throw Error("NATIVE_EMAIL_LOGIN_MODE_CONFLICT");
+  if(biaDeviceAccessEnabled() && (process.env.NATIVE_EMAIL_LOGIN!=="true" || process.env.SECOND_FACTOR_ENABLED!=="true" || cloudflareAccessEnabled()))throw Error("BIA_DEVICE_ACCESS_MODE_CONFLICT");
+  if(biaDeviceAccessEnabled() && process.env.SECOND_FACTOR_BIA_USER_ID)throw Error("BIA_DEVICE_ACCESS_PASSWORD_EXCEPTION_CONFLICT");
   if(process.env.SECOND_FACTOR_ENABLED==="true" && passwordOnlyBiaId() && !/^[1-9][0-9]*$/.test(passwordOnlyBiaId()!))throw Error("SECOND_FACTOR_BIA_ID_INVALID");
+  if(biaDeviceAccessEnabled()){
+    accessConfiguration();
+    validateAccessLoginFlow();
+    if(!authSecret())throw Error("CLOUDFLARE_ACCESS_SESSION_SECRET_MISSING");
+  }
   if(cloudflareAccessEnabled()){
     accessConfiguration();
     validateAccessLoginFlow();

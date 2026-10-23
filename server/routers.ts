@@ -1,6 +1,6 @@
 import {nativeEmailLoginEnabled,sendNativeEmailCode,NATIVE_PENDING_COOKIE,nativePendingOptions} from "./nativeEmailLogin";
 import {isSecondFactorPasswordOnly} from "./secondFactorPolicy";
-import {accessLoginFlowEnabled,isBiaPasswordOnly,issueSelectiveSession,startCloudflareLogin,ACCESS_PENDING_COOKIE} from "./cloudflareLoginFlow";
+import {accessLoginFlowEnabled,biaDeviceAccessEnabled,cloudflareLoginCallbackEnabled,isBiaDeviceAccessUser,isBiaPasswordOnly,issueSelectiveSession,startCloudflareLogin,ACCESS_PENDING_COOKIE} from "./cloudflareLoginFlow";
 import {cloudflareAccessEnabled,assertAccessUser} from "./cloudflareAccess";
 import {secondFactorEnabled,trustedDeviceStore,TRUST_COOKIE,trustCookieOptions} from "./trustedDevices";
 import { recordNumberSchema } from "../shared/recordNumber";
@@ -48,7 +48,7 @@ export const appRouter = router({
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       if(nativeEmailLoginEnabled())ctx.res.clearCookie(NATIVE_PENDING_COOKIE,nativePendingOptions);
-      if(accessLoginFlowEnabled())ctx.res.clearCookie(ACCESS_PENDING_COOKIE,{httpOnly:true,secure:true,sameSite:"lax",path:"/"});
+      if(cloudflareLoginCallbackEnabled())ctx.res.clearCookie(ACCESS_PENDING_COOKIE,{httpOnly:true,secure:true,sameSite:"lax",path:"/"});
       return {
         success: true,
       } as const;
@@ -86,6 +86,7 @@ export const appRouter = router({
         }
         assertDeviceAccess(user, ctx.req.headers ?? {});
 
+        if(biaDeviceAccessEnabled() && isBiaDeviceAccessUser(user))return startCloudflareLogin(user,ctx.req,ctx.res);
         if(accessLoginFlowEnabled()){
           if(isBiaPasswordOnly(user))return issueSelectiveSession(user,ctx.req,ctx.res);
           return startCloudflareLogin(user,ctx.req,ctx.res);
