@@ -60,6 +60,7 @@ describe("alertas do ChatMed",()=>{
     fireEvent.click(screen.getByRole("button",{name:/Avisos do ChatMed/}));
     fireEvent.click(screen.getByRole("button",{name:"Ativar avisos neste aparelho"}));
     await screen.findByRole("button",{name:"Desativar avisos neste aparelho"});
+    expect(api.register).toHaveBeenCalledWith("/chatmed-sw.js?v=1",{scope:"/",updateViaCache:"none"});
     expect(api.subscribe).toHaveBeenCalledWith({...value,sound:true});
     expect(readChatAlertPreferences(1).push).toBe(true);
     manager.getSubscription.mockResolvedValue(subscription);
