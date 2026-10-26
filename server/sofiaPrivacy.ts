@@ -8,7 +8,7 @@ const PUBLIC_WORDS = new Set(`
   a à agora ainda algum alguma alguns algumas alfabetica alfabeticamente alfabética
   apenas as às buscar busque cadastrada cadastrado cadastradas cadastrados cadastro
   canal celular celulares cidade cidades com contato contatos conte contém da das de
-  dele deles dessas desse desses desta destas deste destes do dos e é email emails em
+  dele deles dessas desse desses desta destas deste destes do dos e é email emails e-mail e-mails fax em
   encontre estão este estes eu grupo há hoje janeiro fevereiro março abril maio junho
   julho agosto setembro outubro novembro dezembro lista listar liste mas mês minha
   mostre nao não nome nomes no nos nossa nossas nosso nossos o os ou ordem para paciente

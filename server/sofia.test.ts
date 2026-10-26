@@ -70,6 +70,7 @@ describe("consultas seguras da SofIA",()=>{
     expect(()=>validateAndResolvePlan({...chat,reply:"Nome $V1"},new Map([["$V1","segredo"]]))).toThrow("SOFIA_INVALID_CHAT_REPLY");
     expect(()=>validateAndResolvePlan({...chat,reason:"medical_advice"},new Map())).toThrow("SOFIA_INVALID_CHAT_REPLY");
     expect(redactQuestion("Olá, como você pode ajudar?").redacted).not.toContain("$V");
+    expect(redactQuestion("Quantos pacientes têm e-mail e fax?").redacted).not.toContain("$V");
   });
   it("valida entrada, cursor e idempotência do cliente",()=>{
     expect(sofiaAskSchema.safeParse({text:" ",clientId:crypto.randomUUID()}).success).toBe(false);
