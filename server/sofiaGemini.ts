@@ -27,6 +27,7 @@ function prompt(question:string,previous:string){return `
 Você é o planejador de consultas SOMENTE LEITURA da SofIA. Recebe texto em português com valores privados substituídos por tokens $Vn/$Pn.
 Nunca invente valores, nunca remova o cifrão e use somente tokens existentes no texto ou no plano anterior.
 Retorne o plano COMPLETO da nova consulta, incorporando o plano anterior quando a pergunta for uma continuação.
+Retorne SOMENTE um objeto JSON válido, sem markdown, comentários ou texto adicional.
 
 Entidades: patients (pacientes) ou contacts (agenda/contatos).
 Campos de patients: name, record_number, cpf, address, district, city, state, email, mobile, phone, fax, occupation, referred_by, birth_date, registration_date.
@@ -50,8 +51,6 @@ async function requestGemini(input:string,signal:AbortSignal) {
       model:process.env.GEMINI_MODEL?.trim() || "gemini-3.8-flash",
       input,
       store:false,
-      generation_config:{temperature:0,max_output_tokens:1200,thinking_level:"minimal"},
-      response_format:{type:"text",mime_type:"application/json"},
     }),
   });
   if(!response.ok){
@@ -63,7 +62,8 @@ async function requestGemini(input:string,signal:AbortSignal) {
   const data=await response.json();
   const text=outputText(data);
   if(!text)throw new Error("SOFIA_GEMINI_EMPTY_RESPONSE");
-  return rawSofiaPlanSchema.parse(JSON.parse(text));
+  const json=text.trim().replace(/^```(?:json)?\s*/i,"").replace(/\s*```$/,"");
+  return rawSofiaPlanSchema.parse(JSON.parse(json));
 }
 
 export async function createSofiaPlan(redactedQuestion:string,redactedPrevious:string):Promise<RawSofiaPlan> {

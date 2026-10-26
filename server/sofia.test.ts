@@ -65,12 +65,12 @@ describe("consultas seguras da SofIA",()=>{
   it("sempre solicita store=false ao Gemini e exige resposta estruturada",async()=>{
     vi.stubEnv("SOFIA_ENABLED","true");vi.stubEnv("GEMINI_API_KEY","segredo-sintetico");
     const response={action:"query",entity:"patients",filters:[],sort:"name_asc",output:"count",limit:20,reason:"none"};
-    const fetchMock=vi.fn(async(_url:string,init:any)=>new Response(JSON.stringify({output_text:JSON.stringify(response)}),{status:200,headers:{"content-type":"application/json"}}));
+    const fetchMock=vi.fn(async(_url:string,init:any)=>new Response(JSON.stringify({output_text:`\`\`\`json\n${JSON.stringify(response)}\n\`\`\``}),{status:200,headers:{"content-type":"application/json"}}));
     vi.stubGlobal("fetch",fetchMock);
     await expect(createSofiaPlan("quantos pacientes", "nenhum")).resolves.toEqual(response);
     const request=JSON.parse(fetchMock.mock.calls[0][1].body);
     expect(request.store).toBe(false);expect(request.model).toBe("gemini-3.8-flash");
-    expect(request.response_format).toEqual({type:"text",mime_type:"application/json"});
+    expect(Object.keys(request).sort()).toEqual(["input","model","store"]);
     expect(fetchMock.mock.calls[0][1].headers["x-goog-api-key"]).toBe("segredo-sintetico");
   });
   it("isola o histórico particular pelo usuário autenticado",async()=>{
