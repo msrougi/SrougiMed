@@ -1,4 +1,5 @@
 import {mountCloudflareAccess} from "../cloudflareAccess";
+import {startChatPushDispatcher} from "../chatPush";
 import { restoreRecordNumbers } from "../restoreRecordNumbers";
 import { prepareChatMed } from "../prepareChatMed";
 import { prepareSofia } from "../prepareSofia";
@@ -85,6 +86,7 @@ async function startServer() {
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
+    if(process.env.NODE_ENV==="production")startChatPushDispatcher();
   });
 }
 

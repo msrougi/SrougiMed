@@ -5,6 +5,7 @@ import {cloudflareAccessEnabled,assertAccessUser} from "./cloudflareAccess";
 import {secondFactorEnabled,trustedDeviceStore,TRUST_COOKIE,trustCookieOptions} from "./trustedDevices";
 import { recordNumberSchema } from "../shared/recordNumber";
 import { chatMedRouter } from "./chatMedRouter";
+import {chatAlertsRouter,removeChatPushSession} from "./chatPush";
 import { sofiaRouter } from "./sofiaRouter";
 import { assertDeviceAccess } from "./deviceAccess";
 import { beginNetworkLogin,emailCodeStore } from "./loginEmailCode";
@@ -43,10 +44,12 @@ export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
   chatMed: chatMedRouter,
+  chatAlerts:chatAlertsRouter,
   sofia: sofiaRouter,
   auth: router({
     me: publicProcedure.query(opts => withoutPassword(opts.ctx.user)),
-    logout: publicProcedure.mutation(({ ctx }) => {
+    logout: publicProcedure.mutation(async ({ ctx }) => {
+      try {await removeChatPushSession(ctx.req);}catch{console.warn("[ChatMed] PUSH_LOGOUT_CLEANUP_FAILED");}
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       if(nativeEmailLoginEnabled())ctx.res.clearCookie(NATIVE_PENDING_COOKIE,nativePendingOptions);

@@ -1,5 +1,6 @@
 import {chatEmojiTextStyle} from "@/lib/chatEmojiText";
 import ChatEmojiPicker from "./ChatEmojiPicker";
+import useChatAlerts from "./ChatAlerts";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowLeft, MessageCircle, Send, Users, UserRound, Loader2, Smile, Paperclip, X, Download, AtSign, Image as ImageIcon, Sparkles } from "lucide-react";
 import { trpc } from "@/lib/trpc";
@@ -22,13 +23,14 @@ export default function ChatMed({ userId }: { userId: number }) {
   const [open,setOpen] = useState(false);
   const [selected,setSelected] = useState<{ peerId: number | null; name: string } | null>(null);
   const [sofiaOpen,setSofiaOpen] = useState(false);
-  const threads = trpc.chatMed.threads.useQuery(undefined, { refetchInterval: open ? 5000 : 20000, retry: 1, refetchIntervalInBackground: false });
+  const threads = trpc.chatMed.threads.useQuery(undefined, { refetchInterval: 5000, retry: 1, refetchIntervalInBackground: true });
   const current = threads.data;
+  const alertSettings=useChatAlerts({userId,group:current?.group,threads:current?.threads,unread:current?.unread || 0,onActivity:()=>void threads.refetch(),onOpen:()=>setOpen(true)});
   const conversation = selected && current?.threads.find(thread => thread.peerId === selected.peerId);
   useEffect(() => { if (!open) {setSelected(null);setSofiaOpen(false);} }, [open]);
   return <>
     <Button type="button" onClick={() => setOpen(true)} aria-label={`Abrir ChatMed${current?.unread ? `, ${current.unread} mensagens não lidas` : ""}`}
-      title={current?.mentionUnread ? `${current.mentionUnread} menções não lidas` : "ChatMed"} className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-40 h-14 w-14 rounded-full bg-[#087e78] p-0 text-white shadow-xl hover:bg-[#06665f]">
+      title={current?.mentionUnread ? `${current.mentionUnread} menções não lidas` : "ChatMed"} className={`fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-40 h-14 w-14 rounded-full bg-[#087e78] p-0 text-white shadow-xl hover:bg-[#06665f] ${current?.unread ? "ring-4 ring-amber-400 ring-offset-2 motion-safe:animate-pulse" : ""}`}>
       <MessageCircle className="h-6 w-6" />
       {Boolean(current?.mentionUnread) && <span aria-label={`${current!.mentionUnread} menções não lidas`} className="absolute -bottom-1 -left-1 rounded-full border-2 border-background bg-amber-400 px-1.5 text-xs font-bold text-amber-950">@{countLabel(current!.mentionUnread)}</span>}
       {!threads.error && Boolean(current?.unread) && <span className="absolute -right-1 -top-1 flex min-h-6 min-w-6 items-center justify-center rounded-full border-2 border-background bg-red-600 px-1 text-xs font-bold text-white">{countLabel(current!.unread)}</span>}
@@ -39,6 +41,7 @@ export default function ChatMed({ userId }: { userId: number }) {
           <DialogTitle className="flex items-center gap-2 text-brand"><MessageCircle className="h-5 w-5" />ChatMed</DialogTitle>
           <DialogDescription>Converse com a sua equipe.</DialogDescription>
         </DialogHeader>
+        {alertSettings}
         {threads.error ? <div role="alert" className="p-5 text-sm">Não foi possível atualizar o chat. <Button variant="outline" className="mt-3" onClick={() => void threads.refetch()}>Tentar novamente</Button></div> :
           threads.isLoading ? <p className="p-5 text-sm text-muted-foreground">Carregando conversas…</p> :
           sofiaOpen ? <SofiaConversation onBack={()=>setSofiaOpen(false)}/> :
