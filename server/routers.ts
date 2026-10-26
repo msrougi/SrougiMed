@@ -124,6 +124,7 @@ export const appRouter = router({
         cep: z.string().trim().min(1, "CEP é obrigatório"),
         phone: z.string().max(40).optional(),
         mobile: z.string().max(40).optional(),
+        fax: z.string().max(65535).optional(),
         skinColorId: z.number().optional(),
         city: z.string().trim().min(1, "Cidade é obrigatória"),
         state: z.string().trim().min(1, "Estado é obrigatório"),

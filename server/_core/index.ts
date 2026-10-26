@@ -2,6 +2,7 @@ import {mountCloudflareAccess} from "../cloudflareAccess";
 import { restoreRecordNumbers } from "../restoreRecordNumbers";
 import { prepareChatMed } from "../prepareChatMed";
 import { prepareNetworkAccess } from "../prepareNetworkAccess";
+import { preparePatientFax } from "../preparePatientFax";
 import { getDb } from "../db";
 import "dotenv/config";
 import express from "express";
@@ -40,6 +41,8 @@ async function startServer() {
     try {
       await prepareChatMed(connection);
       await prepareNetworkAccess(connection);
+      const faxResult=await preparePatientFax(connection);
+      console.log("[patient-fax]",JSON.stringify(faxResult));
       const result = await restoreRecordNumbers(connection);
       console.log("[record-numbers]", JSON.stringify(result));
     } finally { connection.release(); }

@@ -156,6 +156,7 @@ export async function createPatient(data: InsertPatient) {
       cep: sanitizeString(data.cep as string | undefined),
       phone: sanitizeString(data.phone as string | undefined),
       mobile: sanitizeString(data.mobile as string | undefined),
+      fax: sanitizeString(data.fax as string | undefined),
       city: sanitizeString(data.city as string | undefined),
       state: sanitizeString(data.state as string | undefined),
       rg: sanitizeString(data.rg as string | undefined),
@@ -304,6 +305,7 @@ export async function updatePatient(id: number, data: Partial<InsertPatient>) {
   if (data.cep !== undefined) sanitizedData.cep = sanitizeString(data.cep as string | undefined);
   if (data.phone !== undefined) sanitizedData.phone = sanitizeString(data.phone as string | undefined);
   if (data.mobile !== undefined) sanitizedData.mobile = sanitizeString(data.mobile as string | undefined);
+  if (data.fax !== undefined) sanitizedData.fax = sanitizeString(data.fax as string | undefined);
   if (data.city !== undefined) sanitizedData.city = sanitizeString(data.city as string | undefined);
   if (data.state !== undefined) sanitizedData.state = sanitizeString(data.state as string | undefined);
   if (data.rg !== undefined) sanitizedData.rg = sanitizeString(data.rg as string | undefined);
@@ -568,6 +570,7 @@ export async function importPatients(patientsData: Array<{
   cep?: string | null;
   phone?: string | null;
   mobile?: string | null;
+  fax?: string | null;
   skinColorId?: number | null;
   city?: string | null;
   state?: string | null;
@@ -617,6 +620,7 @@ export async function importPatients(patientsData: Array<{
         cep: patientData.cep || undefined,
         phone: patientData.phone || undefined,
         mobile: patientData.mobile || undefined,
+        fax: patientData.fax || undefined,
         skinColorId: patientData.skinColorId || undefined,
         city: patientData.city || undefined,
         state: patientData.state || undefined,

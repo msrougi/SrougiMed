@@ -7,9 +7,11 @@ export interface PatientData {
   name: string;
   code?: string | null;
   address?: string | null;
+  district?: string | null;
   cep?: string | null;
   phone?: string | null;
   mobile?: string | null;
+  fax?: string | null;
   skinColorId?: number | null;
   city?: string | null;
   state?: string | null;
@@ -47,6 +49,7 @@ export function patientsToCSV(patients: PatientData[]): string {
     "CEP",
     "Telefone",
     "Celular",
+    "Fax",
     "Cor da Pele",
     "Cidade",
     "Estado",
@@ -76,6 +79,7 @@ export function patientsToCSV(patients: PatientData[]): string {
     patient.cep || "",
     patient.phone || "",
     patient.mobile || "",
+    escapeCSV(patient.fax || ""),
     patient.skinColorId || "",
     escapeCSV(patient.city || ""),
     escapeCSV(patient.state || ""),
@@ -166,6 +170,7 @@ export async function patientsToExcel(
       CEP: patient.cep || "",
       Telefone: patient.phone || "",
       Celular: patient.mobile || "",
+      Fax: patient.fax || "",
       "Cor da Pele": patient.skinColorId || "",
       Cidade: patient.city || "",
       Estado: patient.state || "",

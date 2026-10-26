@@ -6,9 +6,9 @@ import { createInterface } from 'node:readline';
 import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-export const mappingVersion = 12;
+export const mappingVersion = 13;
 const direct = {
-  Name: ['name', 200], Address: ['address', 200], District: ['district', 100], Phone: ['phone', 40],
+  Name: ['name', 200], Address: ['address', 200], District: ['district', 100], Phone: ['phone', 40], FAX: ['fax', 65535],
   City: ['city', 100], State: ['state', 100], ID: ['rg', 100],
   Clini_01_CPF: ['cpf', 100], HomeBorn: ['birthPlace', 100], EMail: ['email', 200],
   IndicatedBy: ['referredBy', 100], Occupation: ['occupation', 200],
@@ -17,7 +17,7 @@ const direct = {
 };
 const special = ['Unit', 'PCod', 'Zip', 'BirthDate', 'DATA_CRIACAO', 'CivilStatus',
   'Sex', 'Race', 'DDDCellular', 'Cellular', 'ATIVO'];
-const ignoredSourceFields = new Set(['FAX', 'IDUF', 'IDDispatcherOrgan', 'IDEmission', 'CNS', 'BloodType']);
+const ignoredSourceFields = new Set(['IDUF', 'IDDispatcherOrgan', 'IDEmission', 'CNS', 'BloodType']);
 const consumed = new Set([...Object.keys(direct), ...special, ...ignoredSourceFields]);
 const present = value => value !== null && value !== undefined && String(value).trim() !== '';
 const canonical = value => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object'

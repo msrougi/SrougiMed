@@ -66,6 +66,7 @@ export const patients = mysqlTable("patients", {
   cep: varchar("cep", { length: 9 }),
   phone: varchar("phone", { length: 40 }),
   mobile: varchar("mobile", { length: 40 }),
+  fax: text("fax"),
   skinColorId: int("skinColorId"),
   city: varchar("city", { length: 100 }),
   state: varchar("state", { length: 100 }),
