@@ -1,6 +1,7 @@
 import {mountCloudflareAccess} from "../cloudflareAccess";
 import { restoreRecordNumbers } from "../restoreRecordNumbers";
 import { prepareChatMed } from "../prepareChatMed";
+import { prepareSofia } from "../prepareSofia";
 import { prepareNetworkAccess } from "../prepareNetworkAccess";
 import { preparePatientFax } from "../preparePatientFax";
 import { preparePatientContactFields } from "../preparePatientContactFields";
@@ -41,6 +42,7 @@ async function startServer() {
     const connection = await database.$client.promise().getConnection();
     try {
       await prepareChatMed(connection);
+      await prepareSofia(connection);
       await prepareNetworkAccess(connection);
       const faxResult=await preparePatientFax(connection);
       console.log("[patient-fax]",JSON.stringify(faxResult));
