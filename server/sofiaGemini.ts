@@ -1,4 +1,4 @@
-import { sofiaPlanJsonSchema, rawSofiaPlanSchema, type RawSofiaPlan } from "./sofiaPlan";
+import { rawSofiaPlanSchema, type RawSofiaPlan } from "./sofiaPlan";
 
 const ENDPOINT="https://generativelanguage.googleapis.com/v1beta/interactions";
 
@@ -51,7 +51,7 @@ async function requestGemini(input:string,signal:AbortSignal) {
       input,
       store:false,
       generation_config:{temperature:0,max_output_tokens:1200,thinking_level:"minimal"},
-      response_format:{type:"text",mime_type:"application/json",schema:sofiaPlanJsonSchema},
+      response_format:{type:"text",mime_type:"application/json"},
     }),
   });
   if(!response.ok){

@@ -44,19 +44,3 @@ export function validateAndResolvePlan(raw:unknown,map:SofiaTokenMap):{action:Ra
   return {action:"query",reason:"none",plan:{entity:parsed.entity,filters,sort:parsed.sort,output:parsed.output,limit:parsed.limit}};
 }
 
-export const sofiaPlanJsonSchema={
-  type:"object",
-  properties:{
-    action:{type:"string",enum:["query","clarify","unsupported"]},
-    entity:{type:"string",enum:[...sofiaEntities]},
-    filters:{type:"array",items:{type:"object",properties:{
-      field:{type:"string",enum:[...sofiaFields]},operator:{type:"string",enum:[...sofiaOperators]},
-      value_tokens:{type:"array",items:{type:"array",items:{type:"string"}}},
-    },required:["field","operator","value_tokens"]}},
-    sort:{type:"string",enum:["name_asc","name_desc","newest","oldest"]},
-    output:{type:"string",enum:["list","count","count_and_list"]},
-    limit:{type:"integer"},
-    reason:{type:"string",enum:["none","ambiguous_entity","missing_filter","medical_advice","write_operation","scheduling","outside_scope"]},
-  },required:["action","entity","filters","sort","output","limit","reason"],
-} as const;
-
