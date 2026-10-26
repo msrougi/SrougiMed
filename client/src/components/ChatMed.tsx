@@ -77,10 +77,13 @@ function SofiaConversation({onBack}:{onBack:()=>void}) {
   const [draft,setDraft]=useState("");
   const [attempt,setAttempt]=useState<{text:string;clientId:string}|null>(null);
   const [olderMessages,setOlderMessages]=useState<SofiaMessage[]>([]);
+  const [sentMessages,setSentMessages]=useState<SofiaMessage[]>([]);
+  const [pendingMessage,setPendingMessage]=useState<{text:string;createdAt:Date;afterId:number}|null>(null);
   const [hasOlder,setHasOlder]=useState(false);
   const [loadingOlder,setLoadingOlder]=useState(false);
   const viewport=useRef<HTMLDivElement>(null);
-  const messages=Array.from(new Map([...olderMessages,...(history.data?.messages || [])].map(message=>[message.id,message])).values()).sort((a,b)=>a.id-b.id);
+  const confirmedMessages=Array.from(new Map([...olderMessages,...sentMessages,...(history.data?.messages || [])].map(message=>[message.id,message])).values()).sort((a,b)=>a.id-b.id);
+  const messages:SofiaMessage[]=[...confirmedMessages,...(pendingMessage && !confirmedMessages.some(message=>message.id>pendingMessage.afterId && message.role==="user" && message.text===pendingMessage.text)?[{id:-1,role:"user" as const,text:pendingMessage.text,createdAt:pendingMessage.createdAt}]:[])];
   useEffect(()=>{if(!olderMessages.length && history.data)setHasOlder(history.data.hasMore);},[history.data?.hasMore,olderMessages.length]);
   useLayoutEffect(()=>{if(viewport.current)viewport.current.scrollTop=viewport.current.scrollHeight;},[messages.length,ask.isPending]);
   async function older(){
@@ -90,7 +93,8 @@ function SofiaConversation({onBack}:{onBack:()=>void}) {
   async function submit(){
     const text=draft.trim();if(!text || text.length>1000 || ask.isPending)return;
     const pending=attempt?.text===text?attempt:{text,clientId:crypto.randomUUID()};setAttempt(pending);
-    try{await ask.mutateAsync(pending);setDraft("");setAttempt(null);}catch{}
+    setPendingMessage({text,createdAt:new Date(),afterId:confirmedMessages.at(-1)?.id || 0});setDraft("");
+    try{const result=await ask.mutateAsync(pending);setSentMessages(previous=>[...previous,result.userMessage,result.assistantMessage]);setAttempt(null);}catch{setDraft(text);}finally{setPendingMessage(null);}
   }
   return <div className="flex min-h-0 flex-1 flex-col">
     <div className="flex shrink-0 items-center gap-2 border-b px-3 py-2">

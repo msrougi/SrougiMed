@@ -18,6 +18,12 @@ const PUBLIC_WORDS = new Set(`
   uf mora moram residente residentes fica ficam registro registrados registradas
   novo novos nova novas mais menos recente recentes antigo antigos contar total desses
   filtrar filtre mantenha mesmos mesmas também tambem só apenas particular privado
+  oi ola olá bom boa dia tarde noite tudo bem obrigado obrigada valeu voce você esta
+  está como pode posso podes podemos ajudar ajuda funciona funcionar fazer faz faze
+  consegue conseguir sou ser sofiA assistente explicar explique entende entendi
+  duvida dúvida duvidas dúvidas por favor preciso quero gostaria saber conversar
+  capacidades funcionalidades sistema srougimed chatmed inteligencia inteligência
+  artificial saudacao saudação saudacoes saudações gentil conversar conversa
 `.trim().split(/\s+/).map(word => normalize(word)));
 
 function normalize(value:string) {

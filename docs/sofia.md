@@ -36,10 +36,15 @@ ficam visíveis aos integrantes daquele grupo.
 
 - `GEMINI_API_KEY`: obrigatória e mantida apenas como segredo do Render.
 - `GEMINI_MODEL`: opcional; padrão `gemini-3.8-flash`.
-- Se o modelo principal responder 429/5xx ou exceder 20 segundos, tenta uma vez
+- Se o modelo principal responder 429/5xx ou exceder 12 segundos, tenta uma vez
   `gemini-3.5-flash-lite`, também disponível no nível gratuito. Erros de chave,
   pedidos inválidos e planos inválidos não são repetidos em outro modelo.
 - O contrato JSON completo é enviado no prompt e validado estritamente no servidor.
+- Saudações e agradecimentos recebem resposta local sem chamada ao Gemini.
+- Conversas e dúvidas gerais podem receber uma resposta textual validada, sem
+  executar consulta ou expor tokens privados. As restrições de escrita e orientação
+  médica continuam aplicáveis.
+- A mensagem do usuário aparece imediatamente ao enviar; a resposta chega em seguida.
 - `SOFIA_ENABLED=false`: desativa explicitamente as chamadas. Na ausência dessa
   variável, a funcionalidade fica habilitada e exige a chave.
 

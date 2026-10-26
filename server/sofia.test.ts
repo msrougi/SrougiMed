@@ -2,7 +2,7 @@ import {afterEach,describe,expect,it,vi} from "vitest";
 import {sofiaAskSchema,sofiaHistorySchema} from "../shared/sofia";
 import {redactPreviousPlan,redactQuestion,resolveTokenGroups} from "./sofiaPrivacy";
 import {rawSofiaPlanSchema,validateAndResolvePlan,type SofiaQueryPlan} from "./sofiaPlan";
-import {compileSofiaQuery,hasSofiaMention,localRefusal,withoutSofiaMention} from "./sofiaStore";
+import {compileSofiaQuery,hasSofiaMention,localRefusal,localSofiaReply,withoutSofiaMention} from "./sofiaStore";
 import {SofiaStore} from "./sofiaStore";
 import {createSofiaPlan} from "./sofiaGemini";
 
@@ -56,6 +56,20 @@ describe("consultas seguras da SofIA",()=>{
     expect(localRefusal("Agende uma consulta amanhã")).toContain("não agenda");
     expect(localRefusal("Qual o tratamento para este sintoma?")).toContain("não forneço orientação médica");
     expect(localRefusal("Quais pacientes estão sem celular?")).toBeNull();
+  });
+  it("responde saudações localmente sem capturar perguntas que começam com olá",()=>{
+    expect(localSofiaReply("Olá! ")).toContain("Olá! Sou a SofIA");
+    expect(localSofiaReply("Bom dia SofIA")).toContain("buscar pacientes");
+    expect(localSofiaReply("obrigada")).toContain("Por nada");
+    expect(localSofiaReply("ola, td bem?")).toContain("Tudo bem por aqui");
+    expect(localSofiaReply("Olá, quantos pacientes têm e-mail?")).toBeNull();
+  });
+  it("permite conversa sem consulta e impede tokens privados ou filtros em respostas de conversa",()=>{
+    const chat={action:"chat",entity:"patients",filters:[],sort:"name_asc",output:"count",limit:20,reason:"none",reply:"Posso ajudar com buscas de pacientes e contatos."};
+    expect(validateAndResolvePlan(chat,new Map())).toMatchObject({action:"chat",plan:null,reply:chat.reply});
+    expect(()=>validateAndResolvePlan({...chat,reply:"Nome $V1"},new Map([["$V1","segredo"]]))).toThrow("SOFIA_INVALID_CHAT_REPLY");
+    expect(()=>validateAndResolvePlan({...chat,reason:"medical_advice"},new Map())).toThrow("SOFIA_INVALID_CHAT_REPLY");
+    expect(redactQuestion("Olá, como você pode ajudar?").redacted).not.toContain("$V");
   });
   it("valida entrada, cursor e idempotência do cliente",()=>{
     expect(sofiaAskSchema.safeParse({text:" ",clientId:crypto.randomUUID()}).success).toBe(false);
