@@ -90,13 +90,14 @@ export class ChatMedStore {
         (SELECT COUNT(DISTINCT m.id) FROM chatmed_mentions x JOIN chatmed_messages m ON m.id=x.messageId
           WHERE m.conversationId=c.id AND x.userId=? AND m.senderId<>? AND m.id>COALESCE(r.lastReadId,0)) AS mentions,
         (SELECT body FROM chatmed_messages m WHERE m.conversationId=c.id ORDER BY m.id DESC LIMIT 1) AS lastMessage,
-        (SELECT createdAt FROM chatmed_messages m WHERE m.conversationId=c.id ORDER BY m.id DESC LIMIT 1) AS lastAt
+        (SELECT createdAt FROM chatmed_messages m WHERE m.conversationId=c.id ORDER BY m.id DESC LIMIT 1) AS lastAt,
+        (SELECT MAX(m.id) FROM chatmed_messages m WHERE m.conversationId=c.id AND m.senderId<>?) AS lastIncomingId
         FROM chatmed_conversations c LEFT JOIN chatmed_reads r ON r.conversationId=c.id AND r.userId=?
-        WHERE c.groupName=? AND ((c.memberA=0 AND c.memberB=0) OR c.memberA=? OR c.memberB=?)`, [userId,userId,userId,userId,actor.chatGroup,userId,userId]);
+        WHERE c.groupName=? AND ((c.memberA=0 AND c.memberB=0) OR c.memberA=? OR c.memberB=?)`, [userId,userId,userId,userId,userId,actor.chatGroup,userId,userId]);
       const entry = (peerId: number | null, name: string) => {
         const c = conversations.find(c => peerId === null ? c.memberA === 0 && c.memberB === 0 :
           c.memberA === Math.min(userId,peerId) && c.memberB === Math.max(userId,peerId));
-        return { peerId, name, mentions: Number(c?.mentions || 0), unread: Number(c?.unread || 0), lastMessage: (c?.lastMessage as string | null) ?? null, lastAt: (c?.lastAt as Date | null) ?? null };
+        return { peerId, name, lastIncomingId:Number(c?.lastIncomingId || 0), mentions: Number(c?.mentions || 0), unread: Number(c?.unread || 0), lastMessage: (c?.lastMessage as string | null) ?? null, lastAt: (c?.lastAt as Date | null) ?? null };
       };
       const threads = [entry(null, actor.chatGroup), ...members.map(member => entry(Number(member.id), member.name || member.username || "Usuário"))];
       return { group: actor.chatGroup, threads, unread: threads.reduce((total,t) => total+t.unread,0),
@@ -137,6 +138,7 @@ export class ChatMedStore {
       const [rows] = await db.query<RowDataPacket[]>("SELECT id,conversationId,senderId,senderName,body,createdAt FROM chatmed_messages WHERE senderId=? AND clientId=? FOR UPDATE", [userId,input.clientId]);
       if (Number(rows[0].conversationId) !== id || rows[0].body !== input.text) throw new TRPCError({ code: "CONFLICT", message: "Reenvio inválido. Atualize a conversa e tente novamente." });
       const mentions=await this.saveMentions(db,Number(rows[0].id),spans,inserted.affectedRows===1);
+      if(inserted.affectedRows===1)await db.query("INSERT IGNORE INTO chatmed_push_events(messageId) VALUES(?)",[rows[0].id]);
       return {...message(rows[0]),...(mentions.length?{mentions}:{})};
     });
   }
@@ -160,6 +162,7 @@ export class ChatMedStore {
         if(!old[0] || old[0].fileName!==file.meta.name || old[0].fileHash!==file.hash)throw new TRPCError({code:"CONFLICT",message:"Reenvio de arquivo inválido. Tente novamente."});
       }
       const mentions=await this.saveMentions(db,Number(row.id),spans,inserted.affectedRows===1);
+      if(inserted.affectedRows===1)await db.query("INSERT IGNORE INTO chatmed_push_events(messageId) VALUES(?)",[row.id]);
       return {...message({...row,fileName:file.meta.name,mimeType:file.meta.mime,byteSize:file.meta.size}),...(mentions.length?{mentions}:{})};
     });
   }

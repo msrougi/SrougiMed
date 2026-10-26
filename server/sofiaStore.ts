@@ -154,7 +154,8 @@ export class SofiaStore{
       const [conversation]=await db.query<RowDataPacket[]>("SELECT id FROM chatmed_conversations WHERE groupName=? AND memberA=0 AND memberB=0 FOR UPDATE",[group]);
       if(!conversation[0])throw new Error("SOFIA_GROUP_NOT_FOUND");
       if(result.plan)await this.saveContext(db,{type:"group",key:group},result.plan);
-      await db.query<ResultSetHeader>(`INSERT IGNORE INTO chatmed_messages(conversationId,senderId,senderName,body,clientId) VALUES(?,0,?,?,?)`,[conversation[0].id,SOFIA_NAME,result.body,clientId]);
+      const [inserted]=await db.query<ResultSetHeader>(`INSERT IGNORE INTO chatmed_messages(conversationId,senderId,senderName,body,clientId) VALUES(?,0,?,?,?)`,[conversation[0].id,SOFIA_NAME,result.body,clientId]);
+      if(inserted.affectedRows===1)await db.query("INSERT IGNORE INTO chatmed_push_events(messageId) VALUES(?)",[inserted.insertId]);
       await db.commit();
     }catch(error){await db.rollback();throw error;}finally{db.release();}
   }
