@@ -1,5 +1,9 @@
 # Cloudflare Access no SrougiMed
 
+## Estado atual: login nativo para todas as contas
+
+Com NATIVE_EMAIL_LOGIN=true e SECOND_FACTOR_ENABLED=true, Bia também usa código por e-mail do SrougiMed. BIA_DEVICE_ACCESS_ENABLED e as antigas exceções de segundo fator da Bia são ignoradas; não é necessário Cloudflare One Client. Ver [configuração atual](native-email-login.md). Os procedimentos abaixo são históricos e não devem ser usados para configurar o modo nativo atual.
+
 Preparado no código, desativado por padrão. Não ativar só por publicar o código: é necessário configurar a aplicação Cloudflare, conferir contas/e-mails, configurar o Render e testar o PIN real.
 
 ## Postura somente para a Bia, mantendo o 2FA nativo
