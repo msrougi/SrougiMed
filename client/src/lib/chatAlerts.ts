@@ -50,7 +50,7 @@ export async function playNewChatSound(userId:number,messageId:number) {
   else play();
 }
 export async function chatPushRegistration() {
-  await navigator.serviceWorker.register("/chatmed-sw.js",{scope:"/",updateViaCache:"none"});
+  await navigator.serviceWorker.register("/chatmed-sw.js?v=1",{scope:"/",updateViaCache:"none"});
   return navigator.serviceWorker.ready;
 }
 export function pushKeyBytes(value:string) {

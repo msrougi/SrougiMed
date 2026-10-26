@@ -58,7 +58,12 @@ export function serveStatic(app: Express) {
     );
   }
 
-  app.use(express.static(distPath));
+  app.use(express.static(distPath,{
+    setHeaders(res,filePath) {
+      // Never let a CDN/browser pin an old push handler across deployments.
+      if(path.basename(filePath)==="chatmed-sw.js")res.setHeader("Cache-Control","no-store");
+    },
+  }));
 
   // fall through to index.html if the file doesn't exist
   app.use("*", (_req, res) => {
