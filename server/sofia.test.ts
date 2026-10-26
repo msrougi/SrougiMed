@@ -70,6 +70,7 @@ describe("consultas seguras da SofIA",()=>{
     await expect(createSofiaPlan("quantos pacientes", "nenhum")).resolves.toEqual(response);
     const request=JSON.parse(fetchMock.mock.calls[0][1].body);
     expect(request.store).toBe(false);expect(request.model).toBe("gemini-3.8-flash");
+    expect(JSON.stringify(request.response_format.schema)).not.toMatch(/maxItems|maximum|additionalProperties/);
     expect(fetchMock.mock.calls[0][1].headers["x-goog-api-key"]).toBe("segredo-sintetico");
   });
   it("isola o histórico particular pelo usuário autenticado",async()=>{

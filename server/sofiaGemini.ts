@@ -56,8 +56,9 @@ async function requestGemini(input:string,signal:AbortSignal) {
   });
   if(!response.ok){
     const retryable=response.status===429 || response.status>=500;
+    const status=response.status;
     await response.body?.cancel().catch(()=>undefined);
-    throw Object.assign(new Error("SOFIA_GEMINI_REQUEST_FAILED"),{retryable});
+    throw Object.assign(new Error(`SOFIA_GEMINI_REQUEST_FAILED_${status}`),{retryable});
   }
   const data=await response.json();
   const text=outputText(data);

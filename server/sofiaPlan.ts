@@ -45,17 +45,17 @@ export function validateAndResolvePlan(raw:unknown,map:SofiaTokenMap):{action:Ra
 }
 
 export const sofiaPlanJsonSchema={
-  type:"object",additionalProperties:false,
+  type:"object",
   properties:{
     action:{type:"string",enum:["query","clarify","unsupported"]},
     entity:{type:"string",enum:[...sofiaEntities]},
-    filters:{type:"array",maxItems:12,items:{type:"object",additionalProperties:false,properties:{
+    filters:{type:"array",items:{type:"object",properties:{
       field:{type:"string",enum:[...sofiaFields]},operator:{type:"string",enum:[...sofiaOperators]},
-      value_tokens:{type:"array",maxItems:10,items:{type:"array",maxItems:6,items:{type:"string"}}},
+      value_tokens:{type:"array",items:{type:"array",items:{type:"string"}}},
     },required:["field","operator","value_tokens"]}},
     sort:{type:"string",enum:["name_asc","name_desc","newest","oldest"]},
     output:{type:"string",enum:["list","count","count_and_list"]},
-    limit:{type:"integer",minimum:1,maximum:50},
+    limit:{type:"integer"},
     reason:{type:"string",enum:["none","ambiguous_entity","missing_filter","medical_advice","write_operation","scheduling","outside_scope"]},
   },required:["action","entity","filters","sort","output","limit","reason"],
 } as const;
