@@ -80,4 +80,25 @@ describe("consultas seguras da SofIA",()=>{
     expect(query.mock.calls[0][0]).toContain("WHERE ownerUserId=?");
     expect(query.mock.calls[0][1][0]).toBe(73);expect(release).toHaveBeenCalledOnce();
   });
+  it("usa o Gemini Flash-Lite quando o principal está sobrecarregado e envia o contrato completo",async()=>{
+    vi.stubEnv("GEMINI_API_KEY","segredo-sintetico");vi.stubEnv("GEMINI_MODEL","gemini-3.8-flash");
+    const plan={action:"query",entity:"patients",filters:[{field:"email",operator:"present",value_tokens:[]}],sort:"name_asc",output:"count",limit:20,reason:"none"};
+    const fetchMock=vi.fn().mockResolvedValueOnce(new Response("indisponível",{status:503})).mockResolvedValueOnce(new Response(JSON.stringify({steps:[{type:"model_output",content:[{type:"text",text:JSON.stringify(plan)}]}]}),{status:200}));
+    vi.stubGlobal("fetch",fetchMock);
+    await expect(createSofiaPlan("quantos pacientes com e-mail","nenhum")).resolves.toEqual(plan);
+    const requests=fetchMock.mock.calls.map(call=>JSON.parse(call[1].body));
+    expect(requests.map(request=>request.model)).toEqual(["gemini-3.8-flash","gemini-3.5-flash-lite"]);
+    expect(requests[1].input).toBe(requests[0].input);expect(requests.every(request=>request.store===false)).toBe(true);
+    expect(requests[0].input).toContain('"limit":20');expect(requests[0].input).toContain('"sort":"name_asc"');
+  });
+  it("não troca de modelo para erros de autenticação nem aceita planos fora do contrato",async()=>{
+    vi.stubEnv("GEMINI_API_KEY","segredo-sintetico");
+    const fetchMock=vi.fn().mockResolvedValueOnce(new Response("não autorizado",{status:401}));
+    vi.stubGlobal("fetch",fetchMock);
+    await expect(createSofiaPlan("quantos pacientes","nenhum")).rejects.toThrow("SOFIA_GEMINI_REQUEST_FAILED_401");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    fetchMock.mockClear();fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({output_text:JSON.stringify({sql:"SELECT * FROM patients"})}),{status:200}));
+    await expect(createSofiaPlan("quantos pacientes","nenhum")).rejects.toThrow();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
 });

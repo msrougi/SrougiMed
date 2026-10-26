@@ -28,6 +28,13 @@ Você é o planejador de consultas SOMENTE LEITURA da SofIA. Recebe texto em por
 Nunca invente valores, nunca remova o cifrão e use somente tokens existentes no texto ou no plano anterior.
 Retorne o plano COMPLETO da nova consulta, incorporando o plano anterior quando a pergunta for uma continuação.
 Retorne SOMENTE um objeto JSON válido, sem markdown, comentários ou texto adicional.
+O objeto deve ter EXATAMENTE estas chaves, inclusive para ações clarify e unsupported:
+{"action":"query","entity":"patients","filters":[],"sort":"name_asc","output":"count","limit":20,"reason":"none"}
+action: query, clarify ou unsupported. sort: name_asc, name_desc, newest ou oldest.
+output: list, count ou count_and_list. limit: inteiro de 1 a 50 (padrão 20).
+reason: none, ambiguous_entity, missing_filter, medical_advice, write_operation, scheduling ou outside_scope.
+Cada filtro tem EXATAMENTE {"field":"email","operator":"present","value_tokens":[]}.
+Use reason=none para query. Em clarify/unsupported mantenha filters vazio e os demais campos com valores válidos.
 
 Entidades: patients (pacientes) ou contacts (agenda/contatos).
 Campos de patients: name, record_number, cpf, address, district, city, state, email, mobile, phone, fax, occupation, referred_by, birth_date, registration_date.
@@ -41,14 +48,14 @@ Se a entidade realmente não puder ser determinada, use clarify/ambiguous_entity
 Plano anterior: ${previous}
 Pergunta atual anonimizada: ${question}`.trim();}
 
-async function requestGemini(input:string,signal:AbortSignal) {
+async function requestGemini(input:string,model:string,signal:AbortSignal) {
   const key=process.env.GEMINI_API_KEY?.trim();
   if(!key)throw new Error("SOFIA_GEMINI_KEY_MISSING");
   const response=await fetch(ENDPOINT,{
     method:"POST",signal,
     headers:{"content-type":"application/json","x-goog-api-key":key},
     body:JSON.stringify({
-      model:process.env.GEMINI_MODEL?.trim() || "gemini-3.8-flash",
+      model,
       input,
       store:false,
     }),
@@ -69,10 +76,11 @@ async function requestGemini(input:string,signal:AbortSignal) {
 export async function createSofiaPlan(redactedQuestion:string,redactedPrevious:string):Promise<RawSofiaPlan> {
   if(!sofiaEnabled())throw new Error("SOFIA_DISABLED");
   const input=prompt(redactedQuestion,redactedPrevious);
-  for(let attempt=0;attempt<2;attempt++){
+  const models=Array.from(new Set([process.env.GEMINI_MODEL?.trim() || "gemini-3.8-flash","gemini-3.5-flash-lite"]));
+  for(let attempt=0;attempt<models.length;attempt++){
     const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),20_000);
-    try{return await requestGemini(input,controller.signal);}
-    catch(error){if(attempt || !(error as any)?.retryable)throw error;}
+    try{return await requestGemini(input,models[attempt],controller.signal);}
+    catch(error){if(attempt===models.length-1 || (!(error as any)?.retryable && !controller.signal.aborted))throw error;}
     finally{clearTimeout(timer);}
   }
   throw new Error("SOFIA_GEMINI_REQUEST_FAILED");
