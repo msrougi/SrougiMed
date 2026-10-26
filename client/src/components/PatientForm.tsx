@@ -35,6 +35,7 @@ const defaultFormData = {
   cep: "",
   phone: "",
   mobile: "",
+  fax: "",
   skinColorId: "",
   city: "",
   state: "",
@@ -386,6 +387,7 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
       cep: formData.cep || undefined,
       phone: formData.phone || undefined,
       mobile: formData.mobile || undefined,
+      fax: formData.fax || undefined,
       skinColorId: formData.skinColorId ? parseInt(formData.skinColorId) : undefined,
       city: formData.city || undefined,
       state: formData.state || undefined,
@@ -517,6 +519,19 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
               placeholder="Celular"
               type="tel"
               maxLength={40}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="fax">Fax</Label>
+            <Input
+              id="fax"
+              name="fax"
+              value={formData.fax}
+              onChange={handleInputChange}
+              placeholder="Fax"
+              type="tel"
+              maxLength={65535}
             />
           </div>
 

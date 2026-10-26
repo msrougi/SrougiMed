@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { createPlan, planPatient, fingerprint } from './plan-personalmed.mjs';
 
 const row = (changes = {}) => ({
-  Unit: 0, PCod: 123, Name: 'Paciente sintético', Address: null, District: null, Phone: null,
+  Unit: 0, PCod: 123, Name: 'Paciente sintético', Address: null, District: null, Phone: null, FAX: null,
   City: null, State: null, ID: null, Clini_01_CPF: null, HomeBorn: null,
   EMail: null, IndicatedBy: null, Occupation: null, Observation: null,
   Mother: null, Father: null, RESPONSAVEL_NOME: null, RESPONSAVEL_FONE: null, ATIVO: 'T', Zip: null, BirthDate: null, DATA_CRIACAO: null, CivilStatus: null,
@@ -87,6 +87,14 @@ test('does not truncate long phones, merge by CPF, or discard punctuation', () =
   assert.equal(b.raw.Phone.length, 41);
   assert.equal(b.issues[0].reason, 'exceeds_capacity');
   assert.equal(fingerprint({ a: 1, b: 2 }), fingerprint({ b: 2, a: 1 }));
+});
+
+test('maps fax to its own field without mixing it with phone or notes',()=>{
+  const plan=planPatient(row({FAX:'(11) 3333-4444',Phone:'(11) 1111-2222',Observation:'Preservada'}));
+  assert.equal(plan.patient.fax,'(11) 3333-4444');
+  assert.equal(plan.patient.phone,'(11) 1111-2222');
+  assert.equal(plan.patient.notes,'Preservada');
+  assert.equal(plan.decisions.some(item=>item.field==='FAX'),false);
 });
 
 test('snapshot comparison finds new, unchanged, changed and absent keys, without deleting anything', async () => {

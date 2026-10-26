@@ -12,6 +12,7 @@ interface Patient {
   cep?: string;
   phone?: string;
   mobile?: string;
+  fax?: string | null;
   skinColorId?: number;
   city?: string;
   state?: string;
@@ -165,6 +166,10 @@ export default function PatientView({
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Celular</label>
             <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{patient.mobile || "-"}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Fax</label>
+            <p className="mt-1 break-words text-sm text-gray-900 dark:text-slate-100">{patient.fax || "-"}</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Nome do responsável</label>

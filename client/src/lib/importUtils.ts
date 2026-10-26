@@ -10,6 +10,7 @@ export interface PatientImportData {
   cep?: string;
   phone?: string;
   mobile?: string;
+  fax?: string;
   skinColorId?: number;
   city?: string;
   state?: string;
@@ -72,6 +73,7 @@ export function parseCSV(csvContent: string): PatientImportData[] {
       else if (lowerCol === 'cep' || lowerCol.includes('cep')) patient.cep = value;
       else if (lowerCol.includes('telefone')) patient.phone = value;
       else if (lowerCol.includes('celular')) patient.mobile = value;
+      else if (lowerCol === 'fax' || lowerCol.includes('fac-símile') || lowerCol.includes('facsimile')) patient.fax = value;
       else if (lowerCol.includes('cor') || lowerCol.includes('pele')) patient.skinColorId = parseInt(value) || undefined;
       else if (lowerCol.includes('cidade')) patient.city = value;
       else if (lowerCol.includes('estado')) patient.state = value;
@@ -177,6 +179,7 @@ export async function parseExcel(file: File): Promise<PatientImportData[]> {
         else if (lowerKey === 'cep' || lowerKey.includes('cep')) patient.cep = String(value);
         else if (lowerKey.includes('telefone')) patient.phone = String(value);
         else if (lowerKey.includes('celular')) patient.mobile = String(value);
+        else if (lowerKey === 'fax' || lowerKey.includes('fac-símile') || lowerKey.includes('facsimile')) patient.fax = String(value);
         else if (lowerKey.includes('cor') || lowerKey.includes('pele')) patient.skinColorId = parseInt(String(value)) || undefined;
         else if (lowerKey.includes('cidade')) patient.city = String(value);
         else if (lowerKey.includes('estado')) patient.state = String(value);
