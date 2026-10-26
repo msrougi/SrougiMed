@@ -47,6 +47,21 @@ async function openConversation(name="# equipe") {
   await waitFor(()=>expect((screen.getByLabelText("Mensagem") as HTMLTextAreaElement).disabled).toBe(false));
 }
 describe("janela ChatMed",()=>{
+  it("mostra a pergunta da SofIA imediatamente enquanto aguarda a resposta e não a duplica",async()=>{
+    let answer!:(value:any)=>void;
+    api.sofiaAsk.mockImplementation(()=>new Promise(resolve=>{answer=resolve;}));
+    render(<ChatMed userId={1}/>);
+    fireEvent.click(screen.getByRole("button",{name:/Abrir ChatMed/}));
+    fireEvent.click(screen.getByRole("button",{name:/SofIA/}));
+    fireEvent.change(screen.getByLabelText("Pergunta para a SofIA"),{target:{value:"olá"}});
+    fireEvent.keyDown(screen.getByLabelText("Pergunta para a SofIA"),{key:"Enter"});
+    expect(screen.getByRole("log").textContent).toContain("olá");
+    expect((screen.getByLabelText("Pergunta para a SofIA") as HTMLTextAreaElement).value).toBe("");
+    expect(screen.getByRole("status").textContent).toContain("consultando");
+    answer({userMessage:{id:20,role:"user",text:"olá",createdAt:new Date()},assistantMessage:{id:21,role:"assistant",text:"Olá! Sou a SofIA.",createdAt:new Date()}});
+    await screen.findByText("Olá! Sou a SofIA.");
+    expect(screen.getAllByText("olá")).toHaveLength(1);
+  });
   it("lista canal, colegas e contador; abre histórico e marca leitura",async()=>{
     render(<ChatMed userId={1}/>);await openConversation();
     expect(screen.getByRole("log").textContent).toContain("Olá, equipe");

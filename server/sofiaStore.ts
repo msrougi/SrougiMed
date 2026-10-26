@@ -26,6 +26,14 @@ export function localRefusal(question:string){
   return null;
 }
 
+export function localSofiaReply(question:string){
+  const refused=localRefusal(question);if(refused)return refused;
+  const value=question.normalize("NFD").replace(COMBINING_MARKS,"").toLocaleLowerCase("pt-BR").replace(/\btd\b/g,"tudo").trim().replace(/[!?.,;:]+$/g,"").trim();
+  if(/^(oi|ola|bom dia|boa tarde|boa noite)([,! ]+sofia)?([,! ]+tudo bem)?$/.test(value) || value==="tudo bem")return "Olá! Sou a SofIA. Tudo bem por aqui! Posso conversar com você e ajudar a buscar pacientes e contatos. O que você precisa?";
+  if(/^(obrigado|obrigada|valeu|muito obrigado|muito obrigada)$/.test(value))return "Por nada! Quando precisar, posso ajudar com buscas de pacientes e contatos.";
+  return null;
+}
+
 function escapeLike(value:string){return value.replace(/[\\%_]/g,character=>"\\"+character);}
 const patientColumns:Partial<Record<SofiaFilter["field"],string>>={name:"name",record_number:"code",cpf:"cpf",address:"address",district:"district",city:"city",state:"state",email:"email",mobile:"mobile",phone:"phone",fax:"fax",occupation:"occupation",referred_by:"referredBy",birth_date:"birthDate",registration_date:"registrationDate"};
 const contactColumns:Partial<Record<SofiaFilter["field"],string>>={name:"name",email:"email",phone:"phone",occupation:"occupation",category:"category",created_at:"createdAt"};
@@ -90,12 +98,13 @@ export class SofiaStore{
     await db.query(`INSERT INTO sofia_contexts(scopeType,scopeKey,planJson) VALUES(?,?,?) ON DUPLICATE KEY UPDATE planJson=VALUES(planJson),updatedAt=CURRENT_TIMESTAMP(3)`,[scope.type,scope.key,JSON.stringify(plan)]);
   }
   private async answer(scope:Scope,question:string){
-    const refused=localRefusal(question);if(refused)return {body:refused,plan:null};
+    const local=localSofiaReply(question);if(local)return {body:local,plan:null};
     const db=await this.connection();
     try{
       const previous=await this.context(db,scope);const map=new Map<string,string>();
       const previousText=redactPreviousPlan(previous,map);const {redacted}=redactQuestion(question,map);
       const raw=await createSofiaPlan(redacted,previousText);const resolved=validateAndResolvePlan(raw,map);
+      if(resolved.action==="chat")return {body:resolved.reply!,plan:null};
       if(!resolved.plan)return {body:fixedAction(resolved.action as "clarify"|"unsupported",resolved.reason),plan:null};
       const query=compileSofiaQuery(resolved.plan);
       const [countRows]=await db.query<RowDataPacket[]>(query.countSql,query.params);const total=Number(countRows[0]?.total || 0);

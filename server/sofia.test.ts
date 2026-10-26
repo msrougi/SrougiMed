@@ -2,7 +2,7 @@ import {afterEach,describe,expect,it,vi} from "vitest";
 import {sofiaAskSchema,sofiaHistorySchema} from "../shared/sofia";
 import {redactPreviousPlan,redactQuestion,resolveTokenGroups} from "./sofiaPrivacy";
 import {rawSofiaPlanSchema,validateAndResolvePlan,type SofiaQueryPlan} from "./sofiaPlan";
-import {compileSofiaQuery,hasSofiaMention,localRefusal,withoutSofiaMention} from "./sofiaStore";
+import {compileSofiaQuery,hasSofiaMention,localRefusal,localSofiaReply,withoutSofiaMention} from "./sofiaStore";
 import {SofiaStore} from "./sofiaStore";
 import {createSofiaPlan} from "./sofiaGemini";
 
@@ -57,6 +57,21 @@ describe("consultas seguras da SofIA",()=>{
     expect(localRefusal("Qual o tratamento para este sintoma?")).toContain("não forneço orientação médica");
     expect(localRefusal("Quais pacientes estão sem celular?")).toBeNull();
   });
+  it("responde saudações localmente sem capturar perguntas que começam com olá",()=>{
+    expect(localSofiaReply("Olá! ")).toContain("Olá! Sou a SofIA");
+    expect(localSofiaReply("Bom dia SofIA")).toContain("buscar pacientes");
+    expect(localSofiaReply("obrigada")).toContain("Por nada");
+    expect(localSofiaReply("ola, td bem?")).toContain("Tudo bem por aqui");
+    expect(localSofiaReply("Olá, quantos pacientes têm e-mail?")).toBeNull();
+  });
+  it("permite conversa sem consulta e impede tokens privados ou filtros em respostas de conversa",()=>{
+    const chat={action:"chat",entity:"patients",filters:[],sort:"name_asc",output:"count",limit:20,reason:"none",reply:"Posso ajudar com buscas de pacientes e contatos."};
+    expect(validateAndResolvePlan(chat,new Map())).toMatchObject({action:"chat",plan:null,reply:chat.reply});
+    expect(()=>validateAndResolvePlan({...chat,reply:"Nome $V1"},new Map([["$V1","segredo"]]))).toThrow("SOFIA_INVALID_CHAT_REPLY");
+    expect(()=>validateAndResolvePlan({...chat,reason:"medical_advice"},new Map())).toThrow("SOFIA_INVALID_CHAT_REPLY");
+    expect(redactQuestion("Olá, como você pode ajudar?").redacted).not.toContain("$V");
+    expect(redactQuestion("Quantos pacientes têm e-mail e fax?").redacted).not.toContain("$V");
+  });
   it("valida entrada, cursor e idempotência do cliente",()=>{
     expect(sofiaAskSchema.safeParse({text:" ",clientId:crypto.randomUUID()}).success).toBe(false);
     expect(sofiaAskSchema.safeParse({text:"consulta",clientId:"invalido"}).success).toBe(false);
@@ -79,5 +94,26 @@ describe("consultas seguras da SofIA",()=>{
     await expect(store.history(73,{})).resolves.toEqual({messages:[],hasMore:false});
     expect(query.mock.calls[0][0]).toContain("WHERE ownerUserId=?");
     expect(query.mock.calls[0][1][0]).toBe(73);expect(release).toHaveBeenCalledOnce();
+  });
+  it("usa o Gemini Flash-Lite quando o principal está sobrecarregado e envia o contrato completo",async()=>{
+    vi.stubEnv("GEMINI_API_KEY","segredo-sintetico");vi.stubEnv("GEMINI_MODEL","gemini-3.8-flash");
+    const plan={action:"query",entity:"patients",filters:[{field:"email",operator:"present",value_tokens:[]}],sort:"name_asc",output:"count",limit:20,reason:"none"};
+    const fetchMock=vi.fn().mockResolvedValueOnce(new Response("indisponível",{status:503})).mockResolvedValueOnce(new Response(JSON.stringify({steps:[{type:"model_output",content:[{type:"text",text:JSON.stringify(plan)}]}]}),{status:200}));
+    vi.stubGlobal("fetch",fetchMock);
+    await expect(createSofiaPlan("quantos pacientes com e-mail","nenhum")).resolves.toEqual(plan);
+    const requests=fetchMock.mock.calls.map(call=>JSON.parse(call[1].body));
+    expect(requests.map(request=>request.model)).toEqual(["gemini-3.8-flash","gemini-3.5-flash-lite"]);
+    expect(requests[1].input).toBe(requests[0].input);expect(requests.every(request=>request.store===false)).toBe(true);
+    expect(requests[0].input).toContain('"limit":20');expect(requests[0].input).toContain('"sort":"name_asc"');
+  });
+  it("não troca de modelo para erros de autenticação nem aceita planos fora do contrato",async()=>{
+    vi.stubEnv("GEMINI_API_KEY","segredo-sintetico");
+    const fetchMock=vi.fn().mockResolvedValueOnce(new Response("não autorizado",{status:401}));
+    vi.stubGlobal("fetch",fetchMock);
+    await expect(createSofiaPlan("quantos pacientes","nenhum")).rejects.toThrow("SOFIA_GEMINI_REQUEST_FAILED_401");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    fetchMock.mockClear();fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({output_text:JSON.stringify({sql:"SELECT * FROM patients"})}),{status:200}));
+    await expect(createSofiaPlan("quantos pacientes","nenhum")).rejects.toThrow();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

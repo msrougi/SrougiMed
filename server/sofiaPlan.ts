@@ -12,13 +12,14 @@ const rawFilterSchema=z.object({
 }).strict();
 
 export const rawSofiaPlanSchema=z.object({
-  action:z.enum(["query","clarify","unsupported"]),
+  action:z.enum(["query","clarify","unsupported","chat"]),
   entity:z.enum(sofiaEntities),
   filters:z.array(rawFilterSchema).max(12),
   sort:z.enum(["name_asc","name_desc","newest","oldest"]),
   output:z.enum(["list","count","count_and_list"]),
   limit:z.number().int().min(1).max(50),
   reason:z.enum(["none","ambiguous_entity","missing_filter","medical_advice","write_operation","scheduling","outside_scope"]),
+  reply:z.string().trim().min(1).max(1000).optional(),
 }).strict();
 
 export type SofiaFilter={field:typeof sofiaFields[number];operator:typeof sofiaOperators[number];values:string[]};
@@ -30,8 +31,12 @@ const allowed:Record<SofiaQueryPlan["entity"],Set<SofiaFilter["field"]>>={
   contacts:new Set<SofiaFilter["field"]>(["name","email","phone","category","occupation","created_at"]),
 };
 
-export function validateAndResolvePlan(raw:unknown,map:SofiaTokenMap):{action:RawSofiaPlan["action"];reason:RawSofiaPlan["reason"];plan:SofiaQueryPlan|null} {
+export function validateAndResolvePlan(raw:unknown,map:SofiaTokenMap):{action:RawSofiaPlan["action"];reason:RawSofiaPlan["reason"];plan:SofiaQueryPlan|null;reply?:string} {
   const parsed=rawSofiaPlanSchema.parse(raw);
+  if(parsed.action==="chat"){
+    if(!parsed.reply || parsed.filters.length || parsed.reason!=="none" || /\$[VP]\d+/.test(parsed.reply))throw new Error("SOFIA_INVALID_CHAT_REPLY");
+    return {action:"chat",reason:"none",plan:null,reply:parsed.reply};
+  }
   if(parsed.action!=="query")return {action:parsed.action,reason:parsed.reason,plan:null};
   const filters:SofiaFilter[]=parsed.filters.map(filter=>{
     if(!allowed[parsed.entity].has(filter.field))throw new Error("SOFIA_FIELD_NOT_ALLOWED");

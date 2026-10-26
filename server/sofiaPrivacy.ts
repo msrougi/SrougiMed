@@ -8,7 +8,7 @@ const PUBLIC_WORDS = new Set(`
   a à agora ainda algum alguma alguns algumas alfabetica alfabeticamente alfabética
   apenas as às buscar busque cadastrada cadastrado cadastradas cadastrados cadastro
   canal celular celulares cidade cidades com contato contatos conte contém da das de
-  dele deles dessas desse desses desta destas deste destes do dos e é email emails em
+  dele deles dessas desse desses desta destas deste destes do dos e é email emails e-mail e-mails fax em
   encontre estão este estes eu grupo há hoje janeiro fevereiro março abril maio junho
   julho agosto setembro outubro novembro dezembro lista listar liste mas mês minha
   mostre nao não nome nomes no nos nossa nossas nosso nossos o os ou ordem para paciente
@@ -18,6 +18,12 @@ const PUBLIC_WORDS = new Set(`
   uf mora moram residente residentes fica ficam registro registrados registradas
   novo novos nova novas mais menos recente recentes antigo antigos contar total desses
   filtrar filtre mantenha mesmos mesmas também tambem só apenas particular privado
+  oi ola olá bom boa dia tarde noite tudo bem obrigado obrigada valeu voce você esta
+  está como pode posso podes podemos ajudar ajuda funciona funcionar fazer faz faze
+  consegue conseguir sou ser sofiA assistente explicar explique entende entendi
+  duvida dúvida duvidas dúvidas por favor preciso quero gostaria saber conversar
+  capacidades funcionalidades sistema srougimed chatmed inteligencia inteligência
+  artificial saudacao saudação saudacoes saudações gentil conversar conversa
 `.trim().split(/\s+/).map(word => normalize(word)));
 
 function normalize(value:string) {
