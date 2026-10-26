@@ -39,18 +39,20 @@ describe.skipIf(!url)("códigos de e-mail — MySQL isolado",()=>{
     const [rows]=await pool.query<any[]>("SELECT consumed FROM srougi_login_codes WHERE id=?",[next.challengeId]);
     expect(Number(rows[0].consumed)).toBe(0);
   });
-  it("preparação nativa permite Bia sem e-mail e preserva somente o compartilhamento autorizado",async()=>{
+  it("preparação nativa exige e-mail da Bia e preserva somente o compartilhamento autorizado",async()=>{
     vi.stubEnv("SECOND_FACTOR_ENABLED","true");vi.stubEnv("NATIVE_EMAIL_LOGIN","true");vi.stubEnv("SECOND_FACTOR_BIA_USER_ID","9");
     vi.stubEnv("AUTH_EMAIL_PROVIDER","resend");vi.stubEnv("AUTH_EMAIL_FROM","access@example.invalid");vi.stubEnv("RESEND_API_KEY","synthetic-only");
     vi.stubEnv("CF_ACCESS_SHARED_OWNER_EMAIL","owner@example.invalid");
     await pool.query("INSERT INTO users(id,username,email,password,role) VALUES(9,'bia',NULL,'synthetic','user'),(2,'admin','owner@example.invalid','synthetic','admin'),(3,'msrougi','owner@example.invalid','synthetic','user')");
     const c=await pool.getConnection();try{
+      await expect(prepareNetworkAccess(c)).rejects.toThrow("EMAIL_MISSING");
+      await pool.query("UPDATE users SET email='bia@example.invalid' WHERE id=9");
       await prepareNetworkAccess(c);
       await pool.query("INSERT INTO users(id,username,email,password) VALUES(4,'other','owner@example.invalid','synthetic')");
       await expect(prepareNetworkAccess(c)).rejects.toThrow("EMAIL_DUPLICATE");
       await pool.query("DELETE FROM users WHERE id=4");
       await pool.query("UPDATE users SET role='admin' WHERE id=9");
-      await expect(prepareNetworkAccess(c)).rejects.toThrow("BIA_ACCOUNT_NOT_READY");
+      await expect(prepareNetworkAccess(c)).resolves.toBeUndefined();
     }finally{c.release();}
   });
   it("guarda apenas hash, entrega por e-mail e consome uma única vez",async()=>{

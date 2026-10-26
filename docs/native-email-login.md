@@ -1,6 +1,6 @@
 # Confirmação por e-mail dentro do SrougiMed
 
-Modo optativo. Publicar o código não substitui automaticamente o Cloudflare Access em uso. A troca só deve ocorrer após configurar o remetente, conferir as contas e testar a entrega real do código.
+Com NATIVE_EMAIL_LOGIN=true, todas as contas, inclusive Bia, usam senha e código por e-mail do próprio SrougiMed. Não há dependência do Cloudflare One Client nem restrição de computador nesse modo. Configurar o remetente, conferir as contas e testar a entrega real do código antes de ativar.
 
 ## Experiência
 
@@ -14,9 +14,9 @@ O mecanismo existente mantém hash do código no banco, uso único, cinco tentat
 
 Todos precisam de endereço válido e exclusivo, exceto o par admin/msrougi cujo compartilhamento continua dependendo de CF_ACCESS_SHARED_OWNER_EMAIL. Senhas, papéis e sessões continuam separados.
 
-A dispensa antiga da Bia continua disponível somente quando SECOND_FACTOR_BIA_USER_ID está configurada. Ela não identifica um computador específico e não deve ser usada junto com a proteção por postura.
+A dispensa antiga da Bia e as opções BIA_DEVICE_ACCESS_ENABLED e CF_ACCESS_BIA_USER_ID são ignoradas no modo nativo. Nenhuma delas pode dispensar o segundo fator nem redirecionar Bia para a Cloudflare.
 
-Com BIA_DEVICE_ACCESS_ENABLED=true, a Bia também usa segundo fator, mas pelo One-time PIN da Cloudflare. Depois da senha do SrougiMed, ela é enviada para `/auth/cloudflare`; a política Access exige simultaneamente o e-mail exato da conta e a postura do equipamento cadastrado no Cloudflare One Client. As demais contas continuam no fluxo nativo da Resend. A associação da Bia exige ao mesmo tempo o ID configurado, login `bia`, papel `user` e e-mail válido. A sessão resultante permanece vinculada à conta, senha/e-mail e navegador.
+Bia precisa de e-mail válido no cadastro, como as demais contas. Não há alteração de senha nem migração de dados. Sessões sem comprovação válida do segundo fator são recusadas.
 
 ## Envio
 
@@ -35,10 +35,7 @@ O envio gratuito por Cloudflare Email Service continua restrito aos endereços p
 CF_ACCESS_ENABLED=false
 NATIVE_EMAIL_LOGIN=true
 SECOND_FACTOR_ENABLED=true
-BIA_DEVICE_ACCESS_ENABLED=true
-CF_ACCESS_BIA_USER_ID=ID_REAL_DA_CONTA_BIA
-CF_ACCESS_TEAM_DOMAIN=https://nome-da-equipe.cloudflareaccess.com
-CF_ACCESS_AUD=tag-AUD-da-aplicacao
+BIA_DEVICE_ACCESS_ENABLED=false
 SROUGI_PUBLIC_ORIGIN=https://srougi.app
 OFFICE_ACCESS_POLICY_ENABLED=false
 AUTH_EMAIL_PROVIDER=resend
@@ -46,14 +43,14 @@ AUTH_EMAIL_FROM=REMETENTE_DO_DOMINIO_VERIFICADO
 RESEND_API_KEY=CHAVE_PRIVADA_DE_ENVIO
 ```
 
-Remover SECOND_FACTOR_BIA_USER_ID ao ativar a postura; a inicialização recusa manter a dispensa antiga junto com BIA_DEVICE_ACCESS_ENABLED. Preservar DATABASE_URL, JWT_SECRET e a configuração privada do endereço compartilhado. Não há troca de senhas nesta alteração. A inicialização recusa a combinação NATIVE_EMAIL_LOGIN=true com CF_ACCESS_ENABLED=true ou SECOND_FACTOR_ENABLED diferente de true. Sem remetente/chave válidos não ativar o modo nativo.
+Remover SECOND_FACTOR_BIA_USER_ID e CF_ACCESS_BIA_USER_ID como limpeza operacional; valores antigos são ignorados no modo nativo. Preservar DATABASE_URL, JWT_SECRET e a configuração privada do endereço compartilhado. A inicialização recusa a combinação NATIVE_EMAIL_LOGIN=true com CF_ACCESS_ENABLED=true ou SECOND_FACTOR_ENABLED diferente de true. Sem remetente/chave válidos não ativar o modo nativo.
 
-5. O hostname inteiro não deve estar protegido por Access. A aplicação limitada a `/auth/cloudflare` deve conter uma política exclusiva para o e-mail da Bia com `Require` para a lista de números de série do equipamento autorizado. A política geral das outras usuárias não deve incluir o e-mail da Bia.
-6. Aguardar Live e testar em aba anônima: entrega e código da Resend para uma conta comum; PIN da Cloudflare para a Bia; Bia no equipamento autorizado; recusa em outro computador e celular; administração e logout. Não afirmar produção validada só com CI.
+5. O hostname inteiro não deve estar protegido por Access. A política antiga da Bia em `/auth/cloudflare` pode ser desvinculada após a publicação; esse callback não participa do login nativo.
+6. Aguardar Live e testar em aba anônima: entrega e código da Resend para uma conta comum e Bia; recusa sem código; administração e logout. Não afirmar produção validada só com CI.
 
 ## Reversão
 
-Para desfazer apenas a limitação da Bia, no mesmo deploy: BIA_DEVICE_ACCESS_ENABLED=false e restaurar SECOND_FACTOR_BIA_USER_ID somente se a dispensa temporária for realmente desejada. Para voltar ao modo Cloudflare global: NATIVE_EMAIL_LOGIN=false, SECOND_FACTOR_ENABLED=false e CF_ACCESS_ENABLED=true. Novas sessões podem exigir login novamente. Não remover a política anterior antes de confirmar o fluxo escolhido em produção.
+Não restaurar a dispensa de segundo fator da Bia. Uma reversão para autenticação Cloudflare exige nova autorização, restauração e validação das políticas e configuração compatível no servidor. Novas sessões podem exigir login novamente.
 
 ## Limites
 

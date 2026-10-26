@@ -14,7 +14,10 @@ import { recordAccessIp } from "./accessIpLog";
 export const ACCESS_CALLBACK = "/auth/cloudflare";
 export const ACCESS_PENDING_COOKIE = "__Host-srougi_access_pending";
 export const accessLoginFlowEnabled = () => cloudflareAccessEnabled() && process.env.CF_ACCESS_LOGIN_FLOW === "true";
-export const biaDeviceAccessEnabled = () => process.env.BIA_DEVICE_ACCESS_ENABLED === "true";
+// Native email login now applies to every account, including Bia. Ignore the
+// retired device-specific switch in this mode so stale deploy settings cannot
+// redirect her to the old Cloudflare callback.
+export const biaDeviceAccessEnabled = () => process.env.BIA_DEVICE_ACCESS_ENABLED === "true" && process.env.NATIVE_EMAIL_LOGIN !== "true";
 export const cloudflareLoginCallbackEnabled = () => accessLoginFlowEnabled() || biaDeviceAccessEnabled();
 type LoginUser = NetworkUser & { name?: string | null; role?: string };
 const pendingOptions = { httpOnly:true, secure:true, sameSite:"lax" as const, path:"/" };

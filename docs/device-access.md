@@ -1,5 +1,11 @@
 # Acesso por computador
 
+## Estado atual
+
+Com NATIVE_EMAIL_LOGIN=true, a restrição abaixo está desativada: Bia usa o mesmo fluxo de senha e código por e-mail das outras contas, sem exigir Cloudflare One Client ou equipamento específico. As informações seguintes descrevem apenas o modo legado.
+
+## Modo legado
+
 A pedido do responsável, o login `bia` fica restrito a computadores. A comparação ignora maiúsculas/minúsculas e espaços nas extremidades. A regra usa o login da conta, não o nome de exibição. Se esse login for renomeado, atualizar a configuração em `shared/deviceAccess.ts`.
 
 A validação ocorre antes da criação do cookie de login e no procedimento base de todas as rotas tRPC. Assim, requisições feitas por sessões já existentes também são bloqueadas. Logout e troca de conta continuam possíveis. O cliente limpa o cache e apresenta a orientação de acesso por computador ao receber a recusa. As outras contas preservam a política anterior.

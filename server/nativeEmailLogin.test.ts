@@ -60,15 +60,21 @@ describe("confirmação nativa com destinatário cadastrado",()=>{
     await expect(caller(session,user).api.admin.listUsers()).rejects.toMatchObject({code:"FORBIDDEN"});
     await expect(caller(session,{...user,password:"changed"}).api.auth.me()).rejects.toMatchObject({code:"FORBIDDEN"});
   });
-  it("Bia dispensa código só no ID/login/papel autorizado e continua bloqueada em celular",async()=>{
-    const bia={...user,id:9,username:"bia",email:null};fixture.authenticate.mockResolvedValue(bia);
-    const s=caller();await expect(s.api.customAuth.login({username:"bia",password:"synthetic"})).resolves.toMatchObject({success:true});
-    const cookie="app_session_id="+cookieValue(s.response,"app_session_id");
-    await expect(caller(cookie,bia).api.auth.me()).resolves.toMatchObject({id:9});
-    await expect(caller(cookie,{...bia,password:"changed"}).api.auth.me()).rejects.toMatchObject({code:"FORBIDDEN"});
-    for(const changed of [{...bia,id:99},{...bia,username:"other"},{...bia,role:"admin"}])await expect(caller(cookie,changed).api.auth.me()).rejects.toMatchObject({code:"FORBIDDEN"});
-    await expect(caller("",null,"iPhone Mobile").api.customAuth.login({username:"bia",password:"synthetic"})).rejects.toMatchObject({code:"FORBIDDEN"});
-    expect(fixture.start).not.toHaveBeenCalled();
+  it("Bia exige 2FA nativo como os demais, mesmo com as antigas exceções configuradas",async()=>{
+    vi.stubEnv("BIA_DEVICE_ACCESS_ENABLED","true");vi.stubEnv("CF_ACCESS_BIA_USER_ID","9");
+    const bia={...user,id:9,username:"bia",email:"bsbancala@example.invalid"};fixture.authenticate.mockResolvedValue(bia);fixture.getUser.mockResolvedValue(bia);fixture.lookup.mockResolvedValue([[{id:9,username:"bia"}],[]]);
+    for(const agent of ["Fixture Desktop","iPhone Mobile"]){
+      const s=caller("",null,agent);
+      await expect(s.api.customAuth.login({username:"bia",password:"synthetic"})).resolves.toMatchObject({success:false,requiresSendCode:true,emailHint:"bs*****@example.invalid"});
+      expect(cookieValue(s.response,"app_session_id")).toBeUndefined();
+      const pending=NATIVE_PENDING_COOKIE+"="+cookieValue(s.response,NATIVE_PENDING_COOKIE);
+      const confirmation=caller(pending,null,agent);
+      await confirmation.api.customAuth.sendLoginCode({});
+      expect(fixture.start).toHaveBeenCalledWith(bia,expect.anything());
+    }
+    await expect(caller("",bia).api.auth.me()).rejects.toMatchObject({code:"FORBIDDEN"});
+    fixture.authenticate.mockResolvedValue({...bia,email:null});
+    await expect(caller().api.customAuth.login({username:"bia",password:"synthetic"})).rejects.toMatchObject({code:"FORBIDDEN"});
   });
   it("mantém e-mail compartilhado só para admin/msrougi sem compartilhar sessão ou papel",async()=>{
     vi.stubEnv("CF_ACCESS_SHARED_OWNER_EMAIL",user.email);
@@ -83,13 +89,13 @@ describe("confirmação nativa com destinatário cadastrado",()=>{
     vi.stubEnv("NATIVE_EMAIL_LOGIN","true");vi.stubEnv("CF_ACCESS_ENABLED","true");expect(validateNetworkConfiguration).toThrow("NATIVE_EMAIL_LOGIN_MODE_CONFLICT");
     expect(maskLoginEmail("a@example.invalid")).toBe("a*****@example.invalid");
   });
-  it("recusa ativar postura da Bia enquanto a exceção antiga de senha estiver configurada",()=>{
+  it("ignora as opções antigas da Bia no modo nativo sem dispensar o código",()=>{
     vi.stubEnv("BIA_DEVICE_ACCESS_ENABLED","true");
     vi.stubEnv("CF_ACCESS_BIA_USER_ID","9");
     vi.stubEnv("SROUGI_PUBLIC_ORIGIN","https://app.example.invalid");
     vi.stubEnv("CF_ACCESS_TEAM_DOMAIN","https://fixture.cloudflareaccess.com");
     vi.stubEnv("CF_ACCESS_AUD","a".repeat(64));
-    expect(validateNetworkConfiguration).toThrow("BIA_DEVICE_ACCESS_PASSWORD_EXCEPTION_CONFLICT");
+    expect(validateNetworkConfiguration).not.toThrow();
   });
   it("logout expira o cookie intermediário na resposta HTTP real",async()=>{
     const app=express();
