@@ -504,8 +504,8 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
               value={formData.phone}
               onChange={handleInputChange}
               placeholder="Telefone"
-              type="tel"
-              maxLength={40}
+              type="text"
+              maxLength={60}
             />
           </div>
 
@@ -517,8 +517,8 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
               value={formData.mobile}
               onChange={handleInputChange}
               placeholder="Celular"
-              type="tel"
-              maxLength={40}
+              type="text"
+              maxLength={60}
             />
           </div>
 
@@ -530,8 +530,8 @@ export default function PatientForm({ onSuccess, initialData }: PatientFormProps
               value={formData.fax}
               onChange={handleInputChange}
               placeholder="Fax"
-              type="tel"
-              maxLength={65535}
+              type="text"
+              maxLength={60}
             />
           </div>
 

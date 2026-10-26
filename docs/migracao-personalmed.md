@@ -1,7 +1,7 @@
 # Preparar o destino para pacientes do PersonalMed
 
 Esta alteração prepara os três pontos aprovados: dados incompletos no legado,
-CPFs repetidos preservados como pacientes distintos e telefones de até 40 caracteres.
+CPFs repetidos preservados como pacientes distintos e campos de contato de até 60 caracteres.
 Não importa os 46.133 pacientes nem altera a produção automaticamente.
 
 ## Comportamento
@@ -19,8 +19,10 @@ Não importa os 46.133 pacientes nem altera a produção automaticamente.
 - A edição de um legado com CPF repetido não bloqueia quando o CPF permanece igual
   (mesmo com outra formatação). Se for alterado para um CPF já cadastrado, a API recusa.
 - O marcador de legado não pode ser definido pelas rotas de criação/edição comum.
-- `patients.phone` e `patients.mobile` passam de 20 a 40 caracteres; formulário e API
-  respeitam esse limite. Excesso causa erro de validação, nunca truncamento automático.
+- `patients.phone` e `patients.mobile` passam para 60 caracteres. Telefone, celular e
+  Fax aceitam livremente números, letras e símbolos no formulário e na API, cada um
+  em seu próprio campo, com limite de 60. A ampliação não converte, mistura nem limpa
+  o conteúdo já armazenado. Excesso causa erro de validação, nunca truncamento automático.
 - `phone_book.phone` já comporta 200 caracteres e não precisa dessa ampliação.
 - A importação sem código passa a gerar um código sequencial. Código fornecido que
   já existe gera erro; não substitui um paciente. Nenhum registro é mesclado pelo CPF.
@@ -47,14 +49,14 @@ Não importa os 46.133 pacientes nem altera a produção automaticamente.
 5. Publicar o código desta alteração contra a cópia já preparada. A ordem é banco
    primeiro, código depois. O novo código consulta as colunas adicionadas.
 6. Testar um paciente sem CPF/nascimento/CEP, dois pacientes com mesmo CPF, edição
-   de um desses pacientes e telefone de 40 caracteres. Confirmar que um cadastro
+   de um desses pacientes e os três campos de contato com 60 caracteres. Confirmar que um cadastro
    novo continua exigindo os campos e recusando CPF existente.
 
 O preparador consulta `information_schema`, valida os nomes e tipos conhecidos e
 usa um bloqueio para impedir duas preparações simultâneas. Ele não executa INSERT,
 UPDATE ou DELETE de pacientes. Adiciona a nova proteção de CPF antes de remover a
-antiga e não reduz telefones que já tenham capacidade superior a 40. Pode ser repetido:
-altera somente o que falta. Uma duplicidade entre registros não migrados bloqueia a
+antiga e não reduz telefones que já tenham capacidade superior a 60. Pode ser repetido:
+altera somente o que falta e não reduz colunas que já tenham capacidade superior. Uma duplicidade entre registros não migrados bloqueia a
 preparação; não transforma esses pacientes automaticamente em legados.
 
 DDL de MySQL tem commit implícito: não há promessa de rollback atômico. Se interrompido,

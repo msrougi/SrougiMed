@@ -6,9 +6,9 @@ import { createInterface } from 'node:readline';
 import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-export const mappingVersion = 13;
+export const mappingVersion = 14;
 const direct = {
-  Name: ['name', 200], Address: ['address', 200], District: ['district', 100], Phone: ['phone', 40], FAX: ['fax', 65535],
+  Name: ['name', 200], Address: ['address', 200], District: ['district', 100], Phone: ['phone', 60], FAX: ['fax', 60],
   City: ['city', 100], State: ['state', 100], ID: ['rg', 100],
   Clini_01_CPF: ['cpf', 100], HomeBorn: ['birthPlace', 100], EMail: ['email', 200],
   IndicatedBy: ['referredBy', 100], Occupation: ['occupation', 200],
@@ -98,7 +98,7 @@ export function planPatient(raw) {
   });
   const cell = present(raw.Cellular) ? raw.Cellular : null;
   const ddd = present(raw.DDDCellular) ? raw.DDDCellular : null;
-  put('mobile', cell ? (ddd ? `${ddd} ${cell}` : cell) : null, 40, 'DDDCellular+Cellular');
+  put('mobile', cell ? (ddd ? `${ddd} ${cell}` : cell) : null, 60, 'DDDCellular+Cellular');
   if (ddd && !cell) issues.push({ field: 'DDDCellular', target: 'mobile', reason: 'ddd_without_number' });
   patient.additionalInfo1 = null;
   patient.additionalInfo2 = null;
