@@ -39,6 +39,8 @@ describe("recuperação do Fax do PersonalMed",()=>{
   });
   it("aceita, importa e exporta Fax em campo separado",()=>{
     expect(patientImportSchema.parse({name:"Teste",fax:"11 3333-4444"}).fax).toBe("11 3333-4444");
+    expect(patientImportSchema.parse({name:"Teste",fax:"FAX A/B +55 (11) 3333-4444 #2"}).fax).toBe("FAX A/B +55 (11) 3333-4444 #2");
+    expect(patientImportSchema.safeParse({name:"Teste",fax:"x".repeat(61)}).success).toBe(false);
     expect(parseCSV("Nome,Fax,Telefone\nTeste,11 3333-4444,11 1111-2222")).toEqual([{name:"Teste",fax:"11 3333-4444",phone:"11 1111-2222"}]);
     const csv=patientsToCSV([{id:1,name:"Teste",fax:"11 3333-4444",phone:"11 1111-2222"}]);
     expect(csv).toContain("Telefone,Celular,Fax");expect(csv).toContain("11 1111-2222,,11 3333-4444");

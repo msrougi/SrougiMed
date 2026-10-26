@@ -108,7 +108,7 @@ O preparador adiciona a coluna após cópia de segurança, antes de publicar o a
 ## Fax recuperado no aplicativo
 
 Em 25/10/2026, Marcelo reviu a decisão anterior e determinou recuperar o campo FAX.
-A versão 13 associa FAX a um campo próprio `patients.fax`, sem concatenar ou alterar
+A versão 14 mantém FAX em um campo próprio `patients.fax`, sem concatenar ou alterar
 telefone, celular, observações ou outras informações. Nos pacientes já importados,
 o preenchimento usa exclusivamente o vínculo `srougi_personalmed_links.targetId` e
 o valor preservado em `original.FAX`; não cruza nome, CPF ou posição de linha. A

@@ -24,7 +24,7 @@ describe("Preparação da estrutura para PersonalMed", () => {
     const drop = plan.findIndex(s => s.includes("DROP INDEX"));
     expect(add).toBeGreaterThan(-1);
     expect(drop).toBeGreaterThan(add);
-    expect(plan.filter(s => s.includes("MODIFY COLUMN") && s.includes("varchar(40)")).length).toBe(2);
+    expect(plan.filter(s => s.includes("MODIFY COLUMN") && s.includes("varchar(60)")).length).toBe(2);
     expect(plan.some(s => /DELETE|UPDATE|TRUNCATE/.test(s))).toBe(false);
   });
   it("não depende da existência da migração manual de CPF", () => {
@@ -66,10 +66,16 @@ describe("Dados incompletos e CPFs do legado", () => {
     expect(patientImportSchema.safeParse({ name: " " }).success).toBe(false);
     expect(patientImportSchema.safeParse({ name: "Teste", genderId: 0 }).success).toBe(false);
   });
-  it("preserva telefones longos e recusa excesso sem truncar", () => {
+  it("preserva texto livre nos três campos de contato e recusa excesso sem truncar", () => {
     const phone = "(11) 1111-1111 / (11) 2222-2222 ramal 12";
     expect(patientImportSchema.parse({ name: "Teste", phone }).phone).toBe(phone);
-    expect(patientImportSchema.safeParse({ name: "Teste", phone: "1".repeat(41) }).success).toBe(false);
+    const freeText = "ramal A/B +55 (11) 99999-9999 #recepção";
+    expect(patientImportSchema.parse({ name: "Teste", phone: freeText, mobile: freeText, fax: freeText })).toMatchObject({
+      phone: freeText, mobile: freeText, fax: freeText,
+    });
+    for (const field of ["phone", "mobile", "fax"] as const) {
+      expect(patientImportSchema.safeParse({ name: "Teste", [field]: "x".repeat(61) }).success).toBe(false);
+    }
   });
   it("cliente não pode definir o marcador de migração", () => {
     expect(patientImportSchema.parse({ name: "Teste", legacyImported: true })).not.toHaveProperty("legacyImported");

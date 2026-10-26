@@ -78,13 +78,13 @@ test('maps only approved white variants and preserves other categories without c
 });
 
 test('does not truncate long phones, merge by CPF, or discard punctuation', () => {
-  const a = planPatient(row({ Phone: '1'.repeat(40), Clini_01_CPF: '000.000.000-00', Observation: 'A ` B \\ C' }));
-  const b = planPatient(row({ PCod: 124, Clini_01_CPF: '000.000.000-00', Phone: '1'.repeat(41) }));
+  const a = planPatient(row({ Phone: 'A+#/'.repeat(15), Clini_01_CPF: '000.000.000-00', Observation: 'A ` B \\ C' }));
+  const b = planPatient(row({ PCod: 124, Clini_01_CPF: '000.000.000-00', Phone: '1'.repeat(61) }));
   assert.notEqual(a.key, b.key);
-  assert.equal(a.patient.phone.length, 40);
+  assert.equal(a.patient.phone.length, 60);
   assert.equal(a.patient.notes, 'A ` B \\ C');
   assert.equal(b.patient.phone, null);
-  assert.equal(b.raw.Phone.length, 41);
+  assert.equal(b.raw.Phone.length, 61);
   assert.equal(b.issues[0].reason, 'exceeds_capacity');
   assert.equal(fingerprint({ a: 1, b: 2 }), fingerprint({ b: 2, a: 1 }));
 });

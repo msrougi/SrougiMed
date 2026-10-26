@@ -46,7 +46,7 @@ export function migrationPlan(structure: Structure): string[] {
     const column = columns.get(field)!;
     const size = /^varchar\((\d+)\)$/i.exec(column.type);
     if (!size || column.nullable !== "YES") throw new Error(`Definição inesperada em ${field}; revisar antes de alterar.`);
-    if (Number(size[1]) < 40) plan.push(`ALTER TABLE \`patients\` MODIFY COLUMN \`${field}\` varchar(40) NULL`);
+    if (Number(size[1]) < 60) plan.push(`ALTER TABLE \`patients\` MODIFY COLUMN \`${field}\` varchar(60) NULL`);
   }
   // Optional patient fields are nullable in the actual application schema.
   for (const field of ["cpf", "cep", "address", "city", "state", "birthDate", "maritalStatusId", "genderId"]) {

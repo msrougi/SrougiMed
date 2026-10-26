@@ -9,7 +9,7 @@ function mockDb(conflicts = 0) {
   return { queries, query: async sql => {
     queries.push(sql);
     if (sql.includes('GET_LOCK')) return [[{ acquired: 1 }]];
-    if (sql.includes('information_schema.COLUMNS')) return [[...fields.map(name => ({name, type:['phone','mobile'].includes(name) ? (done ? 'varchar(40)' : 'varchar(20)') : 'varchar(100)', nullable:'YES', generated:''})),
+    if (sql.includes('information_schema.COLUMNS')) return [[...fields.map(name => ({name, type:['phone','mobile'].includes(name) ? (done ? 'varchar(60)' : 'varchar(20)') : 'varchar(100)', nullable:'YES', generated:''})),
       ...(done ? [{name:'responsibleName',type:'varchar(200)',nullable:'YES',generated:''},{name:'responsiblePhone',type:'varchar(40)',nullable:'YES',generated:''},{name:'motherName',type:'varchar(200)',nullable:'YES',generated:''},{name:'fatherName',type:'varchar(200)',nullable:'YES',generated:''},{name:'district',type:'varchar(100)',nullable:'YES',generated:''},{name:'legacyImported',type:'tinyint(1)',nullable:'NO',generated:''},{name:'cpfForNewPatients',type:'varchar(100)',nullable:'YES',generated:'case when legacyImported = 0 then nullif(trim(cpf), \'\') else null end'}] : [])]];
     if (sql.includes('information_schema.STATISTICS')) return [done ? [{name:'patients_new_cpf_unique',nonUnique:0,col:'cpfForNewPatients'},{name:'patients_cpf_idx',nonUnique:1,col:'cpf'}] : [{name:'patients_cpf_unique',nonUnique:0,col:'cpf'}]];
     if (sql.includes('information_schema.TABLES')) return [[...['patients','phone_book','genders','marital_statuses','skin_colors'].map(name=>({name}))]];
