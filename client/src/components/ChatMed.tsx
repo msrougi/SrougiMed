@@ -1,12 +1,13 @@
 import {chatEmojiTextStyle} from "@/lib/chatEmojiText";
 import ChatEmojiPicker from "./ChatEmojiPicker";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { ArrowLeft, MessageCircle, Send, Users, UserRound, Loader2, Smile, Paperclip, X, Download, AtSign, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, MessageCircle, Send, Users, UserRound, Loader2, Smile, Paperclip, X, Download, AtSign, Image as ImageIcon, Sparkles } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
 import type { ChatMessage, ChatThread } from "@shared/chatMed";
+import type { SofiaMessage } from "@shared/sofia";
 import { CHAT_FILE_ACCEPT, chatFileError } from "@shared/chatAttachments";
 import { findMentionQuery,filterMentionMembers,rebaseMentions,submittedMentions,type ChatMentionInput,type ChatMentionMember } from "@shared/chatMentions";
 
@@ -20,10 +21,11 @@ export function mergeChatMessages(...pages: ChatMessage[][]) {
 export default function ChatMed({ userId }: { userId: number }) {
   const [open,setOpen] = useState(false);
   const [selected,setSelected] = useState<{ peerId: number | null; name: string } | null>(null);
+  const [sofiaOpen,setSofiaOpen] = useState(false);
   const threads = trpc.chatMed.threads.useQuery(undefined, { refetchInterval: open ? 5000 : 20000, retry: 1, refetchIntervalInBackground: false });
   const current = threads.data;
   const conversation = selected && current?.threads.find(thread => thread.peerId === selected.peerId);
-  useEffect(() => { if (!open) setSelected(null); }, [open]);
+  useEffect(() => { if (!open) {setSelected(null);setSofiaOpen(false);} }, [open]);
   return <>
     <Button type="button" onClick={() => setOpen(true)} aria-label={`Abrir ChatMed${current?.unread ? `, ${current.unread} mensagens não lidas` : ""}`}
       title={current?.mentionUnread ? `${current.mentionUnread} menções não lidas` : "ChatMed"} className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-40 h-14 w-14 rounded-full bg-[#087e78] p-0 text-white shadow-xl hover:bg-[#06665f]">
@@ -39,12 +41,17 @@ export default function ChatMed({ userId }: { userId: number }) {
         </DialogHeader>
         {threads.error ? <div role="alert" className="p-5 text-sm">Não foi possível atualizar o chat. <Button variant="outline" className="mt-3" onClick={() => void threads.refetch()}>Tentar novamente</Button></div> :
           threads.isLoading ? <p className="p-5 text-sm text-muted-foreground">Carregando conversas…</p> :
-          !current?.group ? <div className="p-6 text-sm leading-relaxed text-muted-foreground"><p className="mb-2 font-semibold text-foreground">Seu grupo ainda não foi configurado.</p>Peça ao administrador para preencher o campo “Grupo de chat” no seu cadastro de usuário.</div> :
-          conversation && current.group ? <ChatConversation key={`${current.group}:${conversation.peerId}`} userId={userId}
+          sofiaOpen ? <SofiaConversation onBack={()=>setSofiaOpen(false)}/> :
+          conversation && current?.group ? <ChatConversation key={`${current.group}:${conversation.peerId}`} userId={userId}
             thread={{ group: current.group, peerId: conversation.peerId }} name={conversation.name} members={current.members || []}
             onBack={() => setSelected(null)} onActivity={() => void threads.refetch()} /> :
           <div className="min-h-0 flex-1 overflow-y-auto p-3">
-            <p className="px-2 pb-3 text-xs text-muted-foreground">Grupo: <span className="font-medium">{current.group}</span></p>
+            <button type="button" onClick={()=>setSofiaOpen(true)} className="flex min-h-20 w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-200"><Sparkles className="h-5 w-5"/></span>
+              <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold">SofIA</span><span className="block truncate text-xs text-muted-foreground">Assistente de consultas de pacientes e contatos</span></span>
+            </button>
+            {!current?.group ? <div className="p-3 text-sm leading-relaxed text-muted-foreground"><p className="mb-2 font-semibold text-foreground">Seu grupo ainda não foi configurado.</p>Você pode usar a SofIA; para conversar com a equipe, peça ao administrador para preencher o campo “Grupo de chat” no seu cadastro.</div> : <>
+            <p className="px-2 pb-3 pt-3 text-xs text-muted-foreground">Grupo: <span className="font-medium">{current.group}</span></p>
             {Boolean(current.mentionUnread) && <p role="status" className="mb-2 rounded-lg bg-amber-100 px-3 py-2 text-xs text-amber-950 dark:bg-amber-900 dark:text-amber-100">Você tem {current.mentionUnread} menções não lidas no grupo.</p>}
             {current.threads.map(thread => <button type="button" key={thread.peerId ?? "group"} onClick={() => setSelected(thread)}
               className="flex min-h-20 w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
@@ -56,10 +63,60 @@ export default function ChatMed({ userId }: { userId: number }) {
                 {thread.unread > 0 && <span aria-label={`${thread.unread} não lidas`} className="rounded-full bg-[#087e78] px-2 py-0.5 text-xs font-semibold text-white">{countLabel(thread.unread)}</span>}</span>
             </button>)}
             {current.threads.length === 1 && <p className="px-3 pt-4 text-xs text-muted-foreground">Os colegas aparecerão aqui quando tiverem o mesmo grupo no cadastro.</p>}
+            </>}
           </div>}
       </DialogContent>
     </Dialog>
   </>;
+}
+
+function SofiaConversation({onBack}:{onBack:()=>void}) {
+  const utils=trpc.useUtils();
+  const history=trpc.sofia.history.useQuery({}, {retry:1,refetchInterval:5000,refetchIntervalInBackground:false});
+  const ask=trpc.sofia.ask.useMutation({onSuccess:()=>void history.refetch()});
+  const [draft,setDraft]=useState("");
+  const [attempt,setAttempt]=useState<{text:string;clientId:string}|null>(null);
+  const [olderMessages,setOlderMessages]=useState<SofiaMessage[]>([]);
+  const [hasOlder,setHasOlder]=useState(false);
+  const [loadingOlder,setLoadingOlder]=useState(false);
+  const viewport=useRef<HTMLDivElement>(null);
+  const messages=Array.from(new Map([...olderMessages,...(history.data?.messages || [])].map(message=>[message.id,message])).values()).sort((a,b)=>a.id-b.id);
+  useEffect(()=>{if(!olderMessages.length && history.data)setHasOlder(history.data.hasMore);},[history.data?.hasMore,olderMessages.length]);
+  useLayoutEffect(()=>{if(viewport.current)viewport.current.scrollTop=viewport.current.scrollHeight;},[messages.length,ask.isPending]);
+  async function older(){
+    if(!messages[0] || loadingOlder)return;setLoadingOlder(true);
+    try{const page=await utils.client.sofia.history.query({beforeId:messages[0].id});setOlderMessages(previous=>Array.from(new Map([...page.messages,...previous].map(message=>[message.id,message])).values()).sort((a,b)=>a.id-b.id));setHasOlder(page.hasMore);}finally{setLoadingOlder(false);}
+  }
+  async function submit(){
+    const text=draft.trim();if(!text || text.length>1000 || ask.isPending)return;
+    const pending=attempt?.text===text?attempt:{text,clientId:crypto.randomUUID()};setAttempt(pending);
+    try{await ask.mutateAsync(pending);setDraft("");setAttempt(null);}catch{}
+  }
+  return <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex shrink-0 items-center gap-2 border-b px-3 py-2">
+      <Button type="button" variant="ghost" size="icon" aria-label="Voltar às conversas" onClick={onBack}><ArrowLeft className="h-5 w-5"/></Button>
+      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-200"><Sparkles className="h-4 w-4"/></span>
+      <div className="min-w-0"><h3 className="truncate text-sm font-semibold">SofIA</h3><p className="text-xs text-muted-foreground">Conversa particular · somente leitura</p></div>
+    </div>
+    <div ref={viewport} role="log" aria-label="Histórico particular da SofIA" aria-live="polite" className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain bg-muted/25 px-4 py-4">
+      <div className="rounded-xl border border-violet-200 bg-violet-50 p-3 text-xs leading-relaxed text-violet-950 dark:border-violet-900 dark:bg-violet-950/40 dark:text-violet-100">Consulte pacientes e contatos em linguagem natural. A SofIA não altera cadastros, não agenda e não fornece orientação médica.</div>
+      {hasOlder && <div className="text-center"><Button type="button" variant="outline" size="sm" disabled={loadingOlder} onClick={()=>void older()}>{loadingOlder?"Carregando…":"Carregar mensagens anteriores"}</Button></div>}
+      {history.isLoading && <p className="text-center text-xs text-muted-foreground">Carregando histórico…</p>}
+      {!history.isLoading && !messages.length && !history.error && <p className="py-4 text-center text-sm text-muted-foreground">Exemplo: “Quais pacientes de São Paulo estão sem celular?”</p>}
+      {messages.map((message:SofiaMessage,index:number)=><div key={message.id}>
+        {(index===0 || date(messages[index-1].createdAt)!==date(message.createdAt)) && <p className="mb-3 text-center text-[10px] text-muted-foreground">{date(message.createdAt)}</p>}
+        <div className={`flex ${message.role==="user"?"justify-end":"justify-start"}`}><div className={`max-w-[88%] rounded-2xl px-3 py-2 shadow-sm ${message.role==="user"?"rounded-br-sm bg-[#087e78] text-white":"rounded-bl-sm border bg-background text-foreground"}`}>
+          <p className="mb-1 text-xs font-semibold opacity-80">{message.role==="user"?"Você":"SofIA"}</p><p className="whitespace-pre-wrap break-words text-sm [overflow-wrap:anywhere]">{message.text}</p><time className="mt-1 block text-right text-[10px] opacity-70">{time(message.createdAt)}</time>
+        </div></div>
+      </div>)}
+      {ask.isPending && <p role="status" className="text-xs text-muted-foreground">SofIA está consultando…</p>}
+    </div>
+    {(history.error || ask.error) && <div role="alert" className="shrink-0 border-t bg-red-50 px-4 py-2 text-xs text-red-800 dark:bg-red-950/40 dark:text-red-200">{ask.error?.message || history.error?.message || "Não foi possível consultar agora."}</div>}
+    <form onSubmit={event=>{event.preventDefault();void submit();}} className="shrink-0 border-t bg-background p-3 pb-[max(.75rem,env(safe-area-inset-bottom))]">
+      <label htmlFor="sofia-message" className="sr-only">Pergunta para a SofIA</label><div className="flex items-end gap-2"><Textarea id="sofia-message" rows={2} maxLength={1000} value={draft} disabled={ask.isPending || history.isLoading} onChange={event=>{setDraft(event.target.value);if(attempt?.text!==event.target.value.trim())setAttempt(null);}} placeholder="Pergunte sobre pacientes ou contatos…" className="max-h-32 min-h-12 resize-none" onKeyDown={event=>{if(!event.nativeEvent.isComposing && event.key==="Enter" && !event.shiftKey){event.preventDefault();void submit();}}}/><Button type="submit" size="icon" aria-label="Enviar pergunta" disabled={!draft.trim() || ask.isPending || history.isLoading} className="h-12 w-12 shrink-0 bg-violet-700 text-white hover:bg-violet-800">{ask.isPending?<Loader2 className="h-5 w-5 animate-spin"/>:<Send className="h-5 w-5"/>}</Button></div>
+      <div className="mt-1 flex justify-between text-[10px] text-muted-foreground"><span>Enter envia · Shift+Enter quebra linha</span><span>{draft.length}/1000</span></div>
+    </form>
+  </div>;
 }
 
 function ChatConversation({ userId,thread,name,members,onBack,onActivity }: {
@@ -76,7 +133,8 @@ function ChatConversation({ userId,thread,name,members,onBack,onActivity }: {
   const [draftMentions,setDraftMentions]=useState<ChatMentionInput[]>([]);
   const [mentionQuery,setMentionQuery]=useState<ReturnType<typeof findMentionQuery>>(null);
   const [mentionIndex,setMentionIndex]=useState(0);
-  const mentionOptions=mentionQuery?filterMentionMembers(members,mentionQuery.query):[];
+  const mentionMembers=thread.peerId===null?[{id:0,name:"SofIA",username:"sofia"},...members]:members;
+  const mentionOptions=mentionQuery?filterMentionMembers(mentionMembers,mentionQuery.query):[];
   const [file,setFile] = useState<File|null>(null);
   const [fileError,setFileError] = useState("");
   const [emojiOpen,setEmojiOpen] = useState(false);
@@ -199,7 +257,9 @@ function ChatConversation({ userId,thread,name,members,onBack,onActivity }: {
     const value=draft.slice(0,mentionQuery.start)+label+" "+draft.slice(mentionQuery.end);
     if(value.length>4000)return;
     const spans=rebaseMentions(draft,value,draftMentions);
-    setDraftMentions([...spans,{userId:member.id,start:mentionQuery.start,end:mentionQuery.start+label.length}]);
+    // SofIA is a virtual participant. Its literal trigger must not be sent as a
+    // structured user mention because the server only accepts real group users.
+    setDraftMentions(member.id===0?spans:[...spans,{userId:member.id,start:mentionQuery.start,end:mentionQuery.start+label.length}]);
     const caret=mentionQuery.start+label.length+1;
     setDraft(value);setMentionQuery(null);
     setTimeout(()=>{if(alive.current){draftInput.current?.focus();draftInput.current?.setSelectionRange(caret,caret);}},0);

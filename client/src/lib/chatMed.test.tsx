@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import { afterEach,beforeEach,describe,expect,it,vi } from "vitest";
 import { cleanup,fireEvent,render,screen,waitFor } from "@testing-library/react";
-const api=vi.hoisted(()=>({history:vi.fn(),send:vi.fn(),sendFile:vi.fn(),attachment:vi.fn(),read:vi.fn(),refetch:vi.fn(),data:null as any}));
+const api=vi.hoisted(()=>({history:vi.fn(),send:vi.fn(),sendFile:vi.fn(),attachment:vi.fn(),read:vi.fn(),refetch:vi.fn(),data:null as any,sofiaAsk:vi.fn(),sofiaRefetch:vi.fn(),sofiaMessages:[] as any[]}));
 vi.mock("@/lib/trpc",async()=>{
   const {useState}=await import("react");
   return {trpc:{
-    useUtils:()=>({client:{chatMed:{history:{query:api.history},attachment:{query:api.attachment}}}}),
+    useUtils:()=>({client:{chatMed:{history:{query:api.history},attachment:{query:api.attachment}},sofia:{history:{query:vi.fn(async()=>({messages:[],hasMore:false}))}}}}),
     chatMed:{
       threads:{useQuery:()=>({data:api.data,error:null,isLoading:false,refetch:api.refetch})},
       sendFile:{useMutation:()=>({error:null,isPending:false,mutateAsync:api.sendFile})},
@@ -19,6 +19,13 @@ vi.mock("@/lib/trpc",async()=>{
         }};
       }},
     },
+    sofia:{
+      history:{useQuery:()=>({data:{messages:api.sofiaMessages,hasMore:false},error:null,isLoading:false,refetch:api.sofiaRefetch})},
+      ask:{useMutation:()=>{
+        const [error,setError]=useState<Error|null>(null);const [isPending,setPending]=useState(false);
+        return {error,isPending,mutateAsync:async(input:any)=>{setPending(true);setError(null);try{return await api.sofiaAsk(input);}catch(error){setError(error as Error);throw error;}finally{setPending(false);}}};
+      }},
+    },
   }};
 });
 import ChatMed,{mergeChatMessages} from "../components/ChatMed";
@@ -29,6 +36,8 @@ beforeEach(()=>{
   api.history.mockImplementation(async input=>({messages:input.afterId?[]:[first],hasMore:false}));
   api.send.mockImplementation(async input=>({...first,id:2,senderId:1,senderName:"Você",text:input.text}));
   api.sendFile.mockImplementation(async input=>({...first,id:3,senderId:1,text:input.text || "📎 "+input.name,attachment:{name:input.name,mime:"application/pdf",size:10}}));
+  api.sofiaMessages=[];
+  api.sofiaAsk.mockImplementation(async input=>{api.sofiaMessages=[...api.sofiaMessages,{id:10,role:"user",text:input.text,createdAt:new Date()},{id:11,role:"assistant",text:"Encontrei 2 pacientes.",createdAt:new Date()}];return {userMessage:api.sofiaMessages[0],assistantMessage:api.sofiaMessages[1]};});
 });
 afterEach(cleanup);
 async function openConversation(name="# equipe") {
@@ -66,6 +75,17 @@ describe("janela ChatMed",()=>{
     fireEvent.click(screen.getByRole("button",{name:/Abrir ChatMed/}));
     expect(screen.getByText("Seu grupo ainda não foi configurado.")).toBeTruthy();
     expect(api.history).not.toHaveBeenCalled();
+  });
+  it("oferece conversa particular com a SofIA mesmo sem grupo",async()=>{
+    api.data={group:null,threads:[],unread:0};render(<ChatMed userId={1}/>);
+    fireEvent.click(screen.getByRole("button",{name:/Abrir ChatMed/}));
+    fireEvent.click(screen.getByRole("button",{name:/SofIA/}));
+    expect(screen.getByText("Conversa particular · somente leitura")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Pergunta para a SofIA"),{target:{value:"Quantos pacientes estão sem celular?"}});
+    fireEvent.click(screen.getByRole("button",{name:"Enviar pergunta"}));
+    await waitFor(()=>expect(api.sofiaAsk).toHaveBeenCalledOnce());
+    expect(api.sofiaAsk.mock.calls[0][0].text).toBe("Quantos pacientes estão sem celular?");
+    expect(api.sofiaAsk.mock.calls[0][0].clientId).toMatch(/^[0-9a-f-]{36}$/i);
   });
   it("une páginas e incrementos sem duplicar mensagens nem mudar a ordem",()=>{
     expect(mergeChatMessages([{...first,id:3},first],[{...first,id:2},first]).map(message=>message.id)).toEqual([1,2,3]);
@@ -119,6 +139,16 @@ describe("janela ChatMed",()=>{
     fireEvent.click(screen.getByRole("button",{name:"Enviar mensagem"}));
     await waitFor(()=>expect(api.send).toHaveBeenCalledOnce());
     expect(api.send.mock.calls[0][0]).toMatchObject({text:"@Colega fictícia",mentions:[{userId:2,start:0,end:16}]});
+  });
+  it("oferece @SofIA no grupo como gatilho literal, sem fingir que é um usuário",async()=>{
+    render(<ChatMed userId={1}/>);await openConversation();
+    fireEvent.change(screen.getByLabelText("Mensagem"),{target:{value:"@sof",selectionStart:4}});
+    fireEvent.click(await screen.findByRole("option",{name:/SofIA/}));
+    fireEvent.change(screen.getByLabelText("Mensagem"),{target:{value:"@SofIA quantos pacientes há?",selectionStart:29}});
+    fireEvent.click(screen.getByRole("button",{name:"Enviar mensagem"}));
+    await waitFor(()=>expect(api.send).toHaveBeenCalledOnce());
+    expect(api.send.mock.calls[0][0]).toMatchObject({text:"@SofIA quantos pacientes há?"});
+    expect(api.send.mock.calls[0][0].mentions).toBeUndefined();
   });
   it("fecha sugestões sem enviar e não oferece menções no particular",async()=>{
     render(<ChatMed userId={1}/>);await openConversation();

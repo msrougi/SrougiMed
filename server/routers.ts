@@ -5,6 +5,7 @@ import {cloudflareAccessEnabled,assertAccessUser} from "./cloudflareAccess";
 import {secondFactorEnabled,trustedDeviceStore,TRUST_COOKIE,trustCookieOptions} from "./trustedDevices";
 import { recordNumberSchema } from "../shared/recordNumber";
 import { chatMedRouter } from "./chatMedRouter";
+import { sofiaRouter } from "./sofiaRouter";
 import { assertDeviceAccess } from "./deviceAccess";
 import { beginNetworkLogin,emailCodeStore } from "./loginEmailCode";
 import { recordAccessIp } from "./accessIpLog";
@@ -42,6 +43,7 @@ export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
   chatMed: chatMedRouter,
+  sofia: sofiaRouter,
   auth: router({
     me: publicProcedure.query(opts => withoutPassword(opts.ctx.user)),
     logout: publicProcedure.mutation(({ ctx }) => {

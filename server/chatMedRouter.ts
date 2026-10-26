@@ -5,6 +5,7 @@ import { protectedProcedure, router } from "./_core/trpc";
 import { chatHistorySchema, chatSendSchema, chatThreadSchema } from "../shared/chatMed";
 import { getDb } from "./db";
 import { ChatMedStore } from "./chatMedStore";
+import { hasSofiaMention,SofiaStore,withoutSofiaMention } from "./sofiaStore";
 
 async function store() {
   const db = await getDb();
@@ -14,7 +15,16 @@ async function store() {
 export const chatMedRouter = router({
   threads: protectedProcedure.query(async ({ ctx }) => (await store()).threads(ctx.user.id)),
   history: protectedProcedure.input(chatHistorySchema).query(async ({ ctx,input }) => (await store()).history(ctx.user.id,input)),
-  send: protectedProcedure.input(chatSendSchema).mutation(async ({ ctx,input }) => (await store()).send(ctx.user.id,input)),
+  send: protectedProcedure.input(chatSendSchema).mutation(async ({ ctx,input }) => {
+    const chat=await store();const sent=await chat.send(ctx.user.id,input);
+    if(input.peerId===null && hasSofiaMention(input.text)){
+      try{
+        const db=await getDb();
+        if(db)await new SofiaStore(db.$client.promise()).answerGroup(ctx.user.id,input.group,withoutSofiaMention(input.text),sent.id);
+      }catch(error){console.error("[SofIA] GROUP_REPLY_FAILED",(error as {code?:string}).code||"");}
+    }
+    return sent;
+  }),
   sendFile: protectedProcedure.input(chatThreadSchema.merge(chatFilePayloadSchema)).mutation(async ({ctx,input}) => (await store()).sendFile(ctx.user.id,input)),
   attachment: protectedProcedure.input(chatThreadSchema.extend({messageId:z.number().int().positive()})).query(async ({ctx,input}) => {
     ctx.res.setHeader("Cache-Control","private, no-store");

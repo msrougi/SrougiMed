@@ -118,6 +118,8 @@ describe("regressão de acesso", () => {
       () => c.phoneBook.create({ name: "Fixture" }),
       () => c.phoneBook.update({ id: 1, data: { name: "Fixture" } }),
       () => c.phoneBook.delete(1),
+      () => c.sofia.history({}),
+      () => c.sofia.ask({ text: "Liste os pacientes",clientId:"d14d7929-51ee-4a63-9479-1eadf8070666" }),
     ];
     for (const operation of operations)
       await expect(operation()).rejects.toMatchObject({ code: "UNAUTHORIZED" });
