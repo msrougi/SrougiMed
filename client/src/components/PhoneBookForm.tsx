@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 interface PhoneBookFormProps {
   onSuccess?: () => void;
-  initialData?: any;
+  initialData?: (Partial<Record<keyof typeof defaultFormData, string | null>> & { id?: number }) | null;
 }
 
 const defaultFormData = {
@@ -20,15 +20,16 @@ const defaultFormData = {
   observations: "",
 };
 
+function contactFormData(initialData?: PhoneBookFormProps["initialData"]) {
+  // Normalize before the first render: an effect is too late for .length and
+  // controlled inputs. Keep existing strings exactly as stored.
+  return Object.fromEntries(Object.entries(defaultFormData).map(([key,value])=>[
+    key,initialData?.[key as keyof typeof defaultFormData] ?? value,
+  ])) as typeof defaultFormData;
+}
+
 export default function PhoneBookForm({ onSuccess, initialData }: PhoneBookFormProps) {
-  const [formData, setFormData] = useState(initialData || {
-    name: "",
-    email: "",
-    occupation: "",
-    category: "",
-    phone: "",
-    observations: "",
-  });
+  const [formData, setFormData] = useState(() => contactFormData(initialData));
 
   const createMutation = trpc.phoneBook.create.useMutation({
     onSuccess: () => {
@@ -54,14 +55,7 @@ export default function PhoneBookForm({ onSuccess, initialData }: PhoneBookFormP
 
   // Carregar dados iniciais se for edição
   useEffect(() => {
-    if (initialData?.id) {
-      // Converter todos os valores null em string vazia para evitar erro de React
-      const cleanedData = Object.entries(initialData).reduce((acc, [key, value]) => {
-        acc[key] = value === null ? "" : value;
-        return acc;
-      }, {} as any);
-      setFormData(cleanedData);
-    }
+    setFormData(contactFormData(initialData));
   }, [initialData]);
 
 
