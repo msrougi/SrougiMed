@@ -12,6 +12,18 @@ function Fixture({unread=2}:{unread?:number}) {
 beforeEach(()=>{vi.clearAllMocks();localStorage.clear();document.title="SrougiMed";});
 afterEach(()=>{cleanup();delete (navigator as any).serviceWorker;vi.unstubAllGlobals();});
 describe("alertas do ChatMed",()=>{
+  it("mostra só o ícone e abre as opções em painel flutuante",async()=>{
+    render(<Fixture/>);
+    const bell=screen.getByRole("button",{name:"Avisos do ChatMed"});
+    expect(bell.textContent).toBe("");
+    expect(screen.queryByText(/configurar/)).toBeNull();
+    expect(screen.queryByRole("button",{name:"Som ligado"})).toBeNull();
+    fireEvent.click(bell);
+    expect(await screen.findByRole("dialog",{name:"Configurações de avisos do ChatMed"})).toBeTruthy();
+    expect(screen.getByRole("button",{name:"Som ligado"})).toBeTruthy();
+    fireEvent.keyDown(document,{key:"Escape"});
+    await waitFor(()=>expect(screen.queryByRole("button",{name:"Som ligado"})).toBeNull());
+  });
   it("detecta mensagem nova mesmo sem aumento do total e não alerta histórico ou envio próprio",()=>{
     const previous=incomingCursor([{peerId:null,lastIncomingId:10,unread:3}]);
     expect(hasNewIncoming(previous,[{peerId:null,lastIncomingId:10,unread:5}])).toBe(false);

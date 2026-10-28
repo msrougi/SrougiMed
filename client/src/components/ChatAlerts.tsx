@@ -2,6 +2,7 @@ import {useCallback,useEffect,useRef,useState} from "react";
 import {Bell} from "lucide-react";
 import {trpc} from "@/lib/trpc";
 import {Button} from "./ui/button";
+import {Popover,PopoverTrigger,PopoverContent} from "./ui/popover";
 import {CHAT_ALERT_BODY} from "@shared/chatAlerts";
 import {readChatAlertPreferences,saveChatAlertPreferences,unlockChatSound,playChatSound,playNewChatSound,pushSupported,chatPushRegistration,pushKeyBytes,incomingCursor,hasNewIncoming,type IncomingThread} from "@/lib/chatAlerts";
 
@@ -94,15 +95,18 @@ export default function useChatAlerts({userId,group,threads,unread,onActivity,on
     if(active)try{const registration=await chatPushRegistration();await registration.showNotification("SrougiMed · Teste",{body:CHAT_ALERT_BODY,icon:"/icons/app-192.png",tag:"chatmed-test",silent:true,data:{url:"/dashboard?chatmed=1"}});}catch{setStatus("O sistema não permitiu mostrar o aviso. Confira as permissões.");return;}
     setStatus(ready?"Teste executado. Se não ouviu, confira o volume e a opção de som.":"Som indisponível neste navegador; os avisos visuais continuam ativos.");
   }
-  return <div className="shrink-0 border-b px-4 py-2">
-    <button type="button" onClick={()=>setPanel(!panel)} aria-expanded={panel} className="flex items-center gap-2 text-xs text-muted-foreground"><Bell className="h-4 w-4"/>Avisos do ChatMed · {active?"ativados neste aparelho":"configurar"}</button>
-    {panel && <div className="mt-3 space-y-2 text-xs">
+  return <Popover open={panel} onOpenChange={setPanel}>
+    <PopoverTrigger asChild>
+      <Button type="button" variant="ghost" size="icon" aria-label="Avisos do ChatMed" title="Avisos do ChatMed" className="h-9 w-9 shrink-0 rounded-full text-muted-foreground hover:text-brand"><Bell className="h-4 w-4" aria-hidden="true"/></Button>
+    </PopoverTrigger>
+    <PopoverContent align="start" sideOffset={8} aria-label="Configurações de avisos do ChatMed" className="max-h-[var(--radix-popover-content-available-height)] w-80 max-w-[calc(100vw-2rem)] space-y-3 overflow-y-auto rounded-xl text-xs">
+      <h3 className="text-sm font-semibold">Avisos do ChatMed</h3>
       <p>Os avisos mostram apenas “Nova mensagem”, sem conteúdo ou dados de pacientes.</p>
       <div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" disabled={busy} onClick={()=>void toggleSound()} aria-pressed={preferences.sound}>Som {preferences.sound?"ligado":"desligado"}</Button>
         <Button size="sm" disabled={busy} onClick={()=>void (active?disable():enable())}>{busy?"Aguarde…":active?"Desativar avisos neste aparelho":"Ativar avisos neste aparelho"}</Button>
         <Button size="sm" variant="outline" disabled={busy} onClick={()=>void test()}>Testar aviso</Button></div>
       <p className="text-muted-foreground">No iPhone/iPad, adicione à Tela de Início. Modo Foco, permissões e volume do aparelho podem silenciar os avisos. Ao sair da conta, os avisos desse login são removidos.</p>
       {status && <p role="status">{status}</p>}
-    </div>}
-  </div>;
+    </PopoverContent>
+  </Popover>;
 }

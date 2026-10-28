@@ -47,6 +47,20 @@ async function openConversation(name="# equipe") {
   await waitFor(()=>expect((screen.getByLabelText("Mensagem") as HTMLTextAreaElement).disabled).toBe(false));
 }
 describe("janela ChatMed",()=>{
+  it("posiciona o sininho ao lado do título, sem barra de configuração",async()=>{
+    render(<ChatMed userId={1}/>);
+    fireEvent.click(screen.getByRole("button",{name:/Abrir ChatMed/}));
+    const title=screen.getByRole("heading",{name:"ChatMed"});
+    const bell=screen.getByRole("button",{name:"Avisos do ChatMed"});
+    expect(title.parentElement?.contains(bell)).toBe(true);
+    expect(bell.textContent).toBe("");
+    expect(screen.queryByText(/Avisos do ChatMed ·/)).toBeNull();
+    fireEvent.click(bell);
+    expect(await screen.findByRole("dialog",{name:"Configurações de avisos do ChatMed"})).toBeTruthy();
+    fireEvent.keyDown(document,{key:"Escape"});
+    await waitFor(()=>expect(screen.queryByRole("dialog",{name:"Configurações de avisos do ChatMed"})).toBeNull());
+    expect(screen.getByRole("heading",{name:"ChatMed"})).toBeTruthy();
+  });
   it("mostra a pergunta da SofIA imediatamente enquanto aguarda a resposta e não a duplica",async()=>{
     let answer!:(value:any)=>void;
     api.sofiaAsk.mockImplementation(()=>new Promise(resolve=>{answer=resolve;}));
