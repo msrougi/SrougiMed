@@ -16,11 +16,25 @@ export function hasNewIncoming(previous:Map<string,number>,threads:IncomingThrea
   return threads.some(thread=>thread.unread>0 && (thread.lastIncomingId||0)>(previous.get(String(thread.peerId))||0));
 }
 let audio:AudioContext|null=null;
+export const CHAT_ALERT_DEADLINE_MS=20000;
+export function chatAlertStep<T>(operation:()=>Promise<T>,stage:string,deadline=Date.now()+CHAT_ALERT_DEADLINE_MS,maxMs=8000):Promise<T> {
+  const end=Math.min(deadline,Date.now()+maxMs);
+  const failure=()=>new Error(`Tempo esgotado ao ${stage}. Tente novamente. O som dentro do ChatMed pode ser usado independentemente dos avisos externos.`);
+  if(end<=Date.now())return Promise.reject(failure());
+  return new Promise((resolve,reject)=>{
+    const timer=setTimeout(()=>reject(failure()),end-Date.now());
+    try {
+      operation().then(value=>{clearTimeout(timer);if(Date.now()>=end)reject(failure());else resolve(value);},error=>{clearTimeout(timer);reject(error);});
+    }catch(error){clearTimeout(timer);reject(error);}
+  });
+}
 export async function unlockChatSound() {
   try {
     const Audio=window.AudioContext || (window as unknown as {webkitAudioContext?:typeof AudioContext}).webkitAudioContext;
     if(!Audio)return false;
-    audio ??= new Audio();await audio.resume();return audio.state==="running";
+    if(!audio || audio.state==="closed")audio=new Audio();
+    if(audio.state!=="running")await chatAlertStep(()=>audio!.resume(),"liberar o áudio",Date.now()+1500,1500);
+    return audio.state==="running";
   }catch{return false;}
 }
 export function playChatSound() {
@@ -49,9 +63,29 @@ export async function playNewChatSound(userId:number,messageId:number) {
   if(navigator.locks)await navigator.locks.request(`chatmed-sound:${userId}`,play);
   else play();
 }
-export async function chatPushRegistration() {
-  await navigator.serviceWorker.register("/chatmed-sw.js?v=1",{scope:"/",updateViaCache:"none"});
-  return navigator.serviceWorker.ready;
+export async function chatPushRegistration(deadline=Date.now()+CHAT_ALERT_DEADLINE_MS,onStage?:(stage:string)=>void) {
+  onStage?.("Preparando o serviço de notificações");
+  const registration=await chatAlertStep(()=>navigator.serviceWorker.register("/chatmed-sw.js?v=1",{scope:"/",updateViaCache:"none"}),"preparar o serviço de notificações",deadline);
+  if(registration.active?.state==="activated")return registration;
+  onStage?.("Aguardando a ativação do serviço de notificações");
+  let cleanup=()=>{};
+  try {
+    // Wait for this registration, not navigator.serviceWorker.ready (which
+    // never rejects and may wait forever for another registration/scope).
+    await chatAlertStep(()=>new Promise<void>((resolve,reject)=>{
+      const workers=new Set<ServiceWorker>();
+      const changed=()=>{
+        for(const worker of [registration.installing,registration.waiting,registration.active])if(worker && !workers.has(worker)){
+          workers.add(worker);worker.addEventListener("statechange",changed);
+        }
+        if(registration.active?.state==="activated")resolve();
+        else if(workers.size && Array.from(workers).every(worker=>worker.state==="redundant"))reject(new Error("O navegador não conseguiu iniciar o serviço de notificações. Atualize a página e tente novamente."));
+      };
+      cleanup=()=>{registration.removeEventListener("updatefound",changed);workers.forEach(worker=>worker.removeEventListener("statechange",changed));};
+      registration.addEventListener("updatefound",changed);changed();
+    }),"ativar o serviço de notificações",deadline);
+    return registration;
+  }finally{cleanup();}
 }
 export function pushKeyBytes(value:string) {
   const text=atob(value.replace(/-/g,"+").replace(/_/g,"/"));
