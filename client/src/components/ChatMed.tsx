@@ -38,10 +38,12 @@ export default function ChatMed({ userId }: { userId: number }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent onEscapeKeyDown={event=>{if(document.getElementById("chatmed-mention-list"))event.preventDefault();}} className="inset-0 flex h-dvh max-h-dvh w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none p-0 sm:inset-auto sm:p-0 sm:max-h-[calc(100dvh-2rem)] sm:bottom-4 sm:left-auto sm:right-4 sm:top-auto sm:h-[min(42rem,calc(100dvh-2rem))] sm:w-[26rem] sm:max-w-[calc(100vw-2rem)] sm:rounded-2xl">
         <DialogHeader className="shrink-0 border-b bg-[#087e78]/10 px-4 py-4 pr-12 pt-[max(1rem,env(safe-area-inset-top))] text-left">
-          <DialogTitle className="flex items-center gap-2 text-brand"><MessageCircle className="h-5 w-5" />ChatMed</DialogTitle>
+          <div className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-brand"><MessageCircle className="h-5 w-5" />ChatMed</DialogTitle>
+            {alertSettings}
+          </div>
           <DialogDescription>Converse com a sua equipe.</DialogDescription>
         </DialogHeader>
-        {alertSettings}
         {threads.error ? <div role="alert" className="p-5 text-sm">Não foi possível atualizar o chat. <Button variant="outline" className="mt-3" onClick={() => void threads.refetch()}>Tentar novamente</Button></div> :
           threads.isLoading ? <p className="p-5 text-sm text-muted-foreground">Carregando conversas…</p> :
           sofiaOpen ? <SofiaConversation onBack={()=>setSofiaOpen(false)}/> :
