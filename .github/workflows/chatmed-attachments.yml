@@ -10,6 +10,8 @@ on:
       - "client/src/components/ChatAlerts.tsx"
       - "client/src/lib/chatAlerts*"
       - "client/src/components/PhoneBookForm.tsx"
+      - "client/src/components/PatientSearch.tsx"
+      - "client/src/lib/searchScreens.test.tsx"
       - "client/src/lib/phoneBookForm.test.tsx"
       - "client/src/pages/Login.tsx"
       - "client/src/components/AdminPanel.tsx"

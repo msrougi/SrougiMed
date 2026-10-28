@@ -34,6 +34,18 @@ import PatientSearch from "../components/PatientSearch";
 import PhoneBookSearch from "../components/PhoneBookSearch";
 
 afterEach(cleanup);
+it.each(["11122233344", "111.222.333-44", null, undefined])("mostra CPF %s em vez de e-mail no resumo de pacientes", async cpf => {
+  api.patients.mockResolvedValueOnce({ ...pagination(1, 1, 10), items: [{ id: 1, name: "Paciente fictício", cpf, email: "fixture@example.invalid" }] });
+  render(<PatientSearch />);
+  fireEvent.change(screen.getByLabelText("Nome do Paciente"), { target: { value: "Fictício" } });
+  fireEvent.click(screen.getByRole("button", { name: "Buscar" }));
+  await screen.findByText("Paciente fictício");
+  expect(screen.getByRole("columnheader", { name: "CPF" })).toBeTruthy();
+  expect(screen.queryByRole("columnheader", { name: "E-mail" })).toBeNull();
+  const cell = screen.getAllByRole("cell").find(element => element.getAttribute("data-label") === "CPF");
+  expect(cell?.textContent).toBe(cpf || "-");
+  expect(screen.queryByText("fixture@example.invalid")).toBeNull();
+});
 it.each(["11122233344", "111.222.333-44"])("busca CPF completo %s e mantém o filtro na paginação", async cpf => {
   render(<PatientSearch />);
   fireEvent.change(screen.getByLabelText("CPF"), { target: { value: cpf } });

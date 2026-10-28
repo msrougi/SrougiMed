@@ -237,7 +237,7 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
                   <TableHead>Prontuário</TableHead>
                   <TableHead>Cidade</TableHead>
                   <TableHead>Telefone</TableHead>
-                  <TableHead>E-mail</TableHead>
+                  <TableHead>CPF</TableHead>
                   <TableHead className="sticky right-0 z-20 w-36 min-w-36 border-l bg-white dark:bg-card text-right">
                     Ações
                   </TableHead>
@@ -268,10 +268,10 @@ export default function PatientSearch({ onEditPatient }: PatientSearchProps) {
                       {patient.phone || "-"}
                     </TableCell>
                     <TableCell
-                      data-label="E-mail"
+                      data-label="CPF"
                       className="max-w-60 whitespace-normal [overflow-wrap:anywhere]"
                     >
-                      {patient.email || "-"}
+                      {patient.cpf || "-"}
                     </TableCell>
                     <TableCell
                       data-label="Ações"
