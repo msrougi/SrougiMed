@@ -2,6 +2,8 @@
 
 Recursos: som curto (após interação com a página), contador e destaque do botão, número no título da aba e badge do aplicativo quando suportado. Em ChatMed → Avisos do ChatMed, cada usuário pode ligar/desligar o som, ativar/desativar notificações neste aparelho e testar o aviso.
 
+As opções ficam no sininho junto ao título ChatMed. Som na página e push externo são independentes: o áudio é liberado no gesto do clique, sem bloquear o cadastro de push. Após a permissão, o cadastro tem orçamento total de 20 segundos, com limites por etapa e indicação da etapa atual. Instalação/ativação do service worker, conexão ao serviço push e salvamento têm timeout; o botão é liberado após falha para permitir nova tentativa. Uma operação atrasada não pode marcar o cadastro como confirmado na interface. A permissão já concedida não é solicitada de novo. Falha de rede/serviço push ainda pode impedir a ativação e deve ser validada no aparelho real.
+
 Notificações externas dependem de autorização explícita no navegador. No iPhone/iPad, abrir o SrougiMed adicionado à Tela de Início. Modo Foco, volume, permissões do sistema, conectividade e execução em segundo plano podem impedir som/vibração/entrega. Fechar a janela não é o mesmo que encerrar/forçar a parada do navegador. Não prometer entrega em tempo real ou alertas críticos garantidos.
 
 O service worker só trata notificações: não intercepta requisições, não cria cache offline nem guarda dados de pacientes. O aviso contém apenas o nome do aplicativo, texto genérico e ID técnico da mensagem; nunca remetente, grupo, conteúdo, anexos ou dados clínicos. Clicar abre o ChatMed no próprio domínio e exige login normal se a sessão expirou.

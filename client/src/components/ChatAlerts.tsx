@@ -4,7 +4,7 @@ import {trpc} from "@/lib/trpc";
 import {Button} from "./ui/button";
 import {Popover,PopoverTrigger,PopoverContent} from "./ui/popover";
 import {CHAT_ALERT_BODY} from "@shared/chatAlerts";
-import {readChatAlertPreferences,saveChatAlertPreferences,unlockChatSound,playChatSound,playNewChatSound,pushSupported,chatPushRegistration,pushKeyBytes,incomingCursor,hasNewIncoming,type IncomingThread} from "@/lib/chatAlerts";
+import {readChatAlertPreferences,saveChatAlertPreferences,unlockChatSound,playChatSound,playNewChatSound,pushSupported,chatPushRegistration,pushKeyBytes,incomingCursor,hasNewIncoming,chatAlertStep,CHAT_ALERT_DEADLINE_MS,type IncomingThread} from "@/lib/chatAlerts";
 
 export default function useChatAlerts({userId,group,threads,unread,onActivity,onOpen}:{
   userId:number;group:string|null|undefined;threads:IncomingThread[]|undefined;unread:number;
@@ -16,19 +16,21 @@ export default function useChatAlerts({userId,group,threads,unread,onActivity,on
   const [active,setActive]=useState(false);
   const cursor=useRef<{group:string|null|undefined;ids:Map<string,number>}|null>(null);
   const activity=useRef(onActivity),open=useRef(onOpen);activity.current=onActivity;open.current=onOpen;
-  const subscribe=useCallback(async(sound:boolean)=>{
-    const registration=await chatPushRegistration();
-    const {publicKey}=await utils.client.chatAlerts.publicKey.query();
-    let subscription=await registration.pushManager.getSubscription();
+  const subscribe=useCallback(async(sound:boolean,onStage?:(stage:string)=>void)=>{
+    const deadline=Date.now()+CHAT_ALERT_DEADLINE_MS;
+    const step=<T,>(operation:()=>Promise<T>,stage:string,maxMs?:number)=>{onStage?.(stage);return chatAlertStep(operation,stage,deadline,maxMs);};
+    const registration=await chatPushRegistration(deadline,onStage);
+    const {publicKey}=await step(()=>utils.client.chatAlerts.publicKey.query(),"obter a configuração dos avisos");
+    let subscription=await step(()=>registration.pushManager.getSubscription(),"verificar a assinatura deste aparelho");
     const existingKey=subscription?.options.applicationServerKey;
     const key=pushKeyBytes(publicKey);
     if(subscription && existingKey && new Uint8Array(existingKey).join()!==key.join()) {
-      await subscription.unsubscribe();subscription=null;
+      await step(()=>subscription!.unsubscribe(),"renovar a assinatura deste aparelho");subscription=null;
     }
-    subscription ??= await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:key});
+    subscription ??= await step(()=>registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:key}),"conectar ao serviço de notificações do navegador",12000);
     const value=subscription.toJSON();
     if(!value.endpoint || !value.keys)throw Error("O navegador não forneceu a assinatura dos avisos.");
-    await utils.client.chatAlerts.subscribe.mutate({endpoint:value.endpoint,keys:{p256dh:value.keys.p256dh,auth:value.keys.auth},sound});
+    await step(()=>utils.client.chatAlerts.subscribe.mutate({endpoint:value.endpoint!,keys:{p256dh:value.keys!.p256dh,auth:value.keys!.auth},sound}),"salvar a ativação no SrougiMed");
     setActive(true);return registration;
   },[utils]);
   useEffect(()=>{
@@ -65,34 +67,38 @@ export default function useChatAlerts({userId,group,threads,unread,onActivity,on
   },[unread]);
   async function enable() {
     setBusy(true);setStatus("");
+    // Start audio while the click still counts as a user gesture. Its bounded
+    // result must never prevent push registration after browser permission.
+    if(preferences.sound)void unlockChatSound();
     try {
       if(!pushSupported())throw Error("Este navegador não oferece push. No iPhone/iPad, adicione o SrougiMed à Tela de Início e abra pelo ícone.");
       // Permission request happens directly from the user's click.
-      const permission=await Notification.requestPermission();
+      const permission=Notification.permission==="granted"?"granted":await chatAlertStep(()=>Notification.requestPermission(),"aguardar a permissão do navegador",Date.now()+60000,60000);
       if(permission!=="granted")throw Error(permission==="denied"?"Notificações bloqueadas. Libere-as nas configurações do navegador para srougi.app.":"Permissão não concedida. Você pode tentar novamente.");
-      await unlockChatSound();await subscribe(preferences.sound);
+      await subscribe(preferences.sound,stage=>setStatus(stage+"…"));
       const next={...preferences,push:true};setPreferences(next);saveChatAlertPreferences(userId,next);
-      setStatus("Avisos ativados neste aparelho. O sistema precisa permitir notificações e estar conectado à internet.");
+      setStatus("Avisos ativados neste aparelho. Clique em Testar aviso para conferir o som. O sistema precisa permitir notificações e estar conectado à internet.");
     }catch(error){setStatus(error instanceof Error?error.message:"Não foi possível ativar os avisos.");}
     finally{setBusy(false);}
   }
   async function disable() {
     setBusy(true);try {
-      const registration=await navigator.serviceWorker?.getRegistration("/");
-      const subscription=await registration?.pushManager.getSubscription();
-      if(subscription){await utils.client.chatAlerts.unsubscribe.mutate({endpoint:subscription.endpoint});await subscription.unsubscribe();}
+      const deadline=Date.now()+CHAT_ALERT_DEADLINE_MS;
+      const registration=await chatAlertStep(()=>navigator.serviceWorker?.getRegistration("/") || Promise.resolve(undefined),"localizar os avisos deste aparelho",deadline);
+      const subscription=registration?await chatAlertStep(()=>registration.pushManager.getSubscription(),"localizar a assinatura deste aparelho",deadline):null;
+      if(subscription){await chatAlertStep(()=>utils.client.chatAlerts.unsubscribe.mutate({endpoint:subscription.endpoint}),"desativar os avisos no SrougiMed",deadline);await chatAlertStep(()=>subscription.unsubscribe(),"desativar os avisos no navegador",deadline);}
       const next={...preferences,push:false};setPreferences(next);saveChatAlertPreferences(userId,next);setActive(false);setStatus("Avisos externos desativados neste aparelho.");
     }catch{setStatus("Não foi possível desativar. Tente novamente.");}finally{setBusy(false);}
   }
   async function toggleSound() {
     const next={...preferences,sound:!preferences.sound};
     setPreferences(next);saveChatAlertPreferences(userId,next);
-    if(next.sound){await unlockChatSound();playChatSound();}
+    if(next.sound){const ready=await unlockChatSound();if(ready)playChatSound();else setStatus("O navegador ainda não liberou o áudio. Clique em Testar aviso. O som não depende de ativar os avisos externos.");}
     if(active)try{await subscribe(next.sound);}catch{setStatus("Som local atualizado; tente ativar novamente para atualizar o som dos avisos externos.");}
   }
   async function test() {
     const ready=await unlockChatSound();if(preferences.sound && ready)playChatSound();
-    if(active)try{const registration=await chatPushRegistration();await registration.showNotification("SrougiMed · Teste",{body:CHAT_ALERT_BODY,icon:"/icons/app-192.png",tag:"chatmed-test",silent:true,data:{url:"/dashboard?chatmed=1"}});}catch{setStatus("O sistema não permitiu mostrar o aviso. Confira as permissões.");return;}
+    if(active)try{const registration=await chatPushRegistration();await chatAlertStep(()=>registration.showNotification("SrougiMed · Teste",{body:CHAT_ALERT_BODY,icon:"/icons/app-192.png",tag:"chatmed-test",silent:true,data:{url:"/dashboard?chatmed=1"}}),"mostrar o aviso de teste");}catch{setStatus("O sistema não permitiu mostrar o aviso. Confira as permissões.");return;}
     setStatus(ready?"Teste executado. Se não ouviu, confira o volume e a opção de som.":"Som indisponível neste navegador; os avisos visuais continuam ativos.");
   }
   return <Popover open={panel} onOpenChange={setPanel}>

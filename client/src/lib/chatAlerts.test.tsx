@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import {beforeEach,afterEach,describe,it,expect,vi} from "vitest";
-import {render,screen,fireEvent,waitFor,cleanup} from "@testing-library/react";
+import {render,screen,fireEvent,waitFor,cleanup,act} from "@testing-library/react";
 import {incomingCursor,hasNewIncoming,readChatAlertPreferences,saveChatAlertPreferences} from "./chatAlerts";
 const api=vi.hoisted(()=>({key:vi.fn(),subscribe:vi.fn(),unsubscribe:vi.fn(),register:vi.fn(),permission:vi.fn()}));
 const utils={client:{chatAlerts:{publicKey:{query:api.key},subscribe:{mutate:api.subscribe},unsubscribe:{mutate:api.unsubscribe}}}};
@@ -10,8 +10,42 @@ function Fixture({unread=2}:{unread?:number}) {
   return useChatAlerts({userId:1,group:"fixture",threads:[{peerId:null,unread,lastIncomingId:unread}],unread,onActivity:()=>{},onOpen:()=>{}});
 }
 beforeEach(()=>{vi.clearAllMocks();localStorage.clear();document.title="SrougiMed";});
-afterEach(()=>{cleanup();delete (navigator as any).serviceWorker;vi.unstubAllGlobals();});
+afterEach(()=>{cleanup();if(vi.isFakeTimers()){vi.clearAllTimers();vi.useRealTimers();}delete (navigator as any).serviceWorker;vi.unstubAllGlobals();});
 describe("alertas do ChatMed",()=>{
+  it.each(["áudio","navegador","servidor"] as const)("não prende a tela quando %s não responde e permite nova tentativa",async stage=>{
+    vi.useFakeTimers();
+    vi.stubGlobal("isSecureContext",true);vi.stubGlobal("PushManager",function(){});
+    vi.stubGlobal("Notification",{permission:"granted",requestPermission:api.permission});
+    if(stage==="áudio")vi.stubGlobal("AudioContext",function(){return {state:"suspended",resume:()=>new Promise<void>(()=>{})};});
+    const value={endpoint:"https://fcm.googleapis.com/wp/fixture",keys:{p256dh:"A".repeat(87),auth:"B".repeat(22)}};
+    const subscription={endpoint:value.endpoint,options:{},toJSON:()=>value,unsubscribe:vi.fn(async()=>true)};
+    let finishLate!:(value:any)=>void;
+    const manager={getSubscription:vi.fn(async()=>null as typeof subscription|null),subscribe:vi.fn(async()=>subscription)};
+    const registration={pushManager:manager,active:{state:"activated"}};
+    if(stage==="navegador")manager.subscribe.mockImplementation(()=>new Promise(resolve=>finishLate=resolve));
+    api.key.mockResolvedValue({publicKey:btoa("a".repeat(65))});
+    api.subscribe.mockImplementation(stage==="servidor"?()=>new Promise(resolve=>finishLate=resolve):async()=>({success:true}));
+    Object.defineProperty(navigator,"serviceWorker",{configurable:true,value:{register:async()=>registration,addEventListener:vi.fn(),removeEventListener:vi.fn()}});
+    render(<Fixture/>);fireEvent.click(screen.getByRole("button",{name:"Avisos do ChatMed"}));
+    fireEvent.click(screen.getByRole("button",{name:"Ativar avisos neste aparelho"}));
+    await act(async()=>{await vi.advanceTimersByTimeAsync(50);});
+    if(stage==="áudio") {
+      expect(screen.getByRole("button",{name:"Desativar avisos neste aparelho"})).toBeTruthy();
+      expect(readChatAlertPreferences(1).push).toBe(true);return;
+    }
+    await act(async()=>{await vi.advanceTimersByTimeAsync(20000);});
+    expect((screen.getByRole("button",{name:"Ativar avisos neste aparelho"}) as HTMLButtonElement).disabled).toBe(false);
+    expect(screen.getByRole("status").textContent).toContain(stage==="navegador"?"conectar ao serviço":"salvar a ativação");
+    expect(readChatAlertPreferences(1).push).toBe(false);
+    await act(async()=>{finishLate(stage==="navegador"?subscription:{success:true});await vi.advanceTimersByTimeAsync(0);});
+    expect(screen.queryByRole("button",{name:"Desativar avisos neste aparelho"})).toBeNull();
+    if(stage==="navegador")expect(api.subscribe).not.toHaveBeenCalled();
+    manager.getSubscription.mockResolvedValue(subscription);api.subscribe.mockResolvedValue({success:true});
+    fireEvent.click(screen.getByRole("button",{name:"Ativar avisos neste aparelho"}));
+    await act(async()=>{await vi.advanceTimersByTimeAsync(50);});
+    expect(screen.getByRole("button",{name:"Desativar avisos neste aparelho"})).toBeTruthy();
+    expect(api.permission).not.toHaveBeenCalled();
+  });
   it("mostra só o ícone e abre as opções em painel flutuante",async()=>{
     render(<Fixture/>);
     const bell=screen.getByRole("button",{name:"Avisos do ChatMed"});
@@ -65,7 +99,7 @@ describe("alertas do ChatMed",()=>{
     const value={endpoint:"https://fcm.googleapis.com/wp/fixture",keys:{p256dh:"A".repeat(87),auth:"B".repeat(22)}};
     const subscription={endpoint:value.endpoint,toJSON:()=>value,unsubscribe:vi.fn(async()=>true)};
     const manager={getSubscription:vi.fn(async()=>null as any),subscribe:vi.fn(async()=>subscription)};
-    const registration={pushManager:manager};
+    const registration={pushManager:manager,active:{state:"activated"}};
     Object.defineProperty(navigator,"serviceWorker",{configurable:true,value:{register:api.register.mockResolvedValue(registration),ready:Promise.resolve(registration),getRegistration:async()=>registration,addEventListener:vi.fn(),removeEventListener:vi.fn()}});
     api.key.mockResolvedValue({publicKey:btoa("a".repeat(65))});api.subscribe.mockResolvedValue({success:true});api.unsubscribe.mockResolvedValue({success:true});
     render(<Fixture/>);expect(api.register).not.toHaveBeenCalled();

@@ -8,7 +8,7 @@ on:
       - "shared/**"
       - "client/public/chatmed-sw.js"
       - "client/src/components/ChatAlerts.tsx"
-      - "client/src/lib/chatAlerts*"
+      - "client/src/lib/chatAlert*"
       - "client/src/components/PhoneBookForm.tsx"
       - "client/src/components/PatientSearch.tsx"
       - "client/src/lib/searchScreens.test.tsx"
